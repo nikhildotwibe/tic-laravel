@@ -1,4 +1,4 @@
-/node_modules
+/git remote -v
 /public/build
 /public/hot
 /public/storage
