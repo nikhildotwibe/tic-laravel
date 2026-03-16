@@ -1,0 +1,4 @@
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/plantipronline/tic-backend.plantriponline.com
+    - /bin/cp -R * $DEPLOYPATH
