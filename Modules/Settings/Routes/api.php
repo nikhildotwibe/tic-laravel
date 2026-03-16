@@ -66,8 +66,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('lead-sources', LeadSourceController::class);
     Route::apiResource('priorities', PriorityController::class);
     Route::apiResource('currencies', CurrencyController::class);
-    Route::apiResource('requirements', RequirementsController::class);
     Route::apiResource('enquiries1', EnquiriesController::class);
-    Route::get('customers-search-by-mobile', [CustomerController::class, 'searchByMobile']);
     Route::get('suppliers-search-by-mobile', [SupplierController::class, 'searchByMobile']);
 });
