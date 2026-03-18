@@ -28,11 +28,11 @@ class HotelsController extends BaseController
     {
         try {
             $query = Hotel::query();
-            
+
             if($request->sub_destination_id){
                 $query = $query->where('sub_destination_id',$sub_destination_id);
             }
-            
+
             $hotels = $query->latest()->get();
             return $this->sendResponse(HotelResource::collection($hotels), 'All Hotel Fetched', 200);
         } catch (Exception $exception) {
@@ -163,7 +163,7 @@ class HotelsController extends BaseController
         // create or update hotel
         $hotel = Hotel::updateOrcreate(['id' => $id], $hotelData);
 
-        // document 1 
+        // document 1
         if (!empty($document1)) {
             $hotel->addMediaFromRequest('document_1')->toMediaCollection('hotel-profile-images');
         }
@@ -317,4 +317,33 @@ class HotelsController extends BaseController
             return $this->HandleException($exception);
         }
     }
+
+
+     public function deleteImage($imageId)
+    {
+        try {
+            // Find the media (image) by ID
+            $media = \Spatie\MediaLibrary\MediaCollections\Models\Media::findOrFail($imageId);
+
+            // Check if the media belongs to a hotel (assuming collection is 'hotel-images')
+            if (!$media->model instanceof Hotel) {
+                return $this->sendError('Image not found or does not belong to a hotel', 404);
+            }
+
+            // Optional: Check permissions (e.g., if user owns the hotel)
+            // Assuming you have user authentication and hotel ownership check
+            // if ($media->model->user_id !== Auth::id()) {
+            //     return $this->sendError('Unauthorized', 403);
+            // }
+
+            // Delete the media (removes from storage and database)
+            $media->delete();
+
+            return $this->sendResponse([], 'Image deleted successfully', 200);
+        } catch (Exception $exception) {
+            return $this->HandleException($exception);
+        }
+    }
+
+
 }
