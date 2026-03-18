@@ -18,7 +18,11 @@ class MediaResource extends JsonResource
             'id' => $this->resource->id,
             'name' => $this->resource->name,
             'file_name' => $this->resource->file_name,
-            'file_url' => $this->resource->getFullUrl(),
+         'file_url' => url(
+    str_contains($this->resource->getUrl(), '/storage/')
+        ? str_replace('/storage/', '/uploads/', $this->resource->getUrl())
+        : $this->resource->getUrl()
+),
             'mime_type' => $this->resource->mime_type,
             'size' => $this->resource->size,
             'human_readable_size' => $this->resource->human_readable_size,
