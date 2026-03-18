@@ -317,33 +317,4 @@ class HotelsController extends BaseController
             return $this->HandleException($exception);
         }
     }
-
-
-     public function deleteImage($imageId)
-    {
-        try {
-            // Find the media (image) by ID
-            $media = \Spatie\MediaLibrary\MediaCollections\Models\Media::findOrFail($imageId);
-
-            // Check if the media belongs to a hotel (assuming collection is 'hotel-images')
-            if (!$media->model instanceof Hotel) {
-                return $this->sendError('Image not found or does not belong to a hotel', 404);
-            }
-
-            // Optional: Check permissions (e.g., if user owns the hotel)
-            // Assuming you have user authentication and hotel ownership check
-            // if ($media->model->user_id !== Auth::id()) {
-            //     return $this->sendError('Unauthorized', 403);
-            // }
-
-            // Delete the media (removes from storage and database)
-            $media->delete();
-
-            return $this->sendResponse([], 'Image deleted successfully', 200);
-        } catch (Exception $exception) {
-            return $this->HandleException($exception);
-        }
-    }
-
-
 }
