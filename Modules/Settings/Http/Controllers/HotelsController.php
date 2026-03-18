@@ -28,11 +28,11 @@ class HotelsController extends BaseController
     {
         try {
             $query = Hotel::query();
-
+            
             if($request->sub_destination_id){
                 $query = $query->where('sub_destination_id',$sub_destination_id);
             }
-
+            
             $hotels = $query->latest()->get();
             return $this->sendResponse(HotelResource::collection($hotels), 'All Hotel Fetched', 200);
         } catch (Exception $exception) {
@@ -163,7 +163,7 @@ class HotelsController extends BaseController
         // create or update hotel
         $hotel = Hotel::updateOrcreate(['id' => $id], $hotelData);
 
-        // document 1
+        // document 1 
         if (!empty($document1)) {
             $hotel->addMediaFromRequest('document_1')->toMediaCollection('hotel-profile-images');
         }
@@ -317,18 +317,4 @@ class HotelsController extends BaseController
             return $this->HandleException($exception);
         }
     }
-public function deleteImage($id)
-{
-    try {
-        $media = \Spatie\MediaLibrary\MediaCollections\Models\Media::where('id', $id)
-            ->where('collection_name', 'hotel-images')
-            ->firstOrFail();
-
-        $media->delete();
-
-        return $this->sendResponse([], 'Image deleted successfully', 200);
-    } catch (Exception $e) {
-        return $this->HandleException($e);
-    }
-}
 }
