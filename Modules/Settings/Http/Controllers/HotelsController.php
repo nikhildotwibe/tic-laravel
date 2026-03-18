@@ -317,4 +317,18 @@ class HotelsController extends BaseController
             return $this->HandleException($exception);
         }
     }
+public function deleteImage($id)
+{
+    try {
+        $media = \Spatie\MediaLibrary\MediaCollections\Models\Media::where('id', $id)
+            ->where('collection_name', 'hotel-images')
+            ->firstOrFail();
+
+        $media->delete();
+
+        return $this->sendResponse([], 'Image deleted successfully', 200);
+    } catch (Exception $e) {
+        return $this->HandleException($e);
+    }
+}
 }
