@@ -325,7 +325,7 @@ class HotelsController extends BaseController
     try {
         $media = Media::findOrFail($id);
 
-        $media->delete(); // ✅ deletes file + DB
+        $media->delete();
 
         return $this->sendResponse([], 'Image deleted successfully', 200);
 
