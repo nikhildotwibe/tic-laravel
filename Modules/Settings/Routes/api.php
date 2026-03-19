@@ -42,7 +42,7 @@ Route::prefix('settings')->middleware('auth:sanctum')->group(function () {
     Route::resource('languages', LanguagesController::class);
 });
 
-// Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     Route::resource('system-settings', SystemSettingsController::class);
     Route::resource('destinations', DestinationsController::class);
     Route::resource('sub-destinations', SubDestinationsController::class);
@@ -72,4 +72,4 @@ Route::prefix('settings')->middleware('auth:sanctum')->group(function () {
     Route::apiResource('currencies', CurrencyController::class);
     Route::apiResource('enquiries', EnquiriesController::class);
     Route::get('suppliers-search-by-mobile', [SupplierController::class, 'searchByMobile']);
-// });
+});
