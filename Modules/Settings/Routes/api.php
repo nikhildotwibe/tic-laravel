@@ -57,6 +57,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('fetch-draft', [DraftsController::class, 'index']);
     Route::resource('agents', AgentsController::class);
     Route::resource('hotels', HotelsController::class)->except('update');
+
+    Route::delete('hotel-image/{id}', [HotelsController::class, 'deleteImage']);
+
+
     Route::post('hotel-update/{id}', [HotelsController::class, 'update']);
     Route::apiResource('transfers', TransfersController::class)->except('update');
     Route::post('transfer-update/{id}', [TransfersController::class, 'update']);
