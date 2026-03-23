@@ -23,6 +23,8 @@ class TransferResource extends JsonResource
             'destination' => $this->resource->destination,
             'description' => $this->resource->description,
             'is_active' => $this->resource->is_active,
+            'pickuppoint' => $this->resource->pickuppoint,
+            'droppoint' => $this->resource->droppoint,
             'image' => $this->resource->getFirstMediaUrl('transfer-images'),
             'estimations' => TransferEstimationResource::collection($this->resource->estimations)
         ];

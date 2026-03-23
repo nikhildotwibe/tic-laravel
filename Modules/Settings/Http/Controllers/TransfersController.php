@@ -32,6 +32,8 @@ class TransfersController extends BaseController
             Validator::make($request->all(), [
                 'vehicle_name' => 'required',
                 'vehicle_number' => 'required',
+                'pickuppoint' => 'nullable|string',
+                'droppoint' => 'nullable|string',
                 'destination_id' => 'nullable|exists:destinations,id,deleted_at,NULL',
                 'phone_number' => 'required',
                 'is_active' => 'required|in:0,1',
@@ -48,6 +50,8 @@ class TransfersController extends BaseController
             $transfer = new Transfer();
             $transfer->vehicle_name = $request->vehicle_name;
             $transfer->vehicle_number = $request->vehicle_number;
+            $transfer->pickuppoint = $request->pickuppoint;
+            $transfer->droppoint = $request->droppoint;
             $transfer->destination_id = $request->destination_id;
             $transfer->phone_number = $request->phone_number;
             $transfer->description = $request->description;
@@ -104,6 +108,8 @@ class TransfersController extends BaseController
             Validator::make($request->all(), [
                 'vehicle_name' => 'required',
                 'vehicle_number' => 'required',
+                'pickuppoint' => 'nullable|string',
+                'droppoint' => 'nullable|string',
                 'destination_id' => 'nullable|exists:destinations,id,deleted_at,NULL',
                 'phone_number' => 'required',
                 'is_active' => 'required|in:0,1',
@@ -119,6 +125,8 @@ class TransfersController extends BaseController
 
             $transfer->vehicle_name = $request->vehicle_name;
             $transfer->vehicle_number = $request->vehicle_number;
+            $transfer->pickuppoint = $request->pickuppoint;
+            $transfer->droppoint = $request->droppoint;
             $transfer->destination_id = $request->destination_id;
             $transfer->phone_number = $request->phone_number;
             $transfer->description = $request->description;
