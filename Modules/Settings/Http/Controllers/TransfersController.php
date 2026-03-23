@@ -42,6 +42,7 @@ class TransfersController extends BaseController
                 'estimations.*.from_date' => 'required|date_format:Y-m-d',
                 'estimations.*.to_date' => 'required|date_format:Y-m-d',
                 'estimations.*.type' => 'required|in:Private,SIC',
+                'estimations.*.vehicletype' => 'nullable|string',
                 'estimations.*.cost' => 'nullable|gte:0',
                 'estimations.*.adult_cost' => 'nullable|gte:0',
                 'estimations.*.child_cost' => 'nullable|gte:0',
@@ -69,6 +70,7 @@ class TransfersController extends BaseController
                 $estimation->from_date = $estimationData['from_date'];
                 $estimation->to_date = $estimationData['to_date'];
                 $estimation->type = $estimationData['type'];
+                $estimation->vehicletype = $estimationData['vehicletype'] ?? null;
                 $estimation->cost = $estimationData['cost'];
                 $estimation->adult_cost = $estimationData['adult_cost'];
                 $estimation->child_cost = $estimationData['child_cost'];
@@ -118,6 +120,7 @@ class TransfersController extends BaseController
                 'estimations.*.from_date' => 'required|date_format:Y-m-d',
                 'estimations.*.to_date' => 'required|date_format:Y-m-d',
                 'estimations.*.type' => 'required|in:Private,SIC',
+                'estimations.*.vehicletype' => 'nullable|string',
                 'estimations.*.cost' => 'nullable|gte:0',
                 'estimations.*.adult_cost' => 'nullable|gte:0',
                 'estimations.*.child_cost' => 'nullable|gte:0',
@@ -150,6 +153,7 @@ class TransfersController extends BaseController
                 $estimation->from_date = $estimationData['from_date'];
                 $estimation->to_date = $estimationData['to_date'];
                 $estimation->type = $estimationData['type'];
+                $estimation->vehicletype = $estimationData['vehicletype'] ?? null;
                 $estimation->cost = $estimationData['cost'];
                 $estimation->adult_cost = $estimationData['adult_cost'];
                 $estimation->child_cost = $estimationData['child_cost'];

@@ -17,6 +17,7 @@ class TransferEstimationResource extends JsonResource
         return [
             'id' => $this->resource->id,
             'type' => $this->resource->type,
+            'vehicletype' => $this->resource->vehicletype,
             'from_date' => $this->resource->from_date,
             'to_date' => $this->resource->to_date,
             'cost' => $this->resource->cost,
