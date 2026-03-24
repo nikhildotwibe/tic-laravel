@@ -35,6 +35,7 @@ class TransfersController extends BaseController
                 'pickuppoint' => 'nullable|string',
                 'droppoint' => 'nullable|string',
                 'destination_id' => 'nullable|exists:destinations,id,deleted_at,NULL',
+                'sub_destination_id' => 'nullable|exists:sub_destinations,id,deleted_at,NULL',
                 'phone_number' => 'required',
                 'is_active' => 'required|in:0,1',
                 'image' => 'nullable|image|mimes:jpeg,jpg,png|max:2000',
@@ -54,6 +55,7 @@ class TransfersController extends BaseController
             $transfer->pickuppoint = $request->pickuppoint;
             $transfer->droppoint = $request->droppoint;
             $transfer->destination_id = $request->destination_id;
+            $transfer->sub_destination_id = $request->sub_destination_id;
             $transfer->phone_number = $request->phone_number;
             $transfer->description = $request->description;
             $transfer->is_active = $request->is_active;
@@ -113,6 +115,7 @@ class TransfersController extends BaseController
                 'pickuppoint' => 'nullable|string',
                 'droppoint' => 'nullable|string',
                 'destination_id' => 'nullable|exists:destinations,id,deleted_at,NULL',
+                'sub_destination_id' => 'nullable|exists:sub_destinations,id,deleted_at,NULL',
                 'phone_number' => 'required',
                 'is_active' => 'required|in:0,1',
                 'estimations' => 'required|array',
@@ -131,6 +134,7 @@ class TransfersController extends BaseController
             $transfer->pickuppoint = $request->pickuppoint;
             $transfer->droppoint = $request->droppoint;
             $transfer->destination_id = $request->destination_id;
+            $transfer->sub_destination_id = $request->sub_destination_id;
             $transfer->phone_number = $request->phone_number;
             $transfer->description = $request->description;
             $transfer->is_active = $request->is_active;
