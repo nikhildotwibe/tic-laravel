@@ -22,6 +22,11 @@ class Transfer extends BaseModel
         return $this->belongsTo(Destination::class, 'destination_id', 'id');
     }
 
+    public function sub_destination(): BelongsTo
+    {
+        return $this->belongsTo(SubDestination::class, 'sub_destination_id', 'id');
+    }
+
     public function estimations(): HasMany
     {
         return $this->hasMany(TransferEstimation::class, 'transfer_id', 'id');
