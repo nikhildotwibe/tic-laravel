@@ -31,10 +31,22 @@ class CurrencyController extends BaseController
         try {
             Validator::make($request->all(), [
                 'name' => 'required|unique:currencies,name,NULL,id,deleted_at,NULL',
+                'symbol' => 'nullable|string',
+                'code' => 'nullable|string',
+                'exchange_rate' => 'nullable|string',
+                'currency_format' => 'nullable|string',
+                'from_currency' => 'nullable|string',
+                'to_currency' => 'nullable|string',
             ])->validate();
 
             $currency = new Currency();
             $currency->name = $request->name;
+            $currency->symbol = $request->symbol;
+            $currency->code = $request->code;
+            $currency->exchange_rate = $request->exchange_rate;
+            $currency->currency_format = $request->currency_format;
+            $currency->from_currency = $request->from_currency;
+            $currency->to_currency = $request->to_currency;
             $currency->save();
 
             return $this->sendResponse(CurrencyResource::make($currency), 'Currency created Successfully', 201);
@@ -69,10 +81,22 @@ class CurrencyController extends BaseController
 
             Validator::make($request->all(), [
                 'name' => 'required|unique:currencies,name,' . $id . ',id,deleted_at,NULL',
+                'symbol' => 'nullable|string',
+                'code' => 'nullable|string',
+                'exchange_rate' => 'nullable|string',
+                'currency_format' => 'nullable|string',
+                'from_currency' => 'nullable|string',
+                'to_currency' => 'nullable|string',
             ])->validate();
 
 
             $currency->name = $request->name;
+            $currency->symbol = $request->symbol;
+            $currency->code = $request->code;
+            $currency->exchange_rate = $request->exchange_rate;
+            $currency->currency_format = $request->currency_format;
+            $currency->from_currency = $request->from_currency;
+            $currency->to_currency = $request->to_currency;
             $currency->update();
 
             return $this->sendResponse(CurrencyResource::make($currency), 'Currency Updated', 200);
