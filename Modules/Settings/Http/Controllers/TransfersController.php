@@ -31,12 +31,12 @@ class TransfersController extends BaseController
         try {
             Validator::make($request->all(), [
                 'vehicle_name' => 'required',
-                'vehicle_number' => 'required',
+                'vehicle_number' => 'nullable',
                 'pickuppoint' => 'nullable|string',
                 'droppoint' => 'nullable|string',
                 'destination_id' => 'nullable|exists:destinations,id,deleted_at,NULL',
                 'sub_destination_id' => 'nullable|exists:sub_destinations,id,deleted_at,NULL',
-                'phone_number' => 'required',
+                'phone_number' => 'nullable',
                 'is_active' => 'required|in:0,1',
                 'image' => 'nullable|image|mimes:jpeg,jpg,png|max:2000',
                 'estimations' => 'required|array',
@@ -111,12 +111,12 @@ class TransfersController extends BaseController
 
             Validator::make($request->all(), [
                 'vehicle_name' => 'required',
-                'vehicle_number' => 'required',
+                'vehicle_number' => 'nullable',
                 'pickuppoint' => 'nullable|string',
                 'droppoint' => 'nullable|string',
                 'destination_id' => 'nullable|exists:destinations,id,deleted_at,NULL',
                 'sub_destination_id' => 'nullable|exists:sub_destinations,id,deleted_at,NULL',
-                'phone_number' => 'required',
+                'phone_number' => 'nullable',
                 'is_active' => 'required|in:0,1',
                 'estimations' => 'required|array',
                 'estimations.*.id' => 'nullable|exists:transfer_estimations,id,deleted_at,NULL',
