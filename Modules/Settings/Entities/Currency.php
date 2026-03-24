@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 
-class Supplier extends BaseModel
+class Currency extends BaseModel
 {
     use HasFactory;
     use UseUuidTrait;
