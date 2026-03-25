@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Validation\Rule;
 use Modules\Settings\Entities\Currency;
 use Modules\Settings\Transformers\CurrencyResource;
 
@@ -31,16 +30,12 @@ class CurrencyController extends BaseController
     {
         try {
             Validator::make($request->all(), [
-                'name' => 'required|string',
+                'name' => 'required|unique:currencies,name,NULL,id,deleted_at,NULL',
                 'symbol' => 'nullable|string',
                 'code' => 'nullable|string',
                 'exchange_rate' => 'nullable|string',
                 'currency_format' => 'nullable|string',
-                'from_currency' => [
-                    'nullable',
-                    'string',
-                    Rule::unique('currencies')->where(fn($q) => $q->where('to_currency', $request->to_currency)->whereNull('deleted_at'))
-                ],
+                'from_currency' => 'nullable|string',
                 'to_currency' => 'nullable|string',
             ])->validate();
 
@@ -85,16 +80,12 @@ class CurrencyController extends BaseController
             $currency = Currency::findOrFail($id);
 
             Validator::make($request->all(), [
-                'name' => 'required|string',
+                'name' => 'required|unique:currencies,name,' . $id . ',id,deleted_at,NULL',
                 'symbol' => 'nullable|string',
                 'code' => 'nullable|string',
                 'exchange_rate' => 'nullable|string',
                 'currency_format' => 'nullable|string',
-                'from_currency' => [
-                    'nullable',
-                    'string',
-                    Rule::unique('currencies')->where(fn($q) => $q->where('to_currency', $request->to_currency)->whereNull('deleted_at'))->ignore($id)
-                ],
+                'from_currency' => 'nullable|string',
                 'to_currency' => 'nullable|string',
             ])->validate();
 
