@@ -412,6 +412,10 @@ class ItineraryController extends BaseController
             $itinerary->currency = $request->currency;
             $itinerary->description = $request->description;
             $itinerary->price_mode = $request->price_mode;
+            $itinerary->total_amount = $request->total_amount;
+            $itinerary->grand_total = $request->grand_total;
+            $itinerary->converted_total = $request->converted_total;
+            $itinerary->exchange_rate = $request->exchange_rate;
             $itinerary->save();
 
             return $this->sendResponse(ItineraryResource::make($itinerary), 'Itinerary Prices Successfully fetched', 200);
