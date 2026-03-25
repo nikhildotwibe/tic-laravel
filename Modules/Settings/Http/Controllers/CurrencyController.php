@@ -30,7 +30,7 @@ class CurrencyController extends BaseController
     {
         try {
             Validator::make($request->all(), [
-                'name' => 'required|unique:currencies,name,NULL,id,deleted_at,NULL',
+                'name' => 'required|string',
                 'symbol' => 'nullable|string',
                 'code' => 'nullable|string',
                 'exchange_rate' => 'nullable|string',
@@ -80,7 +80,7 @@ class CurrencyController extends BaseController
             $currency = Currency::findOrFail($id);
 
             Validator::make($request->all(), [
-                'name' => 'required|unique:currencies,name,' . $id . ',id,deleted_at,NULL',
+                'name' => 'required|string',
                 'symbol' => 'nullable|string',
                 'code' => 'nullable|string',
                 'exchange_rate' => 'nullable|string',
