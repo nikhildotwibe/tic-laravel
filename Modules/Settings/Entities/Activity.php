@@ -27,6 +27,11 @@ class Activity extends BaseModel
         return $this->belongsTo(SubDestination::class, 'sub_destination_id', 'id');
     }
 
+    public function activityType(): BelongsTo
+    {
+        return $this->belongsTo(ActivityType::class, 'activity_type_id', 'id');
+    }
+
     public function estimations(): HasMany
     {
         return $this->hasMany(ActivityEstimation::class, 'activity_id', 'id');

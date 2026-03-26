@@ -25,6 +25,10 @@ class ActivityResource extends JsonResource
             'contact_email' => $this->resource->contact_email,
             'description' => $this->resource->description,
             'is_active' => $this->resource->is_active,
+            'activity_type_id' => $this->resource->activity_type_id,
+            'activity_type' => $this->resource->activityType,
+            'adult_count' => $this->resource->adult_count,
+            'child_count' => $this->resource->child_count,
             'estimations' => ActivityEstimationResource::collection($this->resource->estimations)
         ];
     }
