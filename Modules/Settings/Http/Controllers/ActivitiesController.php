@@ -56,6 +56,9 @@ class ActivitiesController extends BaseController
             $activity->contact_email = $request->contact_email;
             $activity->description = $request->description;
             $activity->is_active = $request->is_active;
+            $activity->activity_type_id = $request->activity_type_id;
+            $activity->adult_count = $request->adult_count ?? 0;
+            $activity->child_count = $request->child_count ?? 0;
             $activity->save();
 
             if (!empty($request->image)) {
@@ -130,6 +133,9 @@ class ActivitiesController extends BaseController
             $activity->contact_email = $request->contact_email;
             $activity->description = $request->description;
             $activity->is_active = $request->is_active;
+            $activity->activity_type_id = $request->activity_type_id;
+            $activity->adult_count = $request->adult_count ?? 0;
+            $activity->child_count = $request->child_count ?? 0;
             $activity->save();
 
             if (!empty($request->image)) {

@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Modules\Settings\Http\Controllers\ActivitiesController;
+use Modules\Settings\Http\Controllers\ActivityTypeController;
 use Modules\Settings\Http\Controllers\AgentsController;
 use Modules\Settings\Http\Controllers\CategoriesController;
 use Modules\Settings\Http\Controllers\CountriesController;
