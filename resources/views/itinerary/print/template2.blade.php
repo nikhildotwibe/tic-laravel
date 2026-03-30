@@ -431,7 +431,7 @@
         <tr>
             <td colspan="2" style="float: right; text-align: left;line-height:25px">
                 <span>
-                    DEAR SIR2<br>
+                    DEAR SIR<br>
                     GREETINGS FROM TIC TOURS...!!!<br>
                     THANKS FOR DECIDING TO AVAIL SERVICES FROM TIC TOURS, A LEADING TRAVEL AND HOLIDAYS MANAGEMENT
                     COMPANY. WE
