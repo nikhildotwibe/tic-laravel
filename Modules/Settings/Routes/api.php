@@ -25,6 +25,7 @@ use Modules\Settings\Http\Controllers\RoomTypesController;
 use Modules\Settings\Http\Controllers\SubDestinationsController;
 use Modules\Settings\Http\Controllers\SupplierController;
 use Modules\Settings\Http\Controllers\SystemSettingsController;
+use Modules\Settings\Http\Controllers\TaxController;
 use Modules\Settings\Http\Controllers\TransfersController;
 
 /*
@@ -75,4 +76,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('enquiries', EnquiriesController::class);
     Route::apiResource('activity-types', ActivityTypeController::class);
     Route::get('suppliers-search-by-mobile', [SupplierController::class, 'searchByMobile']);
+
+    // Tax Settings (GST)
+    Route::get('tax-settings', [TaxController::class, 'index']);
+    Route::post('tax-settings', [TaxController::class, 'store']);
+
+    // Additional / Custom Taxes
+    Route::get('additional-taxes', [TaxController::class, 'indexAdditional']);
+    Route::post('additional-taxes', [TaxController::class, 'storeAdditional']);
+    Route::get('additional-taxes/{id}', [TaxController::class, 'showAdditional']);
+    Route::put('additional-taxes/{id}', [TaxController::class, 'updateAdditional']);
+    Route::delete('additional-taxes/{id}', [TaxController::class, 'destroyAdditional']);
 });
