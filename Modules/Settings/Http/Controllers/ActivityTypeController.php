@@ -34,6 +34,16 @@ class ActivityTypeController extends BaseController
         }
     }
 
+    public function show($id)
+    {
+        try {
+            $type = ActivityType::findOrFail($id);
+            return $this->sendResponse($type, 'Activity Type Fetched', 200);
+        } catch (Exception $exception) {
+            return $this->HandleException($exception);
+        }
+    }
+
     public function update(Request $request, $id)
     {
         try {
