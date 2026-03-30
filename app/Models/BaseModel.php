@@ -33,11 +33,15 @@ class BaseModel extends Model implements HasMedia
         });
 
         static::updating(function ($model) {
-            $model->updated_by = auth()->user()->id;
+            if (auth()->check()) {
+                // $model->updated_by = auth()->user()->id;
+            }
         });
 
         static::deleting(function ($model) {
-            $model->deleted_by = auth()->user()->id;
+            if (auth()->check()) {
+                   // $model->deleted_by = auth()->user()->id;
+            }
         });
     }
 
