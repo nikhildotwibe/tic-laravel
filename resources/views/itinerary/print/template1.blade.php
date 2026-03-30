@@ -277,7 +277,8 @@
 
             $adultCount = $itinerary->adult_count ?? 0;
             $childCount = $itinerary->child_count ?? 0;
-            $currency = $itinerary->currency ?? 'USD';
+            $currencyModel = Modules\Settings\Entities\Currency::find($itinerary->currency);
+            $currency = $currencyModel->code ?? 'USD';
         @endphp
 
         <p class="section-header">Hotel Options with Rate per person on twin sharing basis in {{ $currency }}</p>
