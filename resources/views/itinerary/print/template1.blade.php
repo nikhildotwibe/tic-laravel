@@ -151,7 +151,7 @@
     {{-- ══════════════════════════════════════════
          GREETING
     ══════════════════════════════════════════ --}}
-    <p>Dear {{ $itinerary->enquiry->customer->name ?? 'Sir/Madam' }},</p>
+    <p>Dear1 {{ $itinerary->enquiry->customer->name ?? 'Sir/Madam' }},</p>
     <p>Greetings from TIC Tours…!!!</p>
     <p>
         Thanks for deciding to avail services from TIC Tours, a leading travel and holidays Management Company.
