@@ -92,6 +92,7 @@ class EnquiriesController extends BaseController
 
             $enquiry = new Enquiry();
             $enquiry->type = $request->type;
+            $enquiry->ref_no = $request->ref_no;
             $enquiry->agent_id = $request->agent_id;
             $enquiry->destination_id = $request->destination_id;
             // $enquiry->sub_destination_id = $request->sub_destination_id;
@@ -189,6 +190,7 @@ class EnquiriesController extends BaseController
 
             $enquiry = Enquiry::findOrFail($id);
             $enquiry->type = $request->type;
+            $enquiry->ref_no = $request->ref_no;
             $enquiry->agent_id = $request->agent_id;
             $enquiry->destination_id = $request->destination_id;
             // $enquiry->sub_destination_id = $request->sub_destination_id;
