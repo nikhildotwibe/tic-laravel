@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Validator as ValidationValidator;
 use Modules\Quotations\Entities\Itinerary;
 use Modules\Quotations\Entities\ItineraryEntry;
-use Modules\Quotations\Entities\PricingSnapshot;
 use Modules\Quotations\Transformers\ItineraryResource;
 use Modules\Settings\Entities\Activity;
 use Modules\Settings\Entities\ActivityEstimation;
@@ -419,120 +418,7 @@ class ItineraryController extends BaseController
             $itinerary->exchange_rate = $request->exchange_rate;
             $itinerary->save();
 
-            // Auto-create pricing snapshot
-            $snapshotEntries = [];
-            foreach ($request->entries as $entryData) {
-                $snapshotEntries[] = [
-                    'id' => $entryData['id'],
-                    'amount' => $entryData['amount'],
-                    'markup' => $entryData['markup'],
-                ];
-            }
-            PricingSnapshot::create([
-                'itinerary_id' => $itinerary->id,
-                'snapshot_data' => json_encode([
-                    'entries' => $snapshotEntries,
-                    'itinerary' => [
-                        'extra_markup_percentage' => $itinerary->extra_markup_percentage,
-                        'extra_markup_amount' => $itinerary->extra_markup_amount,
-                        'cgst_percentage' => $itinerary->cgst_percentage,
-                        'sgst_percentage' => $itinerary->sgst_percentage,
-                        'igst_percentage' => $itinerary->igst_percentage,
-                        'tcs_percentage' => $itinerary->tcs_percentage,
-                        'discount_amount' => $itinerary->discount_amount,
-                        'currency' => $itinerary->currency,
-                        'price_mode' => $itinerary->price_mode,
-                        'total_amount' => $itinerary->total_amount,
-                        'grand_total' => $itinerary->grand_total,
-                        'converted_total' => $itinerary->converted_total,
-                        'exchange_rate' => $itinerary->exchange_rate,
-                        'description' => $itinerary->description,
-                    ],
-                ]),
-                'grand_total' => $itinerary->grand_total ?? 0,
-                'currency' => $itinerary->currency,
-                'created_by' => auth()->check() ? auth()->user()->id : null,
-            ]);
-
             return $this->sendResponse(ItineraryResource::make($itinerary), 'Itinerary Prices Successfully fetched', 200);
-        } catch (Exception $exception) {
-            return $this->HandleException($exception);
-        }
-    }
-
-    /**
-     * Get pricing history for an itinerary.
-     */
-    public function pricingHistory($id)
-    {
-        try {
-            $snapshots = PricingSnapshot::where('itinerary_id', $id)
-                ->orderBy('created_at', 'desc')
-                ->get()
-                ->map(function ($snapshot) {
-                    return [
-                        'id' => $snapshot->id,
-                        'grand_total' => $snapshot->grand_total,
-                        'currency' => $snapshot->currency,
-                        'notes' => $snapshot->notes,
-                        'created_at' => $snapshot->created_at,
-                        'created_by' => $snapshot->creator ? trim($snapshot->creator->first_name . ' ' . $snapshot->creator->last_name) : null,
-                        'snapshot_data' => $snapshot->snapshot_data,
-                    ];
-                });
-
-            return $this->sendResponse($snapshots, 'Pricing History Fetched', 200);
-        } catch (Exception $exception) {
-            return $this->HandleException($exception);
-        }
-    }
-
-    /**
-     * Restore pricing from a snapshot.
-     */
-    public function restorePricing(Request $request, $id, $snapshotId)
-    {
-        try {
-            $itinerary = Itinerary::findOrFail($id);
-            $snapshot = PricingSnapshot::where('itinerary_id', $id)->findOrFail($snapshotId);
-
-            $data = is_string($snapshot->snapshot_data)
-                ? json_decode($snapshot->snapshot_data, true)
-                : $snapshot->snapshot_data;
-
-            if (!$data || !isset($data['entries']) || !isset($data['itinerary'])) {
-                return $this->sendError('Invalid snapshot data', [], 422);
-            }
-
-            // Restore entry amounts & markup
-            foreach ($data['entries'] as $entryData) {
-                $entry = ItineraryEntry::find($entryData['id']);
-                if ($entry) {
-                    $entry->amount = $entryData['amount'];
-                    $entry->markup = $entryData['markup'];
-                    $entry->save();
-                }
-            }
-
-            // Restore itinerary-level pricing fields
-            $itineraryData = $data['itinerary'];
-            $itinerary->extra_markup_percentage = $itineraryData['extra_markup_percentage'] ?? 0;
-            $itinerary->extra_markup_amount = $itineraryData['extra_markup_amount'] ?? 0;
-            $itinerary->cgst_percentage = $itineraryData['cgst_percentage'] ?? 0;
-            $itinerary->sgst_percentage = $itineraryData['sgst_percentage'] ?? 0;
-            $itinerary->igst_percentage = $itineraryData['igst_percentage'] ?? 0;
-            $itinerary->tcs_percentage = $itineraryData['tcs_percentage'] ?? 0;
-            $itinerary->discount_amount = $itineraryData['discount_amount'] ?? 0;
-            $itinerary->currency = $itineraryData['currency'] ?? null;
-            $itinerary->price_mode = $itineraryData['price_mode'] ?? 'TOTAL_PRICE';
-            $itinerary->total_amount = $itineraryData['total_amount'] ?? 0;
-            $itinerary->grand_total = $itineraryData['grand_total'] ?? 0;
-            $itinerary->converted_total = $itineraryData['converted_total'] ?? 0;
-            $itinerary->exchange_rate = $itineraryData['exchange_rate'] ?? 1;
-            $itinerary->description = $itineraryData['description'] ?? '';
-            $itinerary->save();
-
-            return $this->sendResponse(ItineraryResource::make($itinerary), 'Pricing Restored Successfully', 200);
         } catch (Exception $exception) {
             return $this->HandleException($exception);
         }
@@ -542,8 +428,8 @@ class ItineraryController extends BaseController
     {
         $itinerary = Itinerary::findOrFail($id);
 
-        // Generate a unique filename to prevent browser caching
-        $documentFileName = "itinerary_" . $itinerary->id . "_" . time() . ".pdf";
+        // Setup a filename 
+        $documentFileName = "fun.pdf";
 
         // Create the mPDF document
         $document = new PDF([
@@ -555,6 +441,18 @@ class ItineraryController extends BaseController
             'margin_footer' => '2',
         ]);
 
+        // Set some header informations for output
+        $header = [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $documentFileName . '"'
+        ];
+
+
+
+        // Write some simple Content
+        // $document->WriteHTML('<h1 style="color:blue">TheCodingJack</h1>');
+        // $document->WriteHTML('<p>Write something, just for fun!</p>');
+
         $html = View::make(
             'itinerary.print.template1',
             [
@@ -564,12 +462,17 @@ class ItineraryController extends BaseController
         )->render();
         $document->WriteHTML($html);
 
-        // Send the PDF as a response with cache-busting headers
-        return response($document->Output($documentFileName, \Mpdf\Output\Destination::STRING_RETURN))
-            ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'inline; filename="' . $documentFileName . '"')
-            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
-            ->header('Pragma', 'no-cache')
-            ->header('Expires', '0');
+        // Save the PDF to public storage
+        Storage::disk('public')->put($documentFileName, $document->Output($documentFileName, \Mpdf\Output\Destination::STRING_RETURN));
+
+        // Set headers for the response
+        $headers = [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $documentFileName . '"'
+        ];
+
+        // Return the file as a response
+        return response()->file(storage_path('app/public/' . $documentFileName), $headers);
+
     }
 }
