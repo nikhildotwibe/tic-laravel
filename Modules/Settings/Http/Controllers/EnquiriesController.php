@@ -42,13 +42,13 @@ class EnquiriesController extends BaseController
                 'adult_count' => 'required|gte:0',
                 'child_count' => 'required|gte:0',
                 'infant_count' => 'required|gte:0',
-                'lead_source_id' => 'required|exists:lead_sources,id,deleted_at,NULL',
-                'priority_id' => 'required|exists:priorities,id,deleted_at,NULL',
+                'lead_source_id' => 'nullable|exists:lead_sources,id,deleted_at,NULL',
+                'priority_id' => 'nullable|exists:priorities,id,deleted_at,NULL',
 
                 'assigned_to' => 'required|exists:users,id,deleted_at,NULL',
 
-                'requirements' => 'required|array',
-                'requirements.*' => 'required|exists:requirements,id,deleted_at,NULL',
+                'requirements' => 'nullable|array',
+                'requirements.*' => 'nullable|exists:requirements,id,deleted_at,NULL',
 
                 'sub_destinations' => 'required|array',
                 'sub_destinations.*' => 'required|exists:sub_destinations,id,deleted_at,NULL',
@@ -160,14 +160,14 @@ class EnquiriesController extends BaseController
                 'adult_count' => 'required|gte:0',
                 'child_count' => 'required|gte:0',
                 'infant_count' => 'required|gte:0',
-                'lead_source_id' => 'required|exists:lead_sources,id,deleted_at,NULL',
-                'priority_id' => 'required|exists:priorities,id,deleted_at,NULL',
+                'lead_source_id' => 'nullable|exists:lead_sources,id,deleted_at,NULL',
+                'priority_id' => 'nullable|exists:priorities,id,deleted_at,NULL',
 
                 'customer_id' => 'nullable|exists:customers,id,deleted_at,NULL',
                 'assigned_to' => 'required|exists:users,id,deleted_at,NULL',
 
-                'requirements' => 'required|array',
-                'requirements.*' => 'required|exists:requirements,id,deleted_at,NULL',
+                'requirements' => 'nullable|array',
+                'requirements.*' => 'nullable|exists:requirements,id,deleted_at,NULL',
                 
                 'sub_destinations' => 'required|array',
                 'sub_destinations.*' => 'required|exists:sub_destinations,id,deleted_at,NULL',
