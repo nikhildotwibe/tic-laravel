@@ -421,7 +421,7 @@
         <tr>
             <td colspan="2" style="float: right; text-align: left;line-height:25px">
                 <span>
-                    Dear Sir<br>
+                    Dear Sir1<br>
                     Greetings from TIC Tours...!!!<br>
                     <span class="text-justify">
                    Thanks for deciding to avail services from tic tours, a leading travel and holidays management Company. We Hereby forward you the complete package tour plan with all details, for further clarification, or Change As per your idea or planning please do call or mail us.
