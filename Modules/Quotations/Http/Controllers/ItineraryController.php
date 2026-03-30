@@ -542,8 +542,8 @@ class ItineraryController extends BaseController
     {
         $itinerary = Itinerary::findOrFail($id);
 
-        // Setup a filename 
-        $documentFileName = "fun.pdf";
+        // Generate a unique filename to prevent browser caching
+        $documentFileName = "itinerary_" . $itinerary->id . "_" . time() . ".pdf";
 
         // Create the mPDF document
         $document = new PDF([
@@ -555,18 +555,6 @@ class ItineraryController extends BaseController
             'margin_footer' => '2',
         ]);
 
-        // Set some header informations for output
-        $header = [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="' . $documentFileName . '"'
-        ];
-
-
-
-        // Write some simple Content
-        // $document->WriteHTML('<h1 style="color:blue">TheCodingJack</h1>');
-        // $document->WriteHTML('<p>Write something, just for fun!</p>');
-
         $html = View::make(
             'itinerary.print.template1',
             [
@@ -576,17 +564,12 @@ class ItineraryController extends BaseController
         )->render();
         $document->WriteHTML($html);
 
-        // Save the PDF to public storage
-        Storage::disk('public')->put($documentFileName, $document->Output($documentFileName, \Mpdf\Output\Destination::STRING_RETURN));
-
-        // Set headers for the response
-        $headers = [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="' . $documentFileName . '"'
-        ];
-
-        // Return the file as a response
-        return response()->file(storage_path('app/public/' . $documentFileName), $headers);
-
+        // Send the PDF as a response with cache-busting headers
+        return response($document->Output($documentFileName, \Mpdf\Output\Destination::STRING_RETURN))
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="' . $documentFileName . '"')
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
     }
 }

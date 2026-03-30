@@ -4,739 +4,554 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <title>Laravel</title>
+    <title>Itinerary</title>
 
     <!-- Fonts -->
     <link href="https://fonts.bunny.net/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 
-    <!-- Styles -->
     <style>
-        /*! normalize.css v8.0.1 | MIT License | github.com/necolas/normalize.css */
         html {
             line-height: 1.15;
-            -webkit-text-size-adjust: 100%
+            -webkit-text-size-adjust: 100%;
         }
 
         body {
-            margin: 0
-        }
-
-        a {
-            background-color: transparent
-        }
-
-        [hidden] {
-            display: none
-        }
-
-        html {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
-            line-height: 1.5
-        }
-
-        *,
-        :after,
-        :before {
-            box-sizing: border-box;
-            border: 0 solid #e2e8f0
-        }
-
-        a {
-            color: inherit;
-            text-decoration: inherit
-        }
-
-        svg,
-        video {
-            display: block;
-            vertical-align: middle
-        }
-
-        video {
-            max-width: 100%;
-            height: auto
-        }
-
-        .bg-white {
-            --tw-bg-opacity: 1;
-            background-color: rgb(255 255 255 / var(--tw-bg-opacity))
-        }
-
-        .bg-gray-100 {
-            --tw-bg-opacity: 1;
-            background-color: rgb(243 244 246 / var(--tw-bg-opacity))
-        }
-
-        .border-gray-200 {
-            --tw-border-opacity: 1;
-            border-color: rgb(229 231 235 / var(--tw-border-opacity))
-        }
-
-        .border-t {
-            border-top-width: 1px
-        }
-
-        .flex {
-            display: flex
-        }
-
-        .grid {
-            display: grid
-        }
-
-        .hidden {
-            display: none
-        }
-
-        .items-center {
-            align-items: center
-        }
-
-        .justify-center {
-            justify-content: center
-        }
-
-        .font-semibold {
-            font-weight: 600
-        }
-
-        .h-5 {
-            height: 1.25rem
-        }
-
-        .h-8 {
-            height: 2rem
-        }
-
-        .h-16 {
-            height: 4rem
-        }
-
-        .text-sm {
-            font-size: .875rem
-        }
-
-        .text-lg {
-            font-size: 1.125rem
-        }
-
-        .leading-7 {
-            line-height: 1.75rem
-        }
-
-        .mx-auto {
-            margin-left: auto;
-            margin-right: auto
-        }
-
-        .ml-1 {
-            margin-left: .25rem
-        }
-
-        .mt-2 {
-            margin-top: .5rem
-        }
-
-        .mr-2 {
-            margin-right: .5rem
-        }
-
-        .ml-2 {
-            margin-left: .5rem
-        }
-
-        .mt-4 {
-            margin-top: 1rem
-        }
-
-        .ml-4 {
-            margin-left: 1rem
-        }
-
-        .mt-8 {
-            margin-top: 2rem
-        }
-
-        .ml-12 {
-            margin-left: 3rem
-        }
-
-        .-mt-px {
-            margin-top: -1px
-        }
-
-        .max-w-6xl {
-            max-width: 72rem
-        }
-
-        .min-h-screen {
-            min-height: 100vh
-        }
-
-        .overflow-hidden {
-            overflow: hidden
-        }
-
-        .p-6 {
-            padding: 1.5rem
-        }
-
-        .py-4 {
-            padding-top: 1rem;
-            padding-bottom: 1rem
-        }
-
-        .px-6 {
-            padding-left: 1.5rem;
-            padding-right: 1.5rem
-        }
-
-        .pt-8 {
-            padding-top: 2rem
-        }
-
-        .fixed {
-            position: fixed
-        }
-
-        .relative {
-            position: relative
-        }
-
-        .top-0 {
-            top: 0
-        }
-
-        .right-0 {
-            right: 0
-        }
-
-        .shadow {
-            --tw-shadow: 0 1px 3px 0 rgb(0 0 0 / .1), 0 1px 2px -1px rgb(0 0 0 / .1);
-            --tw-shadow-colored: 0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color);
-            box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)
-        }
-
-        .text-center {
-            text-align: center
-        }
-
-        .text-gray-200 {
-            --tw-text-opacity: 1;
-            color: rgb(229 231 235 / var(--tw-text-opacity))
-        }
-
-        .text-gray-300 {
-            --tw-text-opacity: 1;
-            color: rgb(209 213 219 / var(--tw-text-opacity))
-        }
-
-        .text-gray-400 {
-            --tw-text-opacity: 1;
-            color: rgb(156 163 175 / var(--tw-text-opacity))
-        }
-
-        .text-gray-500 {
-            --tw-text-opacity: 1;
-            color: rgb(107 114 128 / var(--tw-text-opacity))
-        }
-
-        .text-gray-600 {
-            --tw-text-opacity: 1;
-            color: rgb(75 85 99 / var(--tw-text-opacity))
-        }
-
-        .text-gray-700 {
-            --tw-text-opacity: 1;
-            color: rgb(55 65 81 / var(--tw-text-opacity))
-        }
-
-        .text-gray-900 {
-            --tw-text-opacity: 1;
-            color: rgb(17 24 39 / var(--tw-text-opacity))
-        }
-
-        .underline {
-            text-decoration: underline
-        }
-
-        .antialiased {
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale
-        }
-
-        .w-5 {
-            width: 1.25rem
-        }
-
-        .w-8 {
-            width: 2rem
-        }
-
-        .w-auto {
-            width: auto
-        }
-
-        .grid-cols-1 {
-            grid-template-columns: repeat(1, minmax(0, 1fr))
-        }
-
-        @media (min-width:640px) {
-            .sm\:rounded-lg {
-                border-radius: .5rem
-            }
-
-            .sm\:block {
-                display: block
-            }
-
-            .sm\:items-center {
-                align-items: center
-            }
-
-            .sm\:justify-start {
-                justify-content: flex-start
-            }
-
-            .sm\:justify-between {
-                justify-content: space-between
-            }
-
-            .sm\:h-20 {
-                height: 5rem
-            }
-
-            .sm\:ml-0 {
-                margin-left: 0
-            }
-
-            .sm\:px-6 {
-                padding-left: 1.5rem;
-                padding-right: 1.5rem
-            }
-
-            .sm\:pt-0 {
-                padding-top: 0
-            }
-
-            .sm\:text-left {
-                text-align: left
-            }
-
-            .sm\:text-right {
-                text-align: right
-            }
-        }
-
-        @media (min-width:768px) {
-            .md\:border-t-0 {
-                border-top-width: 0
-            }
-
-            .md\:border-l {
-                border-left-width: 1px
-            }
-
-            .md\:grid-cols-2 {
-                grid-template-columns: repeat(2, minmax(0, 1fr))
-            }
-        }
-
-        @media (min-width:1024px) {
-            .lg\:px-8 {
-                padding-left: 2rem;
-                padding-right: 2rem
-            }
-        }
-
-        @media (prefers-color-scheme:dark) {
-            .dark\:bg-gray-800 {
-                --tw-bg-opacity: 1;
-                background-color: rgb(31 41 55 / var(--tw-bg-opacity))
-            }
-
-            .dark\:bg-gray-900 {
-                --tw-bg-opacity: 1;
-                background-color: rgb(17 24 39 / var(--tw-bg-opacity))
-            }
-
-            .dark\:border-gray-700 {
-                --tw-border-opacity: 1;
-                border-color: rgb(55 65 81 / var(--tw-border-opacity))
-            }
-
-            .dark\:text-white {
-                --tw-text-opacity: 1;
-                color: rgb(255 255 255 / var(--tw-text-opacity))
-            }
-
-            .dark\:text-gray-400 {
-                --tw-text-opacity: 1;
-                color: rgb(156 163 175 / var(--tw-text-opacity))
-            }
-
-            .dark\:text-gray-500 {
-                --tw-text-opacity: 1;
-                color: rgb(107 114 128 / var(--tw-text-opacity))
-            }
-        }
-    </style>
-
-    <style>
-        body {
+            margin: 0;
             font-family: 'Nunito', sans-serif;
             font-size: 11px;
+            color: #4a1c1c;
         }
 
-        .border-table {
+        * {
+            box-sizing: border-box;
+        }
+
+        .content {
+            padding: 10px 20px;
+        }
+
+        /* Greeting */
+        .greeting {
+            font-weight: bold;
+            color: #4a1c1c;
+            margin-bottom: 5px;
+        }
+
+        .greeting-title {
+            font-weight: bold;
+            color: #4a1c1c;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .intro-text {
+            text-align: justify;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        /* Package Title */
+        .package-title {
+            font-weight: bold;
+            text-decoration: underline;
+            color: #4a1c1c;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        /* Trip Details */
+        .trip-details {
+            margin-left: 30px;
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+
+        .trip-details table td {
+            padding: 1px 5px;
+            vertical-align: top;
+        }
+
+        .trip-label {
+            font-weight: bold;
+            width: 140px;
+        }
+
+        /* Section Headers */
+        .section-header {
+            font-weight: bold;
+            text-decoration: underline;
+            color: #4a1c1c;
+            font-size: 11px;
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+
+        /* Hotel Options Table */
+        .option-label {
+            font-weight: bold;
+            text-decoration: underline;
+            color: #4a1c1c;
+            margin-top: 12px;
+            margin-bottom: 5px;
+        }
+
+        .hotel-table {
             border-collapse: collapse;
             width: 100%;
+            margin-bottom: 5px;
         }
 
-        .border-table th,
-        .border-table td {
-            border: 1px solid black;
-            padding: 8px;
-            text-align: left;
+        .hotel-table th {
+            background-color: #d5c6c6;
+            border: 1px solid #999;
+            padding: 6px 8px;
+            text-align: center;
+            font-weight: bold;
+            color: #4a1c1c;
         }
 
-        table th,
-        table td {
-            padding: 8px;
-            text-align: left;
+        .hotel-table td {
+            border: 1px solid #999;
+            padding: 6px 8px;
+            text-align: center;
         }
 
-        .text-justify {
-            text-align: justify;
+        /* Rate display */
+        .rate-section {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .rate-section .rate-label {
+            font-weight: bold;
+        }
+
+        /* Tour Cost Includes/Excludes */
+        .cost-list {
+            margin-left: 15px;
+            line-height: 1.8;
+        }
+
+        .cost-list li {
+            margin-bottom: 2px;
+        }
+
+        /* Proposed Itinerary */
+        .itinerary-section {
+            margin-top: 15px;
+        }
+
+        .day-header {
+            font-weight: bold;
+            color: #4a1c1c;
+            margin-top: 10px;
+            margin-bottom: 3px;
+        }
+
+        .day-items {
+            margin-left: 120px;
+            line-height: 1.6;
+        }
+
+        .day-item {
+            margin-bottom: 2px;
+        }
+
+        /* Important Note */
+        .important-note {
+            margin-top: 15px;
+            line-height: 1.7;
+        }
+
+        .highlight {
+            background-color: #ffff00;
+        }
+
+        /* Cancellation Policy */
+        .cancellation-section {
+            margin-top: 15px;
+        }
+
+        .cancellation-title {
+            font-weight: bold;
+            text-decoration: underline;
+            font-size: 12px;
+            color: #4a1c1c;
+            margin-bottom: 5px;
+        }
+
+        .cancellation-items {
+            margin-left: 30px;
+            line-height: 1.8;
+        }
+
+        /* Payment Note */
+        .payment-note {
+            margin-top: 15px;
+        }
+
+        .payment-title {
+            font-weight: bold;
+            text-decoration: underline;
+            color: #4a1c1c;
+            font-size: 11px;
+            margin-bottom: 5px;
+        }
+
+        .payment-list {
+            margin-left: 15px;
+        }
+
+        .payment-list ol {
+            margin: 0;
+            padding-left: 20px;
+            line-height: 1.8;
         }
     </style>
 </head>
 
-<body class="antialiased">
+<body>
+    <div class="content">
 
+        {{-- ============================================ --}}
+        {{-- GREETING & INTRO --}}
+        {{-- ============================================ --}}
+        <p class="greeting">Dear,</p>
+        <p class="greeting-title">Greetings from TIC Tours…!!!</p>
+        <p class="intro-text">
+            Thanks for deciding to avail services from TIC Tours, a leading travel and holidays Management
+            Company. We hereby forward you the complete Package Tour plan with all details, for further
+            clarification, or change as per your idea or planning please do call or mail us.
+        </p>
 
-    <table style="width: 100%;">
-
-
-        <tr>
-            <td colspan="2" style="float: right; text-align: left;line-height:25px">
-                <span>
-                    Dear Sir1<br>
-                    Greetings from TIC Tours...!!!<br>
-                    <span class="text-justify">
-                        Thanks for deciding to avail services from tic tours, a leading travel and holidays management
-                        Company. We Hereby forward you the complete package tour plan with all details, for further
-                        clarification, or Change As per your idea or planning please do call or mail us.
-                    </span>
-                </span>
-            </td>
-        </tr>
-
+        {{-- ============================================ --}}
+        {{-- PACKAGE TITLE & TRIP DETAILS --}}
+        {{-- ============================================ --}}
         @php
-            $start = Carbon\Carbon::parse($itinerary->enquiry->start_date);
-            $end = Carbon\Carbon::parse($itinerary->enquiry->end_date);
-            $daysCount = $end->diffInDays($start);
-            $count = $daysCount - 1 . ' N | ' . $daysCount . ' D ';
+            $start = Carbon\Carbon::parse($itinerary->start_date);
+            $end = Carbon\Carbon::parse($itinerary->end_date);
+            $nightsCount = $end->diffInDays($start);
+            $daysCount = $nightsCount + 1;
+            $count = $nightsCount . ' N | ' . str_pad($daysCount, 2, '0', STR_PAD_LEFT) . ' D';
+
+            // Calculate quotation validity in days
+            $validUntil = Carbon\Carbon::parse($itinerary->valid_until);
+            $validityDays = Carbon\Carbon::parse($itinerary->created_at)->diffInDays($validUntil);
         @endphp
 
-        <tr>
-            <td colspan="2" style="float: right; text-align: left;line-height:25px;">
-                <span style="background-color:#d9ead3;padding:15% !important">
-                    {{$count . $itinerary->package_name }}
-                </span>
-            </td>
-        </tr>
+        <p class="package-title">{{ $count }} {{ $itinerary->package_name }}</p>
 
-        <tr>
-            <td style="float: right; text-align: left;line-height:25px;">
-                No. of Guests :
-            </td>
-            <td>
-                {{ $itinerary->adult_count . ' Adult +' . $itinerary->child_count . ' Child' }}
-            </td>
-        </tr>
-        <tr>
-            <td style="float: right; text-align: left;line-height:25px;">
-                Traveling Date :
-            </td>
-            <td>
-                {{ date('D, d M, Y', strtotime($itinerary->start_date)) }}
-            </td>
-        </tr>
-    </table>
+        <div class="trip-details">
+            <table>
+                <tr>
+                    <td class="trip-label">Trip ID:</td>
+                    <td>#{{ $itinerary->seq }}</td>
+                    <td style="padding-left:30px" class="trip-label">Q/Ref:</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td class="trip-label">No. of Guests</td>
+                    <td>: Adults: {{ $itinerary->adult_count }} &nbsp; Child: {{ $itinerary->child_count }}</td>
+                </tr>
+                <tr>
+                    <td class="trip-label">Traveling Date</td>
+                    <td>: {{ date('d M Y', strtotime($itinerary->start_date)) }}</td>
+                </tr>
+                <tr>
+                    <td class="trip-label">No of Night</td>
+                    <td>: {{ str_pad($nightsCount, 2, '0', STR_PAD_LEFT) }}</td>
+                </tr>
+                <tr>
+                    <td class="trip-label">Quotation Validity</td>
+                    <td>: {{ $validityDays }} Days</td>
+                </tr>
+            </table>
+        </div>
 
-    <table class="border-table" style="width: 100%;margin-top:8px;margin-bottom:10px">
-        <tr>
-            <td colspan="4"></td>
-        </tr>
-        <tr>
-            <td colspan="4" style="background-color: black;color:white">Query Details</td>
-        </tr>
-        <tr>
-            <td width="20%">Query ID:</td>
-            <td width="40%">#{{ $itinerary->seq }}</td>
-            <td width="20%">Adult(s):</td>
-            <td width="20%">{{ $itinerary->adult_count }}</td>
-        </tr>
-        <tr>
-            <td>Nights:</td>
-
-
-
-            <td>{{ $count }}</td>
-            <td>Child(s):</td>
-            <td>{{ $itinerary->child_count }}</td>
-        </tr>
-        <tr>
-            <td>Destination Covered:</td>
-            <td>{{ $itinerary->destination->name }}</td>
-            <td>Start Date:</td>
-            <td>{{ date('D, d M, Y', strtotime($itinerary->start_date)) }}</td>
-        </tr>
-        <tr>
-            <td>Query Date:</td>
-            <td>{{ date('D, d M, Y', strtotime($itinerary->created_at)) }}</td>
-            <td>End Date</td>
-            <td>{{ date('D, d M, Y', strtotime($itinerary->end_date)) }}</td>
-            {{-- <td>Tue, 05 Sep, 2023</td> --}}
-        </tr>
-    </table>
-
-
-    <table class="border-table" style="width: 100%;margin-top:10px;">
-        <tbody>
-
-            <tr style="background-color: #E4E4E4;color:white;border:1px solid #E4E4E4 !important">
-                <td width="35%">Destinations</td>
-                @foreach ($itinerary->entries->where('entry_type', 'HOTEL') as $item)
-                    <td>Hotel / Resort <br>{{ $item->option }}</td>
-                @endforeach
-
-            </tr>
-
-
-
-            <tr>
-                <td>{{ $itinerary->package_name }}</td>
-
-                @php
-                    $perPersonAmounts = [];
-                @endphp
-                @foreach ($itinerary->entries->where('entry_type', 'HOTEL') as $key => $item)
-                    @php
-
-                        $perPersonAmounts[$item->id] = [];
-                        $hotel = Modules\Settings\Entities\Hotel::find($item->subject_id);
-
-
-                        $adultCount = $itinerary?->enquiry?->adult_count ?? 0;
-                        $childCount = $itinerary?->enquiry?->child_count ?? 0;
-                        $adultPerPersonAmount = 0;
-                        $adulltNetAmount = 0;
-
-                        $chilPerPersonAmount = 0;
-                        $childNetAmount = 0;
-
-
-                        $adulltPerPersonNetAmount = 0;
-                        $childWPerPersonNetAmount = 0;
-                        $childNPerPersonNetAmount = 0;
-                        $childWPerPersonAmount = 0;
-                        $childNPerPersonAmount = 0;
-
-                        foreach ($itinerary->entries as $key => $entry) {
-
-                            if ($entry->entry_type == 'HOTEL') {
-                                $room = Modules\Settings\Entities\Room::find($entry->room_id);
-                                $adulltPerPersonNetAmount += $room->single_bed_amount + $room->double_bed_amount + $room->triple_bed_amount + $room->extra_bed_amount;
-                                $childWPerPersonNetAmount += $room->child_w_bed_amount * $entry->child_w_count;
-                                $childNPerPersonNetAmount += $room->child_n_bed_amount * $entry->child_n_count;
-                            }
-
-                            if ($entry->entry_type == 'TRANSFER') {
-                                $transferCost = $entry->transfer_type == 'PRIVATE' ? $entry->cost : $entry->adult_cost;
-
-                                $adulltPerPersonNetAmount += $transferCost;
-                                $childWPerPersonNetAmount += $transferCost;
-                                $childNPerPersonNetAmount += $transferCost;
-                            }
-
-                            if ($entry->entry_type == 'ACTIVITY') {
-                                $activityStartDate = $entry['start_date'];
-                                $activityEndDate = $entry['end_date'];
-                                $activityEstimation = Modules\Settings\Entities\ActivityEstimation::where('activity_id', $entry['subject_id'])->whereDate('from_date', '<=', $activityStartDate)->whereDate('to_date', '>=', $activityEndDate)->first();
-                                $adulltPerPersonNetAmount += $activityEstimation->adult_cost;
-                                $childWPerPersonNetAmount += $activityEstimation->child_cost;
-                                $childNPerPersonNetAmount += $activityEstimation->child_cost;
-                            }
-
-
-                        }
-
-                        if ($adultCount != 0) {
-                            $adultPerPersonAmount = $adulltPerPersonNetAmount / $adultCount;
-                        }
-
-                        if ($childCount != 0) {
-                            $childWPerPersonAmount = $childWPerPersonNetAmount / $childCount;
-                            $childNPerPersonAmount = $childNPerPersonNetAmount / $childCount;
-                        }
-
-                        $perPersonAmounts[$item->id] = [
-                            'adult' => $adultPerPersonAmount,
-                            'child_w' => $childWPerPersonAmount,
-                            'child_n' => $childNPerPersonAmount
-                        ];
-
-
-                    @endphp
-
-                    <td>{{ $hotel->name ?? "N/A" }}</td>
-                @endforeach
-
-                @php
-                    info($perPersonAmounts);
-                @endphp
-
-
-            </tr>
-
-
-
-            <tr>
-                <td>Rate Per Person on Double Sharing Basis</td>
-                @foreach ($itinerary->entries->where('entry_type', 'HOTEL') as $key => $item)
-                    <td>{{ $perPersonAmounts[$item->id]['adult'] }}</td>
-                @endforeach
-            </tr>
-
-
-            <tr>
-                <td>Rate Per Child with Extra Bed</td>
-                @foreach ($itinerary->entries->where('entry_type', 'HOTEL') as $key => $item)
-                    <td>{{ $perPersonAmounts[$item->id]['child_w'] }}</td>
-                @endforeach
-            </tr>
-
-            <tr>
-                <td>Rate Per Child without Bed</td>
-                @foreach ($itinerary->entries->where('entry_type', 'HOTEL') as $key => $item)
-                    <td>{{ $perPersonAmounts[$item->id]['child_n'] }}</td>
-                @endforeach
-            </tr>
-
-
-
-
-        </tbody>
-    </table>
-
-
-
-
-
-
-
-    <table class="" style="width: 100%;margin-top:8px;margin-bottom:10px">
-        <tr>
-            <td colspan="2" style="background-color: black;color:white">Itinerary Details</td>
-        </tr>
-
+        {{-- ============================================ --}}
+        {{-- HOTEL OPTIONS SECTION --}}
+        {{-- ============================================ --}}
         @php
-            $uniqueDates = array_unique($itinerary->entries->pluck('date')->toArray());
-            sort($uniqueDates);
+            $hotelEntries = $itinerary->entries->where('entry_type', 'HOTEL');
+            $options = $hotelEntries->groupBy('option');
+
+            $adultCount = $itinerary->adult_count ?? 0;
+            $childCount = $itinerary->child_count ?? 0;
+            $currency = $itinerary->currency ?? 'USD';
         @endphp
 
-        @foreach ($uniqueDates as $key => $date)
-            <tr style="width: 100%;margin-top:8px;margin-bottom:10px">
-                <td width="20%" style="background-color: #E2E2E2">
-                    {{ date('d M Y', strtotime($date)) }}
-                </td>
-                <td width="80%" style="background-color: #F5F5F5">
-                    Day {{ $key + 1 }}<br>
-                    @foreach ($itinerary->entries->where('date', $date) as $k => $item)
+        <p class="section-header">Hotel Options with Rate per person on twin sharing basis in {{ $currency }}</p>
+
+        @foreach ($options as $optionName => $optionEntries)
+            @php
+                $optionIndex = $loop->iteration;
+
+                // Calculate per-person rate for this option
+                $adultTotalCost = 0;
+                $childWTotalCost = 0;
+                $childNTotalCost = 0;
+
+                // Hotel costs for this option
+                foreach ($optionEntries as $hotelEntry) {
+                    $room = Modules\Settings\Entities\Room::find($hotelEntry->room_id);
+                    if ($room) {
+                        $adultTotalCost += $room->single_bed_amount + $room->double_bed_amount + $room->triple_bed_amount + $room->extra_bed_amount;
+                        $childWTotalCost += $room->child_w_bed_amount * $hotelEntry->child_w_count;
+                        $childNTotalCost += $room->child_n_bed_amount * $hotelEntry->child_n_count;
+                    }
+                }
+
+                // Add transfer & activity costs
+                foreach ($itinerary->entries as $entry) {
+                    if ($entry->entry_type == 'TRANSFER') {
+                        $transferCost = $entry->transfer_type == 'PRIVATE' ? $entry->cost : $entry->adult_cost;
+                        $adultTotalCost += $transferCost;
+                        $childWTotalCost += $transferCost;
+                        $childNTotalCost += $transferCost;
+                    }
+                    if ($entry->entry_type == 'ACTIVITY') {
+                        $activityEstimation = Modules\Settings\Entities\ActivityEstimation::where('activity_id', $entry->subject_id)
+                            ->whereDate('from_date', '<=', $entry->start_date)
+                            ->whereDate('to_date', '>=', $entry->end_date)
+                            ->first();
+                        if ($activityEstimation) {
+                            $adultTotalCost += $activityEstimation->adult_cost;
+                            $childWTotalCost += $activityEstimation->child_cost;
+                            $childNTotalCost += $activityEstimation->child_cost;
+                        }
+                    }
+                }
+
+                $adultPerPerson = $adultCount > 0 ? round($adultTotalCost / $adultCount) : 0;
+                $childNPerPerson = $childCount > 0 ? round($childNTotalCost / $childCount) : 0;
+            @endphp
+
+            <p class="option-label">Option {{ $optionIndex }}</p>
+            <table class="hotel-table">
+                <thead>
+                    <tr>
+                        <th width="18%">City/Place</th>
+                        <th width="30%">Hotel name</th>
+                        <th width="15%">No of Nights</th>
+                        <th width="18%">Room Type</th>
+                        <th width="19%">Meals Plan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($optionEntries as $hotelEntry)
                         @php
+                            $hotel = Modules\Settings\Entities\Hotel::find($hotelEntry->subject_id);
+                            $room = Modules\Settings\Entities\Room::find($hotelEntry->room_id);
+                            $subDest = $hotelEntry->sub_destination;
+
+                            // Calculate nights for this hotel entry
+                            $hotelStart = Carbon\Carbon::parse($hotelEntry->start_date);
+                            $hotelEnd = Carbon\Carbon::parse($hotelEntry->end_date);
+                            $hotelNights = $hotelEnd->diffInDays($hotelStart);
+
+                            // Get meal plan names
+                            $mealPlanText = '';
+                            if ($room && $room->meal_plans && $room->meal_plans->count() > 0) {
+                                $mealPlanNames = $room->meal_plans->map(function ($mp) {
+                                    $plan = Modules\Settings\Entities\MealPlan::find($mp->meal_plan_id);
+                                    return $plan ? $plan->name : '';
+                                })->filter()->toArray();
+                                $mealPlanText = implode(', ', $mealPlanNames);
+                            }
+                        @endphp
+                        <tr>
+                            <td>{{ optional($subDest)->name ?? optional($hotel?->sub_destination)->name ?? '' }}</td>
+                            <td>{{ optional($hotel)->name ?? 'N/A' }}</td>
+                            <td>{{ $hotelNights }}</td>
+                            <td>{{ optional($room?->room_type)->name ?? '' }}</td>
+                            <td>{{ $mealPlanText }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+
+            <div class="rate-section">
+                <span class="rate-label">Rate</span><br>
+                {{ $currency }} {{ number_format($adultPerPerson) }} per person on double/twin sharing x {{ $adultCount }} pax<br>
+                {{ $currency }} {{ number_format($childNPerPerson) }} per child without bed
+            </div>
+        @endforeach
+
+        {{-- ============================================ --}}
+        {{-- TOUR COST INCLUDES --}}
+        {{-- ============================================ --}}
+        <p class="section-header">Tour Cost Includes:</p>
+        <ul class="cost-list">
+            @php
+                $uniqueDates = array_unique($itinerary->entries->pluck('date')->toArray());
+                sort($uniqueDates);
+            @endphp
+
+            {{-- List all hotel accommodations --}}
+            @foreach ($options as $optionName => $optionEntries)
+                @foreach ($optionEntries as $hotelEntry)
+                    @php
+                        $hotel = Modules\Settings\Entities\Hotel::find($hotelEntry->subject_id);
+                        $room = Modules\Settings\Entities\Room::find($hotelEntry->room_id);
+                        $hotelStart = Carbon\Carbon::parse($hotelEntry->start_date);
+                        $hotelEnd = Carbon\Carbon::parse($hotelEntry->end_date);
+                        $hotelNights = $hotelEnd->diffInDays($hotelStart);
+
+                        $mealPlanText = '';
+                        if ($room && $room->meal_plans && $room->meal_plans->count() > 0) {
+                            $mealPlanNames = $room->meal_plans->map(function ($mp) {
+                                $plan = Modules\Settings\Entities\MealPlan::find($mp->meal_plan_id);
+                                return $plan ? $plan->name : '';
+                            })->filter()->toArray();
+                            $mealPlanText = ' with ' . implode(', ', $mealPlanNames);
+                        }
+
+                        $roomTypeName = optional($room?->room_type)->name ?? 'mentioned';
+                    @endphp
+                    <li>{{ $hotelNights }} Night accommodation in BASIC/{{ $roomTypeName }} category room{{ $mealPlanText }}</li>
+                @endforeach
+                @php break; @endphp {{-- Only show first option's inclusions --}}
+            @endforeach
+
+            {{-- List transfers --}}
+            @foreach ($itinerary->entries->where('entry_type', 'TRANSFER') as $transferEntry)
+                @php
+                    $transfer = Modules\Settings\Entities\Transfer::find($transferEntry->subject_id);
+                    $transferType = $transferEntry->transfer_type == 'PRIVATE' ? 'PVT' : 'SIC';
+                @endphp
+                <li>Transfer from {{ optional($transfer)->description ?? optional($transfer)->vehicle_name }} by {{ $transferType }}</li>
+            @endforeach
+
+            {{-- List activities --}}
+            @foreach ($itinerary->entries->where('entry_type', 'ACTIVITY') as $activityEntry)
+                @php
+                    $activity = Modules\Settings\Entities\Activity::find($activityEntry->subject_id);
+                    $transferType = '';
+                @endphp
+                <li>{{ optional($activity)->activity_name }}{{ $activityEntry->description ? ' - ' . $activityEntry->description : '' }}</li>
+            @endforeach
+
+            <li>English speaking customer service assistance</li>
+        </ul>
+
+        {{-- ============================================ --}}
+        {{-- PROPOSED ITINERARY --}}
+        {{-- ============================================ --}}
+        <p class="section-header" style="font-size:12px; margin-top:20px;">Proposed Itinerary</p>
+
+        <div class="itinerary-section">
+            @foreach ($uniqueDates as $key => $date)
+                @php
+                    $dayEntries = $itinerary->entries->where('date', $date);
+                    $dateFormatted = date('d M', strtotime($date));
+                @endphp
+                <div style="margin-bottom: 8px;">
+                    <span class="day-header">Day {{ $key + 1 }} ({{ $dateFormatted }}) :</span>
+                    @foreach ($dayEntries as $k => $item)
+                        @php
+                            $displayText = '';
                             if ($item->entry_type == 'HOTEL') {
-                                info($item->room->meal_plans);
-
-                                $mealPlansArray = $item->room->meal_plans->toArray();
-
                                 $sub = Modules\Settings\Entities\Hotel::find($item->subject_id);
-                                if (!empty($mealPlansArray)) {
-                                    $mealPlanNames = array_map(function ($mealPlanEntry) {
-                                        info($mealPlanEntry);
-                                        $p = Modules\Settings\Entities\MealPlan::find($mealPlanEntry['meal_plan_id']);
-                                        return $p->name;
-                                    }, $mealPlansArray);
-
-                                    info($mealPlanNames);
-
-                                    $mealPlans = implode(',', $mealPlanNames);
-                                    echo 'Accomodation in ' . optional($sub)->name . ',(' . optional($item->room->room_type)->name . ') with (Meal(' . $mealPlans . ').';
+                                $room = $item->room;
+                                $mealPlanText = '';
+                                if ($room && $room->meal_plans && $room->meal_plans->count() > 0) {
+                                    $mealPlanNames = $room->meal_plans->map(function ($mp) {
+                                        $plan = Modules\Settings\Entities\MealPlan::find($mp->meal_plan_id);
+                                        return $plan ? $plan->name : '';
+                                    })->filter()->toArray();
+                                    $mealPlanText = implode(', ', $mealPlanNames);
+                                }
+                                if ($k == 0) {
+                                    $displayText = $mealPlanText ? 'Breakfast at hotel' : 'Check-in at ' . optional($sub)->name;
                                 } else {
-                                    echo 'Accomodation in ' . optional($sub)->name . ',(' . optional($item->room->room_type)->name . ').';
+                                    $displayText = 'Accommodation in ' . optional($sub)->name . ' (' . optional($room?->room_type)->name . ')';
                                 }
                             } elseif ($item->entry_type == 'TRANSFER') {
                                 $sub = Modules\Settings\Entities\Transfer::find($item->subject_id);
-                                echo 'Transfer From (' . optional($sub)->vehicle_name . ')';
+                                $transferType = $item->transfer_type == 'PRIVATE' ? 'PVT' : 'SIC';
+                                $displayText = 'Transfer from ' . (optional($sub)->description ?? optional($sub)->vehicle_name) . ' by ' . $transferType . ' basis';
                             } elseif ($item->entry_type == 'ACTIVITY') {
                                 $sub = Modules\Settings\Entities\Activity::find($item->subject_id);
-                                echo optional($sub)->activity_name;
+                                $displayText = optional($sub)->activity_name;
+                                if ($item->description) {
+                                    $displayText .= ' - ' . $item->description;
+                                }
                             }
                         @endphp
-                        <br>
+                        @if ($k == 0 && $item->entry_type != 'HOTEL')
+                            <span>{{ $displayText }}</span><br>
+                        @elseif ($k == 0 && $item->entry_type == 'HOTEL')
+                            <span>{{ $displayText }}</span><br>
+                        @else
+                            <span style="margin-left: 120px;">: {{ $displayText }}</span><br>
+                        @endif
                     @endforeach
-                </td>
-            </tr>
-        @endforeach
+                </div>
+            @endforeach
+        </div>
 
-    </table>
+        {{-- ============================================ --}}
+        {{-- TOUR COST EXCLUDES --}}
+        {{-- ============================================ --}}
+        <p class="section-header">Tour Cost Excludes:</p>
+        <ul class="cost-list" style="list-style-type: '· ';">
+            <li>Any Airfare / Visa fee</li>
+            <li>Our services cover accidental insurance, if any hospital case guests have to pay and the insurance company will reimburse after checking the documents. It is advisable for you to take an insurance cover for total travel including air.</li>
+            <li>Any meals other than those mentioned in Menu.</li>
+            <li>Any portage at airports and hotels, tips, insurance, wine, mineral water, telephone charges, and all items of personal nature.</li>
+            <li>Expenses caused by factors beyond our control like rail and flight delays, roadblocks, vehicle mal-functions, political disturbances etc.</li>
+            <li>Any services not specifically mentioned in the inclusions.</li>
+        </ul>
 
-    {{-- <table class="" style="width: 100%;margin-top:8px;margin-bottom:10px">
-        <tr>
-            <td width="20%" style="background-color: #E2E2E2">01 Sep 2023</td>
-            <td width="80%" style="background-color: #F5F5F5">Day 3</td>
-        </tr>
-    </table>
+        {{-- ============================================ --}}
+        {{-- IMPORTANT NOTE --}}
+        {{-- ============================================ --}}
+        <div class="important-note">
+            <p class="section-header">Important Note:</p>
+            <div style="margin-left: 15px; line-height: 1.8;">
+                · <span class="highlight"><strong>The above package is only an offer and not a confirmation</strong></span>. <em>We shall proceed with your booking only after we receive your confirmation.</em><br>
+                · The airfare quoted, if any, is as of now and is subject to change.<br>
+                · In case of non-availability of rooms at the hotels mentioned, we shall provide you alternate hotels of similar category.<br>
+                · <span class="highlight">Check-in time at the hotel is 14:00/15:00 hrs & Check-out time at the hotel is 11:00/12.00 hrs As per the hotel policy</span><br>
+                · Booking confirmation is subject to availability.<br>
+                · The above rates are valid for the mentioned period only.<br>
+                · 100% Package cost should be paid <u>07 Days</u> prior to departure or mentioned cut off date<br>
+                · TIC Tours Reserves the right to change/modify or terminate the offer any time at its own discretion and without any prior notice.<br>
+                · <span class="highlight">Infants are free (Below 02 years/below 90 CM), If the height is more than 90 CM is considered as a child & The Child height is more than 120/130 CM is considered as an adult and pay the difference at the counter directly.</span><br>
+                · All the Island Tours and ferry transfers depend on the weather condition. If Pattaya Coral Island does not operate due to Heavy Waves/Wind/Thunderstorm we can refund THB 200/USD 6 Per person only.<br>
+            </div>
+        </div>
 
-    <table class="" style="width: 100%;margin-top:8px;margin-bottom:10px">
-        <tr>
-            <td width="20%" style="background-color: #E2E2E2">01 Sep 2023</td>
-            <td width="80%" style="background-color: #F5F5F5">Day 4</td>
-        </tr>
-    </table> --}}
+        {{-- ============================================ --}}
+        {{-- CANCELLATION POLICY --}}
+        {{-- ============================================ --}}
+        <div class="cancellation-section">
+            <p class="cancellation-title">CANCELLATION POLICY</p>
+            <p>Cancellation charges per person will be applicable as follows:</p>
+            <div class="cancellation-items">
+                · If cancellation is made any time not less than 16 days prior to departure, 20-30% of Package Cost shall be deducted.<br>
+                · If cancellation is made 15 to 07 days prior to departure, 50-60% of tour cost shall be deducted.<br>
+                · If cancellation is made 06 to 03 day prior to departure, 75-85% of tour cost shall be deducted.<br>
+                · In case a passenger is no show at the time of departure, 100% of tour cost shall be deducted.<br>
+            </div>
+        </div>
 
-    <span>
+        {{-- ============================================ --}}
+        {{-- PAYMENT NOTE --}}
+        {{-- ============================================ --}}
+        <div class="payment-note">
+            <p class="payment-title">Payment Note:</p>
+            <div class="payment-list">
+                <ol>
+                    <li>Online Payment available - use Credit/Debit Card - <strong>No Additional charge</strong></li>
+                    <li>For Indian Payment 5% GST is applicable and ROE will be <u>xe.com</u> +1.5 on the day of deposit. TCS Declaration is required</li>
+                    <li>Every swift transaction adds USD 35 as bank charges. <u>Outward Remittance charge to be borne by Transferor</u></li>
+                    <li>Confirmed tour vouchers will be issued 3 days before the travel date.</li>
+                </ol>
+            </div>
+        </div>
 
-        IMPORTANT NOTE: <br>
-        • THE ABOVE PACKAGE IS ONLY AN OFFER AND NOT A CONFIRMATION. WE SHALL PROCEED WITH YOUR BOOKING ONLY AFTER WE
-        RECEIVE YOUR CONFIRMATION.<br>
-        • THE AIRFARE QUOTED, IF ANY, IS AS OF NOW AND IS SUBJECT TO CHANGE.<br>
-        • IN CASE OF NON-AVAILABILITY OF ROOMS AT THE HOTELS MENTIONED, WE SHALL PROVIDE YOU ALTERNATE HOTELS OF SIMILAR
-        CATEGORY.<br>
-        • CHECK-IN/CHECK-OUT TIME AT THE HOTEL IS 12.00 HRS.<br>
-        • BOOKING CONFIRMATION IS SUBJECT TO AVAILABILITY.<br>
-        • THE ABOVE RATES ARE VALID FOR THE MENTIONED PERIOD ONLY.<br>
-        • 100% PACKAGE COST SHOULD BE PAID 03 DAYS PRIOR TO DEPARTURE OR MENTIONED CUT OFF DATE<br>
-        • TIC TOURS RESERVES THE RIGHT TO CHANGE/MODIFY OR TERMINATE THE OFFER ANY TIME AT ITS OWN DISCRETION AND
-        WITHOUT ANY PRIOR NOTICE.<br>
-        CANCELLATION POLICY<br>
-        CANCELLATION CHARGES PER PERSON WILL BE APPLICABLE AS FOLLOWS:<br>
-        • IF CANCELLATION IS MADE ANY TIME NOT LESS THAN 16 DAYS PRIOR TO DEPARTURE, 20-30% OF PACKAGE COST SHALL BE
-        DEDUCTED.<br>
-        • IF CANCELLATION IS MADE 15 TO 07 DAYS PRIOR TO DEPARTURE, 50-60% OF TOUR COST SHALL BE DEDUCTED.<br>
-        • IF CANCELLATION IS MADE 06 TO 03 DAY PRIOR TO DEPARTURE, 75-85% OF TOUR COST SHALL BE DEDUCTED.<br>
-        • IN CASE PASSENGER IS NO SHOW AT THE TIME OF DEPARTURE, 100% OF TOUR COST SHALL BE DEDUCTED.<br>
-        NOTE 2:<br>
-        1. FOR INDIAN PAYMENT 5% GST IS APPLICABLE AND ROE WILL BE XE.COM +1.5 ON THE DAY OF DEPOSIT<br>
-        2. EVERY SWIFT TRANSACTION ADD USD 35 AS BANK CHARGES. OUTWARD REMITTANCE CHARGE TO BE BORNE BY TRANSFEROR<br>
-        3. IF ARRIVAL/DEPARTURE AT DMK AIRPORT PLEASE INFORM US BEFORE QUOTING.<br>
-        4. SIC TRANSFERS NOT AVAILABLE BETWEEN 6 PM AND 8 AM<br>
-        5. SIC TRANSFERS AVAILABLE FROM SUVARNABHUMI AIRPORT ONLY<br>
-        6. CONFIRMED TOUR VOUCHER WILL BE ISSUED 3 DAYS BEFORE TRAVELING DATE<br>
-    </span>
-
+    </div>
 </body>
 
 </html>
