@@ -24,5 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('itinerary-update/{id}', [ItineraryController::class, 'update']);
     // Route::get('itineraries/{id}/pricing', [ItineraryController::class, 'pricing']);
     Route::post('itineraries/{id}/set-pricing', [ItineraryController::class, 'setpricing']);
+    Route::get('itineraries/{id}/pricing-history', [ItineraryController::class, 'pricingHistory']);
+    Route::post('itineraries/{id}/restore-pricing/{snapshotId}', [ItineraryController::class, 'restorePricing']);
     Route::post('itinerary/print/{id}', [ItineraryController::class, 'print']);
 });
