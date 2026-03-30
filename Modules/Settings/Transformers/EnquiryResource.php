@@ -17,6 +17,7 @@ class EnquiryResource extends JsonResource
     {
         return [
             'id' => $this->resource->id,
+            'ref_no' => $this->resource->ref_no,
             'type' => $this->resource->type,
             'agent_id' => $this->resource->agent_id,
             'destination_id' => $this->resource->destination_id,
