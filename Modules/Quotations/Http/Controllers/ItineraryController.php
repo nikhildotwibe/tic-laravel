@@ -476,7 +476,7 @@ class ItineraryController extends BaseController
                         'currency' => $snapshot->currency,
                         'notes' => $snapshot->notes,
                         'created_at' => $snapshot->created_at,
-                        'created_by' => $snapshot->creator ? $snapshot->creator->name : null,
+                        'created_by' => $snapshot->creator ? trim($snapshot->creator->first_name . ' ' . $snapshot->creator->last_name) : null,
                         'snapshot_data' => $snapshot->snapshot_data,
                     ];
                 });

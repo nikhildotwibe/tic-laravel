@@ -33,6 +33,6 @@ class PricingSnapshot extends BaseModel
 
     public function creator()
     {
-        return $this->belongsTo(\App\Models\User::class, 'created_by');
+        return $this->belongsTo(\Modules\User\Entities\User::class, 'created_by');
     }
 }
