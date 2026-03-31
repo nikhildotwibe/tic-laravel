@@ -339,33 +339,47 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($optionEntries as $hotelEntry)
-                        @php
+                    @php
+                        $mergedHotels = [];
+                        foreach ($optionEntries as $hotelEntry) {
                             $hotel = Modules\Settings\Entities\Hotel::find($hotelEntry->subject_id);
                             $room = Modules\Settings\Entities\Room::find($hotelEntry->room_id);
                             $subDest = $hotelEntry->sub_destination;
 
-                            // Calculate nights for this hotel entry
                             $hotelStart = Carbon\Carbon::parse($hotelEntry->start_date);
                             $hotelEnd = Carbon\Carbon::parse($hotelEntry->end_date);
                             $hotelNights = $hotelEnd->diffInDays($hotelStart);
 
-                            // Get meal plan names
                             $mealPlanText = '';
                             if ($room && $room->meal_plans && $room->meal_plans->count() > 0) {
                                 $mealPlanNames = $room->meal_plans->map(function ($mp) {
                                     $plan = Modules\Settings\Entities\MealPlan::find($mp->meal_plan_id);
                                     return $plan ? $plan->name : '';
-                                })->filter()->toArray();
+                                })->filter()->unique()->toArray();
                                 $mealPlanText = implode(', ', $mealPlanNames);
                             }
-                        @endphp
+
+                            $key = ($subDest->id ?? 0) . '_' . ($hotel->id ?? 0) . '_' . ($room->id ?? 0);
+                            if (isset($mergedHotels[$key])) {
+                                $mergedHotels[$key]['nights'] += $hotelNights;
+                            } else {
+                                $mergedHotels[$key] = [
+                                    'city' => optional($subDest)->name ?? optional($hotel?->sub_destination)->name ?? '',
+                                    'hotel' => optional($hotel)->name ?? 'N/A',
+                                    'nights' => $hotelNights,
+                                    'room' => optional($room?->room_type)->name ?? '',
+                                    'meals' => $mealPlanText
+                                ];
+                            }
+                        }
+                    @endphp
+                    @foreach ($mergedHotels as $mh)
                         <tr>
-                            <td>{{ optional($subDest)->name ?? optional($hotel?->sub_destination)->name ?? '' }}</td>
-                            <td>{{ optional($hotel)->name ?? 'N/A' }}</td>
-                            <td>{{ $hotelNights }}</td>
-                            <td>{{ optional($room?->room_type)->name ?? '' }}</td>
-                            <td>{{ $mealPlanText }}</td>
+                            <td>{{ $mh['city'] }}</td>
+                            <td>{{ $mh['hotel'] }}</td>
+                            <td>{{ $mh['nights'] }}</td>
+                            <td>{{ $mh['room'] }}</td>
+                            <td>{{ $mh['meals'] }}</td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -390,8 +404,9 @@
 
             {{-- List all hotel accommodations --}}
             @foreach ($options as $optionName => $optionEntries)
-                @foreach ($optionEntries as $hotelEntry)
-                    @php
+                @php
+                    $mergedHotelsList = [];
+                    foreach ($optionEntries as $hotelEntry) {
                         $hotel = Modules\Settings\Entities\Hotel::find($hotelEntry->subject_id);
                         $room = Modules\Settings\Entities\Room::find($hotelEntry->room_id);
                         $hotelStart = Carbon\Carbon::parse($hotelEntry->start_date);
@@ -403,13 +418,26 @@
                             $mealPlanNames = $room->meal_plans->map(function ($mp) {
                                 $plan = Modules\Settings\Entities\MealPlan::find($mp->meal_plan_id);
                                 return $plan ? $plan->name : '';
-                            })->filter()->toArray();
+                            })->filter()->unique()->toArray();
                             $mealPlanText = ' with ' . implode(', ', $mealPlanNames);
                         }
 
                         $roomTypeName = optional($room?->room_type)->name ?? 'mentioned';
-                    @endphp
-                    <li>{{ $hotelNights }} Night accommodation in BASIC/{{ $roomTypeName }} category room{{ $mealPlanText }}</li>
+                        $key = ($hotel->id ?? 0) . '_' . ($room->id ?? 0);
+                        
+                        if (isset($mergedHotelsList[$key])) {
+                            $mergedHotelsList[$key]['nights'] += $hotelNights;
+                        } else {
+                            $mergedHotelsList[$key] = [
+                                'nights' => $hotelNights,
+                                'room' => $roomTypeName,
+                                'meals' => $mealPlanText
+                            ];
+                        }
+                    }
+                @endphp
+                @foreach ($mergedHotelsList as $mhl)
+                    <li>{{ $mhl['nights'] }} Night accommodation in BASIC/{{ $mhl['room'] }} category room{{ $mhl['meals'] }}</li>
                 @endforeach
                 @php break; @endphp {{-- Only show first option's inclusions --}}
             @endforeach
