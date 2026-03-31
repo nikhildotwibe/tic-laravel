@@ -181,6 +181,7 @@ class ItineraryResource extends JsonResource
             'converted_total' => $this->resource->converted_total,
             'total_amount' => $this->resource->total_amount,
             'exchange_rate' => $this->resource->exchange_rate,
+            'currency' => $this->resource->currency,
             'description' => $this->resource->description,
             'entries' => ItineraryEntryResource::collection($this->resource->entries),
             'net_amount' => $netAmount,
