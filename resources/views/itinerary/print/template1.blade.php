@@ -247,7 +247,7 @@
                     <td class="trip-label">Trip ID:</td>
                     <td>#{{ $itinerary->seq }}</td>
                     <td style="padding-left:30px" class="trip-label">Q/Ref:</td>
-                    <td></td>
+                    <td>{{ optional($itinerary->enquiry)->ref_no }}</td>
                 </tr>
                 <tr>
                     <td class="trip-label">No. of Guests</td>
