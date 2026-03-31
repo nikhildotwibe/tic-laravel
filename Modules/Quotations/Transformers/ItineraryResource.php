@@ -182,6 +182,9 @@ class ItineraryResource extends JsonResource
             'total_amount' => $this->resource->total_amount,
             'exchange_rate' => $this->resource->exchange_rate,
             'currency' => $this->resource->currency,
+            'currency_code' => tap(\Modules\Settings\Entities\Currency::find($this->resource->currency), function($model) {
+                return $model ? $model->code : null;
+            }),
             'description' => $this->resource->description,
             'entries' => ItineraryEntryResource::collection($this->resource->entries),
             'net_amount' => $netAmount,
