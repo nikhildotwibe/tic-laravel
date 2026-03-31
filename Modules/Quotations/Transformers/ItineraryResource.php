@@ -159,6 +159,7 @@ class ItineraryResource extends JsonResource
 
         return [
             'id' => $this->resource->id,
+            'seq' => $this->resource->seq,
             'package_name' => $this->resource->package_name,
             'enquiry_id' => $this->resource->enquiry_id,
             'enquiry' => EnquiryResource::make($this->resource->enquiry),
