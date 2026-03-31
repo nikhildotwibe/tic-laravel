@@ -387,8 +387,11 @@
 
             <div class="rate-section">
                 <span class="rate-label">Rate</span><br>
-                {{ $currency }} {{ number_format($adultPerPerson) }} per person on double/twin sharing x {{ $adultCount }} pax<br>
+                {{ $currency }} {{ number_format($adultPerPerson) }} per person on double/twin sharing x {{ $adultCount }} pax
+                @if($childCount > 0)
+                <br>
                 {{ $currency }} {{ number_format($childNPerPerson) }} per child without bed
+                @endif
             </div>
         @endforeach
 
