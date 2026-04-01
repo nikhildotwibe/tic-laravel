@@ -403,7 +403,7 @@
                 <span class="rate-label">Rate</span><br>
                 {{ $currency }} {{ number_format($adultPerPerson, 2) }} per person on double/twin sharing basis
                 <br>
-                <span class="rate-label">Total Package Cost for {{ $totalPax }} pax: {{ $currency }} {{ number_format($totalConverted, 2) }}</span>
+                <span class="rate-label">Total Package Cost for {{ $totalPax }} pax: {{ $currency }} {{ number_format($convertedGrandTotal, 2) }}</span>
             </div>
         @endforeach
 
