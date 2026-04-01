@@ -287,44 +287,51 @@
             @php
                 $optionIndex = $loop->iteration;
 
-                // Calculate per-person rate for this option
-                $adultTotalCost = 0;
-                $childWTotalCost = 0;
-                $childNTotalCost = 0;
-
-                // Hotel costs for this option
+                // 1. Calculate base total for this option (Hotels + Transfers + Activities)
+                $optionBaseAmount = 0;
+                
+                // Add amounts for hotels in THIS option
                 foreach ($optionEntries as $hotelEntry) {
-                    $room = Modules\Settings\Entities\Room::find($hotelEntry->room_id);
-                    if ($room) {
-                        $adultTotalCost += $room->single_bed_amount + $room->double_bed_amount + $room->triple_bed_amount + $room->extra_bed_amount;
-                        $childWTotalCost += $room->child_w_bed_amount * $hotelEntry->child_w_count;
-                        $childNTotalCost += $room->child_n_bed_amount * $hotelEntry->child_n_count;
-                    }
+                    $optionBaseAmount += ($hotelEntry->amount ?? 0) + ($hotelEntry->markup ?? 0);
                 }
 
-                // Add transfer & activity costs
+                // Add amounts for all other entries (Transfers, Activities) which are common across options
                 foreach ($itinerary->entries as $entry) {
-                    if ($entry->entry_type == 'TRANSFER') {
-                        $transferCost = $entry->transfer_type == 'PRIVATE' ? $entry->cost : $entry->adult_cost;
-                        $adultTotalCost += $transferCost;
-                        $childWTotalCost += $transferCost;
-                        $childNTotalCost += $transferCost;
-                    }
-                    if ($entry->entry_type == 'ACTIVITY') {
-                        $activityEstimation = Modules\Settings\Entities\ActivityEstimation::where('activity_id', $entry->subject_id)
-                            ->whereDate('from_date', '<=', $entry->start_date)
-                            ->whereDate('to_date', '>=', $entry->end_date)
-                            ->first();
-                        if ($activityEstimation) {
-                            $adultTotalCost += $activityEstimation->adult_cost;
-                            $childWTotalCost += $activityEstimation->child_cost;
-                            $childNTotalCost += $activityEstimation->child_cost;
-                        }
+                    if ($entry->entry_type != 'HOTEL') {
+                        $optionBaseAmount += ($entry->amount ?? 0) + ($entry->markup ?? 0);
                     }
                 }
 
-                $adultPerPerson = $adultCount > 0 ? round($adultTotalCost / $adultCount) : 0;
-                $childNPerPerson = $childCount > 0 ? round($childNTotalCost / $childCount) : 0;
+                // 2. Apply Itinerary-level Markup
+                $extraMarkup = 0;
+                if ($itinerary->extra_markup_percentage > 0) {
+                    $extraMarkup = $optionBaseAmount * ($itinerary->extra_markup_percentage / 100);
+                } else {
+                    $extraMarkup = $itinerary->extra_markup_amount ?? 0;
+                }
+                $optionTotalWithMarkup = $optionBaseAmount + $extraMarkup;
+
+                // 3. Apply Discount
+                $discount = $itinerary->discount_amount ?? 0;
+                $optionTotalWithDiscount = $optionTotalWithMarkup - $discount;
+
+                // 4. Apply Taxes
+                $taxPercent = ($itinerary->cgst_percentage ?? 0) + ($itinerary->sgst_percentage ?? 0) + ($itinerary->igst_percentage ?? 0);
+                $taxAmount = $optionTotalWithDiscount * ($taxPercent / 100);
+                $optionGrandTotal = $optionTotalWithDiscount + $taxAmount;
+
+                // 5. Apply Exchange Rate and Calculate Per Person
+                $rate = $itinerary->exchange_rate ?: 1;
+                $totalPax = ($adultCount + $childCount) ?: 1;
+                
+                // Final Grand Total in converted currency
+                $convertedGrandTotal = $optionGrandTotal / $rate;
+                
+                // Per-person distribution (simplified match to frontend logic)
+                $adultPerPerson = $adultCount > 0 ? round($convertedGrandTotal / $totalPax) : 0;
+                // Note: More complex distribution (child vs adult) could be added if needed, 
+                // but following the manual prompt's focus on the per-person rate matching the screenshot.
+                $childNPerPerson = $childCount > 0 ? round($convertedGrandTotal / $totalPax) : 0;
             @endphp
 
             <p class="option-label">Option {{ $optionIndex }}</p>
@@ -387,10 +394,10 @@
 
             <div class="rate-section">
                 <span class="rate-label">Rate</span><br>
-                {{ $currency }} {{ number_format($adultPerPerson) }} per person on double/twin sharing x {{ $adultCount }} pax
+                {{ $currency }} {{ number_format($adultPerPerson, 2) }} per person on double/twin sharing x {{ $adultCount }} pax
                 @if($childCount > 0)
                 <br>
-                {{ $currency }} {{ number_format($childNPerPerson) }} per child without bed
+                {{ $currency }} {{ number_format($childNPerPerson, 2) }} per child without bed
                 @endif
             </div>
         @endforeach
@@ -509,7 +516,7 @@
                         }
                     }
                 @endphp
-                <div style="margin-bottom: 8px;">
+                 <div style="margin-bottom: 8px;">
                     <span class="day-header">Day {{ $key + 1 }} ({{ $dateFormatted }}) :</span>
                     @foreach ($visibleItems as $index => $text)
                         @if ($index == 0)
