@@ -277,8 +277,15 @@
 
             $adultCount = $itinerary->adult_count ?? 0;
             $childCount = $itinerary->child_count ?? 0;
-            $currencyModel = Modules\Settings\Entities\Currency::find($itinerary->currency);
-            $currency = $currencyModel->code ?? 'USD';
+            
+            // Handle currency lookup (ID, 'base' string, or fallback)
+            if ($itinerary->currency === 'base' || empty($itinerary->currency)) {
+                // Fetch from enquiry base currency if available, otherwise default to 'THB'
+                $currency = optional($itinerary->enquiry)->currency_code ?? 'THB';
+            } else {
+                $currencyModel = Modules\Settings\Entities\Currency::find($itinerary->currency);
+                $currency = $currencyModel->to_currency ?? $currencyModel->code ?? $itinerary->currency ?? 'THB';
+            }
         @endphp
 
         <p class="section-header">Hotel Options with Rate per person on twin sharing basis in {{ $currency }}</p>
@@ -394,11 +401,9 @@
 
             <div class="rate-section">
                 <span class="rate-label">Rate</span><br>
-                {{ $currency }} {{ number_format($adultPerPerson, 2) }} per person on double/twin sharing x {{ $adultCount }} pax
-                @if($childCount > 0)
+                {{ $currency }} {{ number_format($adultPerPerson, 2) }} per person on double/twin sharing basis
                 <br>
-                {{ $currency }} {{ number_format($childNPerPerson, 2) }} per child without bed
-                @endif
+                <span class="rate-label">Total Package Cost for {{ $totalPax }} pax: {{ $currency }} {{ number_format($totalConverted, 2) }}</span>
             </div>
         @endforeach
 
