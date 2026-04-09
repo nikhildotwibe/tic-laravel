@@ -162,6 +162,19 @@ class ItineraryResource extends JsonResource
             $editedBy = trim($this->resource->updater->first_name . ' ' . $this->resource->updater->last_name);
         } elseif ($this->resource->creator) {
             $editedBy = trim($this->resource->creator->first_name . ' ' . $this->resource->creator->last_name);
+        } else {
+            // Fallback for older itineraries before created_by/updated_by was reliably populated
+            $snapshot = \Modules\Quotations\Entities\PricingSnapshot::where('itinerary_id', $this->resource->id)
+                ->orderBy('created_at', 'desc')
+                ->first();
+            
+            if ($snapshot && $snapshot->creator) {
+                $editedBy = trim($snapshot->creator->first_name . ' ' . $snapshot->creator->last_name);
+            } elseif ($this->resource->enquiry && $this->resource->enquiry->assigned_to_user) {
+                // Ultimate fallback: Assigned user of the enquiry
+                $user = $this->resource->enquiry->assigned_to_user;
+                $editedBy = trim($user->first_name . ' ' . $user->last_name);
+            }
         }
 
         return [

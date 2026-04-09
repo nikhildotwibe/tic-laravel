@@ -28,19 +28,20 @@ class BaseModel extends Model implements HasMedia
 
         static::creating(function ($model) {
             $model->id = Str::uuid()->toString();
-            // $model->created_by = auth()->user()->id;
-            // $model->created_by = Auth::user()->id;
+            if (auth()->check()) {
+                $model->created_by = auth()->user()->id;
+            }
         });
 
         static::updating(function ($model) {
             if (auth()->check()) {
-                // $model->updated_by = auth()->user()->id;
+                $model->updated_by = auth()->user()->id;
             }
         });
 
         static::deleting(function ($model) {
             if (auth()->check()) {
-                   // $model->deleted_by = auth()->user()->id;
+                   $model->deleted_by = auth()->user()->id;
             }
         });
     }
