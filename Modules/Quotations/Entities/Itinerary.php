@@ -31,4 +31,14 @@ class Itinerary extends BaseModel
     {
         return $this->hasMany(ItineraryEntry::class, 'itinerary_id', 'id');
     }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(\Modules\User\Entities\User::class, 'created_by', 'id');
+    }
+
+    public function updater(): BelongsTo
+    {
+        return $this->belongsTo(\Modules\User\Entities\User::class, 'updated_by', 'id');
+    }
 }

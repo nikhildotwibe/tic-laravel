@@ -157,6 +157,13 @@ class ItineraryController extends BaseController
     public function process($requestData, string|null $id = null)
     {
 
+        if (auth()->check()) {
+            if (!$id) {
+                $requestData['created_by'] = auth()->id();
+            }
+            $requestData['updated_by'] = auth()->id();
+        }
+
         $entriesData = $requestData['entries'];
         unset($requestData['entries']);
 

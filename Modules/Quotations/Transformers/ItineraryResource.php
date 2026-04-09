@@ -157,11 +157,20 @@ class ItineraryResource extends JsonResource
             ];
         }
 
+        $editedBy = null;
+        if ($this->resource->updater) {
+            $editedBy = trim($this->resource->updater->first_name . ' ' . $this->resource->updater->last_name);
+        } elseif ($this->resource->creator) {
+            $editedBy = trim($this->resource->creator->first_name . ' ' . $this->resource->creator->last_name);
+        }
+
         return [
             'id' => $this->resource->id,
             'seq' => $this->resource->seq,
             'package_name' => $this->resource->package_name,
             'enquiry_id' => $this->resource->enquiry_id,
+            'enquiry_ref_no' => $this->resource->enquiry ? $this->resource->enquiry->ref_no : null,
+            'edited_by' => $editedBy,
             'enquiry' => EnquiryResource::make($this->resource->enquiry),
             'start_date' => $this->resource->start_date,
             'end_date' => $this->resource->end_date,
