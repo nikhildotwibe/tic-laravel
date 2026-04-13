@@ -587,15 +587,23 @@ class ItineraryController extends BaseController
      * @param String $id
      * @return JsonResponse
      */
-    public function previewHtml(String $id)
+    public function previewHtml(Request $request, String $id)
     {
         try {
             $itinerary = Itinerary::findOrFail($id);
+
+            $options = [
+                'priceBreakup' => $request->query('priceBreakup', 'true') === 'true',
+                'hideTotalPrice' => $request->query('hideTotalPrice', 'false') === 'true',
+                'itinerary' => $request->query('itinerary', 'true') === 'true',
+                'terms' => $request->query('terms', 'false') === 'true',
+            ];
 
             $html = View::make(
                 'itinerary.print.template1',
                 [
                     'itinerary' => $itinerary,
+                    'options' => $options,
                 ]
             )->render();
 

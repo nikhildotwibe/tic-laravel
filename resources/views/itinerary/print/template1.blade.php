@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html>
-
+@php
+    $opts = $options ?? [
+        'priceBreakup' => true,
+        'hideTotalPrice' => false,
+        'itinerary' => true,
+        'terms' => true,
+    ];
+@endphp
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -288,7 +295,11 @@
             }
         @endphp
 
+        @if($opts['hideTotalPrice'])
+        <p class="section-header">Hotel Options</p>
+        @else
         <p class="section-header">Hotel Options with Rate per person on twin sharing basis in {{ $currency }}</p>
+        @endif
 
         @foreach ($options as $optionName => $optionEntries)
             @php
@@ -399,12 +410,16 @@
                 </tbody>
             </table>
 
+            @if(!$opts['hideTotalPrice'])
             <div class="rate-section">
                 <span class="rate-label">Rate</span><br>
+                @if($opts['priceBreakup'])
                 {{ $currency }} {{ number_format($adultPerPerson, 2) }} per person on double/twin sharing basis
                 <br>
+                @endif
                 <span class="rate-label">Total Package Cost for {{ $totalPax }} pax: {{ $currency }} {{ number_format($convertedGrandTotal, 2) }}</span>
             </div>
+            @endif
         @endforeach
 
         {{-- ============================================ --}}
@@ -478,6 +493,7 @@
             <li>English speaking customer service assistance</li>
         </ul>
 
+        @if($opts['itinerary'])
         {{-- ============================================ --}}
         {{-- PROPOSED ITINERARY --}}
         {{-- ============================================ --}}
@@ -533,7 +549,9 @@
                 </div>
             @endforeach
         </div>
+        @endif
 
+        @if($opts['terms'])
         {{-- ============================================ --}}
         {{-- TOUR COST EXCLUDES --}}
         {{-- ============================================ --}}
@@ -594,6 +612,7 @@
                 </ol>
             </div>
         </div>
+        @endif
 
     </div>
 </body>
