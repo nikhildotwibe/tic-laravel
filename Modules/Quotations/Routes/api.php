@@ -27,5 +27,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('itineraries/{id}/pricing-history', [ItineraryController::class, 'pricingHistory']);
     Route::post('itineraries/{id}/restore-pricing/{snapshotId}', [ItineraryController::class, 'restorePricing']);
     Route::post('itinerary/print/{id}', [ItineraryController::class, 'print']);
+    Route::get('itineraries/{id}/preview-html', [ItineraryController::class, 'previewHtml']);
     Route::post('itineraries/{id}/share-email', [ItineraryController::class, 'shareEmail']);
 });

@@ -583,6 +583,29 @@ class ItineraryController extends BaseController
     }
 
     /**
+     * Preview HTML response for Email Sharing
+     * @param String $id
+     * @return JsonResponse
+     */
+    public function previewHtml(String $id)
+    {
+        try {
+            $itinerary = Itinerary::findOrFail($id);
+
+            $html = View::make(
+                'itinerary.print.template1',
+                [
+                    'itinerary' => $itinerary,
+                ]
+            )->render();
+
+            return $this->sendResponse(['html' => $html], 'HTML preview fetched', 200);
+        } catch (Exception $exception) {
+            return $this->HandleException($exception);
+        }
+    }
+
+    /**
      * Share via Email.
      * @param Request $request
      * @param int $id
