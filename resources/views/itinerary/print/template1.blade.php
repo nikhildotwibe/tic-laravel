@@ -422,6 +422,47 @@
             @endif
         @endforeach
 
+        @php
+            $quotedOptionsStr = $itinerary->quoted_options;
+            $quotedOptions = is_string($quotedOptionsStr) ? json_decode($quotedOptionsStr, true) : $quotedOptionsStr;
+        @endphp
+
+        @if($quotedOptions && !$opts['hideTotalPrice'])
+        <p class="section-header">Quoted Options Breakdown</p>
+        <table class="hotel-table" style="margin-top:10px;">
+            <thead>
+                <tr>
+                    <th width="20%">Options</th>
+                    <th width="35%">Person Occupancy</th>
+                    <th width="15%">Markup ({{ $currency }})</th>
+                    <th width="10%">Tax (%)</th>
+                    <th width="20%">Total ({{ $currency }})</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($quotedOptions as $qOpt)
+                    @foreach ($qOpt['rows'] as $idx => $row)
+                        <tr>
+                            @if ($idx === 0)
+                                <td rowspan="{{ count($qOpt['rows']) + 1 }}" style="font-weight:bold; vertical-align:middle; text-align:center; background-color:#eaeaea;">
+                                    {{ $qOpt['optionName'] }}
+                                </td>
+                            @endif
+                            <td style="text-align:left;">{{ $row['label'] }}</td>
+                            <td>{{ number_format($row['markup'], 2) }}</td>
+                            <td>{{ $row['vat'] }}</td>
+                            <td style="font-weight:bold;">{{ number_format($row['total'], 2) }}</td>
+                        </tr>
+                    @endforeach
+                    <tr>
+                        <td colspan="3" style="text-align:right; font-weight:bold; background-color:#eaeaea;">Grand Total:</td>
+                        <td style="font-weight:bold; text-align:center; background-color:#eaeaea;">{{ number_format($qOpt['grandTotal'], 2) }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+        @endif
+
         {{-- ============================================ --}}
         {{-- TOUR COST INCLUDES --}}
         {{-- ============================================ --}}

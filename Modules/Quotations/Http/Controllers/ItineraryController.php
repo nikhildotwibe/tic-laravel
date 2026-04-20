@@ -426,6 +426,9 @@ class ItineraryController extends BaseController
             $itinerary->grand_total = $request->grand_total;
             $itinerary->converted_total = $request->converted_total;
             $itinerary->exchange_rate = $request->exchange_rate;
+            if ($request->has('quoted_options')) {
+                $itinerary->quoted_options = $request->quoted_options;
+            }
             $itinerary->save();
 
             // Auto-create pricing snapshot
@@ -456,6 +459,7 @@ class ItineraryController extends BaseController
                         'converted_total' => $itinerary->converted_total,
                         'exchange_rate' => $itinerary->exchange_rate,
                         'description' => $itinerary->description,
+                        'quoted_options' => $itinerary->quoted_options,
                     ],
                 ]),
                 'grand_total' => $itinerary->grand_total ?? 0,
@@ -539,6 +543,7 @@ class ItineraryController extends BaseController
             $itinerary->converted_total = $itineraryData['converted_total'] ?? 0;
             $itinerary->exchange_rate = $itineraryData['exchange_rate'] ?? 1;
             $itinerary->description = $itineraryData['description'] ?? '';
+            $itinerary->quoted_options = $itineraryData['quoted_options'] ?? null;
             $itinerary->save();
 
             return $this->sendResponse(ItineraryResource::make($itinerary), 'Pricing Restored Successfully', 200);
