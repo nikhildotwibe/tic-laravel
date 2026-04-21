@@ -438,7 +438,7 @@
                             @else
                                 {{ $currency }} {{ number_format($row['total'], 2) }} per {{ $row['label'] }}
                             @endif
-                            @if(isset($row['count']) && $row['count'] > 0)
+                            @if(isset($row['count']) && $row['count'] > 1)
                                 * {{ $row['count'] }}
                             @endif
                             <br>
@@ -449,7 +449,7 @@
                         @else
                             {{ $currency }} {{ number_format($adultPerPerson, 2) }} per person on double/twin sharing basis
                         @endif
-                        @if($totalPax > 0)
+                        @if($totalPax > 1)
                             * {{ $totalPax }}
                         @endif
                         <br>
