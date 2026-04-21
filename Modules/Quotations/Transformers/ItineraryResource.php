@@ -101,11 +101,12 @@ class ItineraryResource extends JsonResource
                     
                     info($entry);
                     $room = Room::find($entry->room_id);
-                                        info($room);
-
-                    $adulltPerPersonNetAmount += ($room->single_bed_amount * $entry->single_count) + ($room->double_bed_amount * $entry->double_count) + ($room->triple_bed_amount * $entry->triple_count) + ($room->extra_bed_amount * $entry->extra_count);
-                    $childWPerPersonNetAmount += ($room->child_w_bed_amount * $entry->child_w_count);
-                    $childNPerPersonNetAmount += ($room->child_n_bed_amount * $entry->child_n_count);
+                    if ($room) {
+                        info($room);
+                        $adulltPerPersonNetAmount += ($room->single_bed_amount * $entry->single_count) + ($room->double_bed_amount * $entry->double_count) + ($room->triple_bed_amount * $entry->triple_count) + ($room->extra_bed_amount * $entry->extra_count);
+                        $childWPerPersonNetAmount += ($room->child_w_bed_amount * $entry->child_w_count);
+                        $childNPerPersonNetAmount += ($room->child_n_bed_amount * $entry->child_n_count);
+                    }
                 }
                 
                 if($entry->entry_type=='TRANSFER'){
@@ -204,9 +205,7 @@ class ItineraryResource extends JsonResource
             'total_amount' => $this->resource->total_amount,
             'exchange_rate' => $this->resource->exchange_rate,
             'currency' => $this->resource->currency,
-            'currency_code' => tap(\Modules\Settings\Entities\Currency::find($this->resource->currency), function($model) {
-                return $model ? $model->code : null;
-            }),
+            'currency_code' => optional(\Modules\Settings\Entities\Currency::find($this->resource->currency))->code,
             'description' => $this->resource->description,
             'entries' => ItineraryEntryResource::collection($this->resource->entries),
             'net_amount' => $netAmount,
