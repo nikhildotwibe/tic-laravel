@@ -1,0 +1,10 @@
+{
+    "User": true,
+    "Group": true,
+    "Expense": true,
+    "Field": true,
+    "Player": true,
+    "Settings": true,
+    "CreateFieldFeaturesTable": true,
+    "Quotations": true
+}
