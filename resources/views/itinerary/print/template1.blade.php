@@ -351,10 +351,13 @@
                 $convertedGrandTotal = $optionGrandTotal / $rate;
                 
                 // Per-person distribution (simplified match to frontend logic)
-                $adultPerPerson = $adultCount > 0 ? round($convertedGrandTotal / $totalPax) : 0;
-                // Note: More complex distribution (child vs adult) could be added if needed, 
-                // but following the manual prompt's focus on the per-person rate matching the screenshot.
-                $childNPerPerson = $childCount > 0 ? round($convertedGrandTotal / $totalPax) : 0;
+                if ($itinerary->price_mode == "TOTAL_PRICE") {
+                    $adultPerPerson = $convertedGrandTotal;
+                    $childNPerPerson = $convertedGrandTotal;
+                } else {
+                    $adultPerPerson = $adultCount > 0 ? round($convertedGrandTotal / $totalPax) : 0;
+                    $childNPerPerson = $childCount > 0 ? round($convertedGrandTotal / $totalPax) : 0;
+                }
             @endphp
 
             <p class="option-label">Option {{ $optionIndex }}</p>
@@ -430,10 +433,18 @@
                     @endphp
                     @if($matchedQOpt && !empty($matchedQOpt['rows']))
                         @foreach($matchedQOpt['rows'] as $row)
-                            {{ $currency }} {{ number_format($row['total'], 2) }} per {{ $row['label'] }}<br>
+                            @if ($itinerary->price_mode == "TOTAL_PRICE")
+                                {{ $currency }} {{ number_format($row['total'], 2) }} {{ trim(str_ireplace('person', '', $row['label'])) }}<br>
+                            @else
+                                {{ $currency }} {{ number_format($row['total'], 2) }} per {{ $row['label'] }}<br>
+                            @endif
                         @endforeach
                     @else
-                        {{ $currency }} {{ number_format($adultPerPerson, 2) }} per person on double/twin sharing basis<br>
+                        @if ($itinerary->price_mode == "TOTAL_PRICE")
+                            {{ $currency }} {{ number_format($adultPerPerson, 2) }} on double/twin sharing basis<br>
+                        @else
+                            {{ $currency }} {{ number_format($adultPerPerson, 2) }} per person on double/twin sharing basis<br>
+                        @endif
                     @endif
                 @endif
                 <span class="rate-label">Total Package Cost for {{ $totalPax }} pax: {{ $currency }} {{ number_format($convertedGrandTotal, 2) }}</span>
