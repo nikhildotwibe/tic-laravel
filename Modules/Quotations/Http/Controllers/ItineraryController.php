@@ -1,4 +1,4 @@
-<?php
+    <?php
 
 namespace Modules\Quotations\Http\Controllers;
 
@@ -618,6 +618,16 @@ class ItineraryController extends BaseController
         }
     }
 
+    private function getOrdinal($number)
+    {
+        $ends = ['th', 'st', 'nd', 'rd', 'th', 'th', 'th', 'th', 'th', 'th'];
+        if ((($number % 100) >= 11) && (($number % 100) <= 13)) {
+            return $number . 'th';
+        } else {
+            return $number . $ends[$number % 10];
+        }
+    }
+
     /**
      * Preview WhatsApp response
      * @param Request $request
@@ -627,31 +637,29 @@ class ItineraryController extends BaseController
     public function previewWhatsapp(Request $request, String $id)
     {
         try {
-            $itinerary = Itinerary::with(['enquiry', 'destination'])->findOrFail($id);
+            $itinerary = Itinerary::with(['enquiry', 'destination', 'entries'])->findOrFail($id);
             $enquiry = $itinerary->enquiry;
 
             $priceBreakup = $request->query('priceBreakup', 'true') === 'true';
             $hideTotalPrice = $request->query('hideTotalPrice', 'false') === 'true';
             $includeItinerary = $request->query('itinerary', 'true') === 'true';
 
-            $nightsCount = Carbon::parse($itinerary->start_date)->diffInDays(Carbon::parse($itinerary->end_date));
+            $startDate = Carbon::parse($itinerary->start_date);
+            $endDate = Carbon::parse($itinerary->end_date);
+            $nightsCount = $startDate->diffInDays($endDate);
             $daysCount = $nightsCount + 1;
 
-            $text = "Greetings from *TIC Tours!*\n\n";
-            $text .= "We are pleased to share the travel plan for your upcoming trip to *" . ($itinerary->destination->name ?? 'your destination') . "*.\n\n";
+            $text = "Hi " . ($enquiry->customer_name ?? 'Customer') . ",\n\n";
+            $text .= "Greetings from *TIC Tours.*\n\n";
+            $text .= "Thank you for your query with us. As per your requirements, following are the package details.\n\n";
 
-            $text .= "*Package:* " . $itinerary->package_name . "\n";
-            $text .= "*Duration:* {$nightsCount}N/{$daysCount}D\n";
-            $text .= "*Trip ID:* " . ($enquiry->ref_no ?? $itinerary->seq ?? $itinerary->id) . "\n";
-            $text .= "*Travel Date:* " . Carbon::parse($itinerary->start_date)->format('d M Y') . "\n";
-            $text .= "*Guests:* " . $itinerary->adult_count . " Adult(s)";
-            if ($itinerary->child_count > 0) {
-                $text .= ", " . $itinerary->child_count . " Child(ren)";
-            }
-            $text .= "\n\n";
+            $text .= "*Trip ID " . ($enquiry->ref_no ?? $itinerary->seq ?? $itinerary->id) . "*\n";
+            $text .= "----------\n";
+            $text .= "*" . ($itinerary->package_name ?? 'Package') . "*\n";
+            $text .= "• *" . $startDate->format('d M Y') . "* _for_ *{$nightsCount} Nights, {$daysCount} Days*\n";
+            $text .= "• *" . $itinerary->adult_count . " Adults*" . ($itinerary->child_count > 0 ? " and " . $itinerary->child_count . " Child" : "") . "\n\n";
 
             if (!$hideTotalPrice) {
-                // Get currency info
                 $currencyModel = \Modules\Settings\Entities\Currency::find($itinerary->currency);
                 $currencyCode = $currencyModel ? $currencyModel->code : 'USD';
                 $currencySymbol = $currencyModel ? $currencyModel->symbol : '$';
@@ -660,12 +668,21 @@ class ItineraryController extends BaseController
 
                 if ($priceBreakup && $itinerary->quoted_options) {
                     $options = is_string($itinerary->quoted_options) ? json_decode($itinerary->quoted_options, true) : $itinerary->quoted_options;
-                    if (is_array($options)) {
-                        foreach ($options as $opt) {
-                            $label = $opt['label'] ?? 'Person';
-                            $rate = number_format($opt['perPerson'] ?? 0, 2);
-                            $count = $opt['count'] ?? 0;
-                            $text .= "• *{$label}*\t\t{$currencySymbol} {$rate} x {$count}\n";
+                    if (is_array($options) && !empty($options)) {
+                        $rows = $options[0]['rows'] ?? [];
+                        foreach ($rows as $row) {
+                            $label = $row['label'] ?? 'Person';
+                            $perPerson = floatval($row['perPerson'] ?? 0);
+                            $count = intval($row['count'] ?? 0);
+                            $rowTotal = floatval($row['total'] ?? ($perPerson * $count));
+
+                            $isDoubleOrTriple = (stripos($label, 'double') !== false || stripos($label, 'triple') !== false);
+                            
+                            if ($isDoubleOrTriple && ($itinerary->price_mode === 'PER_PERSON' || $itinerary->price_mode === 'PER_TRAVELLER')) {
+                                $text .= "• *{$label}*\t\t{$currencySymbol} " . number_format($perPerson, 2) . " x {$count}\n";
+                            } else {
+                                $text .= "• *{$label}*\t\t- {$currencySymbol} " . number_format($rowTotal, 2) . " x 1\n";
+                            }
                         }
                     }
                 }
@@ -675,29 +692,75 @@ class ItineraryController extends BaseController
             }
 
             if ($includeItinerary) {
-                $text .= "*Itinerary Brief:*\n";
-                $entriesByDate = $itinerary->entries()->orderBy('date')->get()->groupBy('date');
-                $dayNum = 1;
-                foreach ($entriesByDate as $date => $dayEntries) {
-                    $dateFormatted = Carbon::parse($date)->format('d M');
-                    $text .= "Day {$dayNum} ({$dateFormatted}): ";
-                    $activities = $dayEntries->where('entry_type', 'ACTIVITY')->pluck('description')->toArray();
-                    if (!empty($activities)) {
-                        $text .= implode(', ', $activities);
-                    } else {
-                        $text .= "Arrival & Transfer";
+                // Hotels Section
+                $entriesByOption = $itinerary->entries()->where('entry_type', 'HOTEL')->orderBy('date')->get();
+                if ($entriesByOption->count() > 0) {
+                    $text .= "🏨  *_Hotels_*\n";
+                    $text .= "-----------\n";
+
+                    // Simple grouping by hotel name
+                    $groupedHotels = [];
+                    foreach ($entriesByOption as $index => $entry) {
+                        $hotel = \Modules\Settings\Entities\Hotel::find($entry->subject_id);
+                        $room = \Modules\Settings\Entities\Room::find($entry->room_id);
+                        $hotelName = $hotel ? $hotel->name : 'Hotel';
+                        $location = $entry->sub_destination_id ? (\Modules\Settings\Entities\SubDestination::find($entry->sub_destination_id)->name ?? 'Destination') : 'Destination';
+                        
+                        $nightsKey = $hotelName . '-' . $location;
+                        if (!isset($groupedHotels[$nightsKey])) {
+                            $groupedHotels[$nightsKey] = [
+                                'name' => $hotelName,
+                                'location' => $location,
+                                'nights' => [],
+                                'checkIn' => Carbon::parse($entry->date),
+                                'checkOut' => Carbon::parse($entry->date)->addDay(),
+                                'room' => $room ? $room->name : 'Room',
+                                'meal' => 'Bed and Breakfast', // Default or fetch if available
+                                'pax' => $itinerary->adult_count
+                            ];
+                        }
+                        $groupedHotels[$nightsKey]['nights'][] = $index + 1;
+                        $groupedHotels[$nightsKey]['checkOut'] = Carbon::parse($entry->date)->addDay();
                     }
-                    $text .= "\n";
-                    $dayNum++;
+
+                    foreach ($groupedHotels as $h) {
+                        $nightOrdinals = array_map([$this, 'getOrdinal'], $h['nights']);
+                        $nightStr = implode(', ', $nightOrdinals) . (count($h['nights']) > 1 ? " Nights" : " Night");
+                        
+                        $text .= "*{$nightStr}* _at_ *{$h['location']}*\n";
+                        $text .= "_Check-in: " . $h['checkIn']->format('d M') . "_ & _Check-out: " . $h['checkOut']->format('d M') . "_\n";
+                        $text .= "*{$h['name']}*\n";
+                        $roomCount = ceil($h['pax'] / 2);
+                        $text .= "Option 1 • {$roomCount} {$h['room']} ({$h['pax']} Pax)\n\n";
+                    }
                 }
-                $text .= "\n";
+
+                // Activities Section
+                $entriesByDate = $itinerary->entries()->orderBy('date')->get()->groupBy('date');
+                if ($entriesByDate->count() > 0) {
+                    $text .= "🚖  *Transportation and Activities*\n";
+                    $text .= "-----------\n";
+                    $dayNum = 1;
+                    foreach ($entriesByDate as $date => $dayEntries) {
+                        $carbonDate = Carbon::parse($date);
+                        $text .= "*" . $this->getOrdinal($dayNum) . " Day - " . $carbonDate->format('D, d M y') . "*\n";
+                        
+                        foreach ($dayEntries as $entry) {
+                            if ($entry->entry_type === 'ACTIVITY') {
+                                $text .= "• {$entry->description} - Tour _({$itinerary->adult_count} Adults)_\n";
+                            } elseif ($entry->entry_type === 'TRANSFER') {
+                                $text .= "• TRANSFER " . ($entry->transfer_type ?? 'Private') . " - Meals/Transit _({$itinerary->adult_count} Adults)_\n";
+                            }
+                        }
+                        $text .= "\n";
+                        $dayNum++;
+                    }
+                }
             }
 
             if ($request->query('terms', 'false') === 'true') {
                 $text .= "*Terms & Conditions:*\n";
-                $text .= "• Rates are subject to availability.\n";
-                $text .= "• Standard check-in 14:00, check-out 12:00.\n";
-                $text .= "• Cancellation policy as per company rules.\n\n";
+                $text .= "Standard cancellation and policies apply. Subject to availability.\n\n";
             }
 
             $text .= "Looking forward to hearing from you!\n\n";
