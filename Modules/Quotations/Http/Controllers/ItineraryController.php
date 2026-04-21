@@ -665,6 +665,7 @@ class ItineraryController extends BaseController
                 $currencyCode = $currencyModel ? $currencyModel->code : 'USD';
                 $currencySymbol = $currencyModel ? $currencyModel->symbol : '$';
 
+                $finalGrandTotal = floatval($itinerary->grand_total ?? 0);
                 if ($priceBreakup && $itinerary->quoted_options) {
                     $options = is_string($itinerary->quoted_options) ? json_decode($itinerary->quoted_options, true) : $itinerary->quoted_options;
                     if (is_array($options) && !empty($options)) {
@@ -673,6 +674,11 @@ class ItineraryController extends BaseController
                         // Override currency from JSON if available (to match UI exactly)
                         $currencyCode = $firstOption['currencyCode'] ?? $currencyCode;
                         $currencySymbol = $firstOption['currencySymbol'] ?? $currencySymbol;
+                        
+                        // Use the grand total from JSON if available (this is the converted total)
+                        if (isset($firstOption['grandTotal'])) {
+                            $finalGrandTotal = floatval($firstOption['grandTotal']);
+                        }
 
                         $text .= "*Price ({$currencyCode}):*\n";
 
@@ -700,8 +706,7 @@ class ItineraryController extends BaseController
                     $text .= "*Price ({$currencyCode}):*\n";
                 }
 
-                $totalNum = floatval($itinerary->grand_total ?? 0);
-                $total = number_format($totalNum, 2);
+                $total = number_format($finalGrandTotal, 2);
                 $text .= "*Total: {$currencySymbol} {$total} /-* _(exc. Vat)_\n\n";
             }
 
