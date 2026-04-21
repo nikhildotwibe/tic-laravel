@@ -660,21 +660,30 @@ class ItineraryController extends BaseController
             $text .= "• *" . $itinerary->adult_count . " Adults*" . ($itinerary->child_count > 0 ? " and " . $itinerary->child_count . " Child" : "") . "\n\n";
 
             if (!$hideTotalPrice) {
+                // Default currency from itinerary
                 $currencyModel = \Modules\Settings\Entities\Currency::find($itinerary->currency);
                 $currencyCode = $currencyModel ? $currencyModel->code : 'USD';
                 $currencySymbol = $currencyModel ? $currencyModel->symbol : '$';
 
-                $text .= "*Price ({$currencyCode}):*\n";
-
                 if ($priceBreakup && $itinerary->quoted_options) {
                     $options = is_string($itinerary->quoted_options) ? json_decode($itinerary->quoted_options, true) : $itinerary->quoted_options;
                     if (is_array($options) && !empty($options)) {
-                        $rows = $options[0]['rows'] ?? [];
+                        $firstOption = $options[0];
+                        
+                        // Override currency from JSON if available (to match UI exactly)
+                        $currencyCode = $firstOption['currencyCode'] ?? $currencyCode;
+                        $currencySymbol = $firstOption['currencySymbol'] ?? $currencySymbol;
+
+                        $text .= "*Price ({$currencyCode}):*\n";
+
+                        $rows = $firstOption['rows'] ?? [];
                         foreach ($rows as $row) {
                             $label = $row['label'] ?? 'Person';
-                            $perPerson = floatval($row['perPerson'] ?? 0);
+                            $rowTotal = floatval($row['total'] ?? 0);
                             $count = intval($row['count'] ?? 0);
-                            $rowTotal = floatval($row['total'] ?? ($perPerson * $count));
+                            
+                            // Prefer perPerson field, fallback to total/count
+                            $perPerson = floatval($row['perPerson'] ?? ($count > 0 ? $rowTotal / $count : 0));
 
                             $isDoubleOrTriple = (stripos($label, 'double') !== false || stripos($label, 'triple') !== false);
                             
@@ -684,11 +693,15 @@ class ItineraryController extends BaseController
                                 $text .= "• *{$label}*\t\t- {$currencySymbol} " . number_format($rowTotal, 2) . " x 1\n";
                             }
                         }
+                    } else {
+                         $text .= "*Price ({$currencyCode}):*\n";
                     }
+                } else {
+                    $text .= "*Price ({$currencyCode}):*\n";
                 }
 
                 $total = number_format($itinerary->grand_total ?? 0, 0);
-                $text .= "*Total: {$total} /-* _(exc. Vat)_\n\n";
+                $text .= "*Total: {$currencySymbol} {$total} /-* _(exc. Vat)_\n\n";
             }
 
             if ($includeItinerary) {
