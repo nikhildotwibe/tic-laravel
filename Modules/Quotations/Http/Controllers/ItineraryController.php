@@ -694,9 +694,11 @@ class ItineraryController extends BaseController
                             $isDoubleOrTriple = (stripos($label, 'double') !== false || stripos($label, 'triple') !== false);
                             
                             if ($isDoubleOrTriple && ($itinerary->price_mode === 'PER_PERSON' || $itinerary->price_mode === 'PER_TRAVELLER')) {
-                                $text .= "• *{$label}*\t\t{$currencySymbol} " . number_format($perPerson, 2) . " x {$count}\n";
+                                $countSuffix = $count > 1 ? " x {$count}" : "";
+                                $text .= "• *{$label}*\t\t{$currencySymbol} " . number_format($perPerson, 2) . $countSuffix . "\n";
                             } else {
-                                $text .= "• *{$label}*\t\t- {$currencySymbol} " . number_format($rowTotal, 2) . " x 1\n";
+                                $countSuffix = $count > 1 ? " x {$count}" : "";
+                                $text .= "• *{$label}*\t\t- {$currencySymbol} " . number_format($rowTotal, 2) . $countSuffix . "\n";
                             }
                         }
                     } else {
