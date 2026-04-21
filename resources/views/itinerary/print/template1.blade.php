@@ -436,7 +436,10 @@
                             @if ($itinerary->price_mode == "TOTAL_PRICE")
                                 {{ $currency }} {{ number_format($row['total'], 0) }} {{ trim(str_ireplace('person', '', $row['label'])) }}
                             @else
-                                {{ $currency }} {{ number_format($row['total'], 0) }} per {{ $row['label'] }}
+                                @php
+                                    $perPerson = $row['perPerson'] ?? ($row['count'] > 0 ? $row['total'] / $row['count'] : $row['total']);
+                                @endphp
+                                {{ $currency }} {{ number_format($perPerson, 0) }} per {{ $row['label'] }}
                             @endif
                             @if(isset($row['count']) && $row['count'] > 1)
                                 * {{ $row['count'] }}
