@@ -434,9 +434,9 @@
                     @if($matchedQOpt && !empty($matchedQOpt['rows']))
                         @foreach($matchedQOpt['rows'] as $row)
                             @if ($itinerary->price_mode == "TOTAL_PRICE")
-                                {{ $currency }} {{ number_format($row['total'], 2) }} {{ trim(str_ireplace('person', '', $row['label'])) }}
+                                {{ $currency }} {{ number_format($row['total'], 0) }} {{ trim(str_ireplace('person', '', $row['label'])) }}
                             @else
-                                {{ $currency }} {{ number_format($row['total'], 2) }} per {{ $row['label'] }}
+                                {{ $currency }} {{ number_format($row['total'], 0) }} per {{ $row['label'] }}
                             @endif
                             @if(isset($row['count']) && $row['count'] > 1)
                                 * {{ $row['count'] }}
@@ -445,9 +445,9 @@
                         @endforeach
                     @else
                         @if ($itinerary->price_mode == "TOTAL_PRICE")
-                            {{ $currency }} {{ number_format($adultPerPerson, 2) }} on double/twin sharing basis
+                            {{ $currency }} {{ number_format($adultPerPerson, 0) }} on double/twin sharing basis
                         @else
-                            {{ $currency }} {{ number_format($adultPerPerson, 2) }} per person on double/twin sharing basis
+                            {{ $currency }} {{ number_format($adultPerPerson, 0) }} per person on double/twin sharing basis
                         @endif
                         @if($totalPax > 1)
                             * {{ $totalPax }}
@@ -455,7 +455,7 @@
                         <br>
                     @endif
                 @endif
-                <span class="rate-label">Total Package Cost for {{ $totalPax }} pax: {{ $currency }} {{ number_format($convertedGrandTotal, 2) }}</span>
+                <span class="rate-label">Total Package Cost for {{ $totalPax }} pax: {{ $currency }} {{ number_format($convertedGrandTotal, 0) }}</span>
             </div>
             @endif
         @endforeach
