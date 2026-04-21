@@ -700,7 +700,8 @@ class ItineraryController extends BaseController
                     $text .= "*Price ({$currencyCode}):*\n";
                 }
 
-                $total = number_format($itinerary->grand_total ?? 0, 0);
+                $totalNum = floatval($itinerary->grand_total ?? 0);
+                $total = number_format($totalNum, 2);
                 $text .= "*Total: {$currencySymbol} {$total} /-* _(exc. Vat)_\n\n";
             }
 
