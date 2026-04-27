@@ -675,10 +675,6 @@ class ItineraryController extends BaseController
                         // Currency from quoted_options (this is the converted/display currency from UI)
                         $currencyCode = $firstOption['currencyCode'] ?? $currencyCode;
                         $currencySymbol = $firstOption['currencySymbol'] ?? $currencySymbol;
-                        // Grand total from quoted_options (already in the display currency)
-                        if (isset($firstOption['grandTotal'])) {
-                            $finalGrandTotal = floatval($firstOption['grandTotal']);
-                        }
                     }
                 }
 
@@ -691,10 +687,14 @@ class ItineraryController extends BaseController
                     }
                 }
 
-                // Step 3: Use converted_total if we have it and quoted_options didn't override
-                if (!$firstOption && $itinerary->converted_total && floatval($itinerary->converted_total) > 0) {
+                // Step 3: Grand total — use the itinerary's actual grand_total (includes taxes/markup/discount)
+                // Apply exchange rate conversion if a converted currency is being displayed
+                $exchangeRate = floatval($itinerary->exchange_rate ?? 1);
+                if ($exchangeRate > 0 && $exchangeRate != 1 && $itinerary->converted_total) {
+                    // Converted currency is active — use the pre-calculated converted total
                     $finalGrandTotal = floatval($itinerary->converted_total);
                 }
+                // else: $finalGrandTotal already set to $itinerary->grand_total (base currency)
 
                 $isPERMode = ($itinerary->price_mode === 'PER_PERSON' || $itinerary->price_mode === 'PER_TRAVELLER');
 
