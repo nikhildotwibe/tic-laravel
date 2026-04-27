@@ -660,49 +660,73 @@ class ItineraryController extends BaseController
             $text .= "• *" . $itinerary->adult_count . " Adults*" . ($itinerary->child_count > 0 ? " and " . $itinerary->child_count . " Child" : "") . "\n\n";
 
             if (!$hideTotalPrice) {
-                // Default currency from itinerary
-                $currencyModel = \Modules\Settings\Entities\Currency::find($itinerary->currency);
-                $currencyCode = $currencyModel ? $currencyModel->code : 'USD';
-                $currencySymbol = $currencyModel ? $currencyModel->symbol : '$';
-
+                // ── Resolve currency and grand total ──
+                // Step 1: Try to get currency from quoted_options JSON (most accurate — matches UI)
+                $currencyCode = 'USD';
+                $currencySymbol = '$';
                 $finalGrandTotal = floatval($itinerary->grand_total ?? 0);
-                if ($priceBreakup && $itinerary->quoted_options) {
-                    $options = is_string($itinerary->quoted_options) ? json_decode($itinerary->quoted_options, true) : $itinerary->quoted_options;
-                    if (is_array($options) && !empty($options)) {
-                        $firstOption = $options[0];
-                        
-                        // Override currency from JSON if available (to match UI exactly)
+                $quotedOptions = null;
+                $firstOption = null;
+
+                if ($itinerary->quoted_options) {
+                    $quotedOptions = is_string($itinerary->quoted_options) ? json_decode($itinerary->quoted_options, true) : $itinerary->quoted_options;
+                    if (is_array($quotedOptions) && !empty($quotedOptions)) {
+                        $firstOption = $quotedOptions[0];
+                        // Currency from quoted_options (this is the converted/display currency from UI)
                         $currencyCode = $firstOption['currencyCode'] ?? $currencyCode;
                         $currencySymbol = $firstOption['currencySymbol'] ?? $currencySymbol;
-                        
-                        // Use the grand total from JSON if available (this is the converted total)
+                        // Grand total from quoted_options (already in the display currency)
                         if (isset($firstOption['grandTotal'])) {
                             $finalGrandTotal = floatval($firstOption['grandTotal']);
                         }
+                    }
+                }
 
-                        $text .= "*Price ({$currencyCode}):*\n";
+                // Step 2: If quoted_options didn't provide currency, resolve from DB
+                if ($currencyCode === 'USD' && $itinerary->currency) {
+                    $currencyModel = \Modules\Settings\Entities\Currency::find($itinerary->currency);
+                    if ($currencyModel) {
+                        $currencyCode = $currencyModel->code ?? $currencyCode;
+                        $currencySymbol = $currencyModel->symbol ?? $currencySymbol;
+                    }
+                }
 
-                        $rows = $firstOption['rows'] ?? [];
-                        foreach ($rows as $row) {
-                            $label = $row['label'] ?? 'Person';
-                            $rowTotal = floatval($row['total'] ?? 0);
-                            $count = intval($row['count'] ?? 0);
-                            
-                            // Prefer perPerson field, fallback to total/count
-                            $perPerson = floatval($row['perPerson'] ?? ($count > 0 ? $rowTotal / $count : 0));
+                // Step 3: Use converted_total if we have it and quoted_options didn't override
+                if (!$firstOption && $itinerary->converted_total && floatval($itinerary->converted_total) > 0) {
+                    $finalGrandTotal = floatval($itinerary->converted_total);
+                }
 
-                            $isDoubleOrTriple = (stripos($label, 'double') !== false || stripos($label, 'triple') !== false);
-                            
-                            if ($isDoubleOrTriple && ($itinerary->price_mode === 'PER_PERSON' || $itinerary->price_mode === 'PER_TRAVELLER')) {
-                                $countSuffix = $count > 1 ? " x {$count}" : "";
-                                $text .= "• *{$label}*\t\t{$currencySymbol} " . number_format($perPerson, 2) . $countSuffix . "\n";
-                            } else {
-                                $countSuffix = $count > 1 ? " x {$count}" : "";
-                                $text .= "• *{$label}*\t\t- {$currencySymbol} " . number_format($rowTotal, 2) . $countSuffix . "\n";
-                            }
+                $isPERMode = ($itinerary->price_mode === 'PER_PERSON' || $itinerary->price_mode === 'PER_TRAVELLER');
+
+                // ── Price breakdown rows ──
+                if ($priceBreakup && $firstOption) {
+                    $text .= "*Price ({$currencyCode}):*\n";
+
+                    $rows = $firstOption['rows'] ?? [];
+                    foreach ($rows as $row) {
+                        $label = $row['label'] ?? 'Person';
+                        $count = intval($row['count'] ?? 0);
+                        $perPerson = floatval($row['perPerson'] ?? 0);
+                        $rowTotal = floatval($row['total'] ?? 0);
+
+                        // Ensure consistent perPerson/rowTotal regardless of how data was stored
+                        if ($perPerson > 0 && $rowTotal <= 0) {
+                            $rowTotal = $perPerson * $count;
+                        } elseif ($rowTotal > 0 && $perPerson <= 0 && $count > 0) {
+                            $perPerson = $rowTotal / $count;
                         }
-                    } else {
-                         $text .= "*Price ({$currencyCode}):*\n";
+
+                        $isDoubleOrTriple = (stripos($label, 'double') !== false || stripos($label, 'triple') !== false);
+
+                        if ($isDoubleOrTriple && $isPERMode) {
+                            // Show per-person rate for sharing types
+                            $countSuffix = $count > 1 ? " x {$count}" : "";
+                            $text .= "• *{$label}*\t\t{$currencySymbol} " . number_format($perPerson, 2) . $countSuffix . "\n";
+                        } else {
+                            // Show total for this person type
+                            $countSuffix = $count > 1 ? " x {$count}" : "";
+                            $text .= "• *{$label}*\t\t- {$currencySymbol} " . number_format($rowTotal, 2) . $countSuffix . "\n";
+                        }
                     }
                 } else {
                     $text .= "*Price ({$currencyCode}):*\n";
