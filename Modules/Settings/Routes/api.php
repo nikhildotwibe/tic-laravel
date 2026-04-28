@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Modules\Settings\Http\Controllers\ActivitiesController;
 use Modules\Settings\Http\Controllers\ActivityTypeController;
+use Modules\Settings\Http\Controllers\VehicleTypeController;
 use Modules\Settings\Http\Controllers\AgentsController;
 use Modules\Settings\Http\Controllers\CategoriesController;
 use Modules\Settings\Http\Controllers\CountriesController;
@@ -75,6 +76,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('requirements', RequirementsController::class);
     Route::apiResource('enquiries', EnquiriesController::class);
     Route::apiResource('activity-types', ActivityTypeController::class);
+    Route::apiResource('vehicle-types', VehicleTypeController::class);
     Route::get('suppliers-search-by-mobile', [SupplierController::class, 'searchByMobile']);
 
     // Tax Settings (GST)
