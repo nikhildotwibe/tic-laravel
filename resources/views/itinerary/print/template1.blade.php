@@ -419,18 +419,19 @@
             </table>
 
             @if(!$opts['hideTotalPrice'])
+            @php
+                // Look up the matching quoted option for this iteration (needed for both breakup rows and total)
+                $matchedQOpt = null;
+                if ($quotedOptions) {
+                    $idx = $loop->iteration - 1;
+                    if (isset($quotedOptions[$idx])) {
+                        $matchedQOpt = $quotedOptions[$idx];
+                    }
+                }
+            @endphp
             <div class="rate-section">
                 <span class="rate-label">Rate</span><br>
                 @if($opts['priceBreakup'])
-                    @php
-                        $matchedQOpt = null;
-                        if ($quotedOptions) {
-                            $idx = $loop->iteration - 1;
-                            if (isset($quotedOptions[$idx])) {
-                                $matchedQOpt = $quotedOptions[$idx];
-                            }
-                        }
-                    @endphp
                     @if($matchedQOpt && !empty($matchedQOpt['rows']))
                         @foreach($matchedQOpt['rows'] as $row)
                             @if ($itinerary->price_mode == "TOTAL_PRICE")
@@ -458,7 +459,13 @@
                         <br>
                     @endif
                 @endif
-                <span class="rate-label">Total Package Cost for {{ $totalPax }} pax: {{ $currency }} {{ number_format($convertedGrandTotal, 0) }}</span>
+                @php
+                    // Use the occupancy-aware grand total from quoted_options when available
+                    $displayGrandTotal = ($matchedQOpt && isset($matchedQOpt['grandTotal']))
+                        ? $matchedQOpt['grandTotal']
+                        : $convertedGrandTotal;
+                @endphp
+                <span class="rate-label">Total Package Cost for {{ $totalPax }} pax: {{ $currency }} {{ number_format($displayGrandTotal, 0) }}</span>
             </div>
             @endif
         @endforeach
