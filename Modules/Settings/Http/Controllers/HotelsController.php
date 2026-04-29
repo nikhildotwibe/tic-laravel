@@ -98,13 +98,8 @@ class HotelsController extends BaseController
                 'document_4.*' => 'nullable|mimes:doc,docx,txt,pdf|max:2000',
             ];
 
-        if ($id != null) {
-            $rules['rooms.*.images'] = 'array|min:1';
-            $rules['rooms.*.images.*'] = 'image|mimes:jpeg,jpg,png|max:2000';
-        } else {
-            $rules['rooms.*.images'] = 'required|array|min:1';
-            $rules['rooms.*.images.*'] = 'required|image|mimes:jpeg,jpg,png|max:2000';
-        }
+        $rules['rooms.*.images'] = 'nullable|array';
+        $rules['rooms.*.images.*'] = 'nullable|image|mimes:jpeg,jpg,png|max:2000';
 
 
         return Validator::make($requestData, $rules)->setAttributeNames(
