@@ -662,21 +662,19 @@ class ItineraryController extends BaseController
             $text .= "• *" . $itinerary->adult_count . " Adults*" . ($itinerary->child_count > 0 ? " and " . $itinerary->child_count . " Child" : "") . "\n\n";
 
             if (!$hideTotalPrice) {
-                // ── Resolve currency and grand total ──
+                // ── Resolve currency ──
                 // Step 1: Try to get currency from quoted_options JSON (most accurate — matches UI)
                 $currencyCode = 'USD';
                 $currencySymbol = '$';
-                $finalGrandTotal = floatval($itinerary->grand_total ?? 0);
                 $quotedOptions = null;
-                $firstOption = null;
 
                 if ($itinerary->quoted_options) {
-                    $quotedOptions = is_string($itinerary->quoted_options) ? json_decode($itinerary->quoted_options, true) : $itinerary->quoted_options;
+                    $quotedOptions = is_string($itinerary->quoted_options)
+                        ? json_decode($itinerary->quoted_options, true)
+                        : $itinerary->quoted_options;
                     if (is_array($quotedOptions) && !empty($quotedOptions)) {
-                        $firstOption = $quotedOptions[0];
-                        // Currency from quoted_options (this is the converted/display currency from UI)
-                        $currencyCode = $firstOption['currencyCode'] ?? $currencyCode;
-                        $currencySymbol = $firstOption['currencySymbol'] ?? $currencySymbol;
+                        $currencyCode   = $quotedOptions[0]['currencyCode']   ?? $currencyCode;
+                        $currencySymbol = $quotedOptions[0]['currencySymbol'] ?? $currencySymbol;
                     }
                 }
 
@@ -684,101 +682,126 @@ class ItineraryController extends BaseController
                 if ($currencyCode === 'USD' && $itinerary->currency) {
                     $currencyModel = \Modules\Settings\Entities\Currency::find($itinerary->currency);
                     if ($currencyModel) {
-                        $currencyCode = $currencyModel->code ?? $currencyCode;
+                        $currencyCode   = $currencyModel->code   ?? $currencyCode;
                         $currencySymbol = $currencyModel->symbol ?? $currencySymbol;
                     }
                 }
 
-                // Step 3: Grand total — use the itinerary's actual grand_total (includes taxes/markup/discount)
-                // Apply exchange rate conversion if a converted currency is being displayed
-                $exchangeRate = floatval($itinerary->exchange_rate ?? 1);
-                if ($exchangeRate > 0 && $exchangeRate != 1 && $itinerary->converted_total) {
-                    // Converted currency is active — use the pre-calculated converted total
-                    $finalGrandTotal = floatval($itinerary->converted_total);
-                }
-                // else: $finalGrandTotal already set to $itinerary->grand_total (base currency)
-
                 $isPERMode = ($itinerary->price_mode === 'PER_PERSON' || $itinerary->price_mode === 'PER_TRAVELLER');
 
-                // ── Price breakdown rows ──
-                if ($priceBreakup && $firstOption) {
+                // ── Show all options ──
+                if ($quotedOptions && count($quotedOptions) > 0) {
                     $text .= "*Price ({$currencyCode}):*\n";
 
-                    $rows = $firstOption['rows'] ?? [];
-                    foreach ($rows as $row) {
-                        $label = $row['label'] ?? 'Person';
-                        $count = intval($row['count'] ?? 0);
-                        $perPerson = floatval($row['perPerson'] ?? 0);
-                        $rowTotal = floatval($row['total'] ?? 0);
+                    foreach ($quotedOptions as $option) {
+                        $optionName        = $option['optionName'] ?? 'Option';
+                        $optionGrandTotal  = floatval($option['grandTotal'] ?? 0);
+                        $rows              = $option['rows'] ?? [];
 
-                        // Ensure consistent perPerson/rowTotal regardless of how data was stored
-                        if ($perPerson > 0 && $rowTotal <= 0) {
-                            $rowTotal = $perPerson * $count;
-                        } elseif ($rowTotal > 0 && $perPerson <= 0 && $count > 0) {
-                            $perPerson = $rowTotal / $count;
+                        // Option header (only when there are multiple options)
+                        if (count($quotedOptions) > 1) {
+                            $text .= "\n*{$optionName}*\n";
                         }
 
-                        $isDoubleOrTriple = (stripos($label, 'double') !== false || stripos($label, 'triple') !== false);
+                        // Per-person / per-type rows
+                        if ($priceBreakup && !empty($rows)) {
+                            foreach ($rows as $row) {
+                                $label     = $row['label'] ?? 'Person';
+                                $count     = intval($row['count'] ?? 0);
+                                $perPerson = floatval($row['perPerson'] ?? 0);
+                                $rowTotal  = floatval($row['total'] ?? 0);
 
-                        if ($isDoubleOrTriple && $isPERMode) {
-                            // Show per-person rate for sharing types
-                            $countSuffix = $count > 1 ? " x {$count}" : "";
-                            $text .= "• *{$label}*\t\t{$currencySymbol} " . number_format($perPerson, 2) . $countSuffix . "\n";
-                        } else {
-                            // Show total for this person type
-                            $countSuffix = $count > 1 ? " x {$count}" : "";
-                            $text .= "• *{$label}*\t\t- {$currencySymbol} " . number_format($rowTotal, 2) . $countSuffix . "\n";
+                                // Normalise perPerson ↔ rowTotal
+                                if ($perPerson > 0 && $rowTotal <= 0) {
+                                    $rowTotal = $perPerson * $count;
+                                } elseif ($rowTotal > 0 && $perPerson <= 0 && $count > 0) {
+                                    $perPerson = $rowTotal / $count;
+                                }
+
+                                $isSharing = stripos($label, 'double') !== false || stripos($label, 'triple') !== false;
+                                $countSuffix = $count > 1 ? " x {$count}" : "";
+
+                                if ($isSharing && $isPERMode) {
+                                    $text .= "• *{$label}*\t\t{$currencySymbol} " . number_format($perPerson, 2) . $countSuffix . "\n";
+                                } else {
+                                    $text .= "• *{$label}*\t\t- {$currencySymbol} " . number_format($rowTotal, 2) . $countSuffix . "\n";
+                                }
+                            }
                         }
+
+                        $text .= "*Total: {$currencySymbol} " . number_format($optionGrandTotal, 0) . " /-* _(exc. Vat)_\n";
                     }
+                    $text .= "\n";
                 } else {
+                    // Fallback when quoted_options not yet saved
+                    $exchangeRate   = floatval($itinerary->exchange_rate ?? 1);
+                    $fallbackTotal  = floatval($itinerary->grand_total ?? 0);
+                    if ($exchangeRate > 0 && $exchangeRate != 1 && $itinerary->converted_total) {
+                        $fallbackTotal = floatval($itinerary->converted_total);
+                    }
                     $text .= "*Price ({$currencyCode}):*\n";
+                    $text .= "*Total: {$currencySymbol} " . number_format($fallbackTotal, 0) . " /-* _(exc. Vat)_\n\n";
                 }
-
-                $total = number_format($finalGrandTotal, 0);
-                $text .= "*Total: {$currencySymbol} {$total} /-* _(exc. Vat)_\n\n";
             }
 
             if ($includeItinerary) {
-                // Hotels Section
-                $entriesByOption = $itinerary->entries()->where('entry_type', 'HOTEL')->orderBy('date')->get();
-                if ($entriesByOption->count() > 0) {
+                // Hotels Section — grouped by option then by hotel
+                $allHotelEntries = $itinerary->entries()->where('entry_type', 'HOTEL')->orderBy('option')->orderBy('date')->get();
+                if ($allHotelEntries->count() > 0) {
                     $text .= "🏨  *_Hotels_*\n";
                     $text .= "-----------\n";
 
-                    // Simple grouping by hotel name
-                    $groupedHotels = [];
-                    foreach ($entriesByOption as $index => $entry) {
-                        $hotel = \Modules\Settings\Entities\Hotel::find($entry->subject_id);
-                        $room = \Modules\Settings\Entities\Room::find($entry->room_id);
-                        $hotelName = $hotel ? $hotel->name : 'Hotel';
-                        $location = $entry->sub_destination_id ? (\Modules\Settings\Entities\SubDestination::find($entry->sub_destination_id)->name ?? 'Destination') : 'Destination';
-                        
-                        $nightsKey = $hotelName . '-' . $location;
-                        if (!isset($groupedHotels[$nightsKey])) {
-                            $groupedHotels[$nightsKey] = [
-                                'name' => $hotelName,
-                                'location' => $location,
-                                'nights' => [],
-                                'checkIn' => Carbon::parse($entry->date),
-                                'checkOut' => Carbon::parse($entry->date)->addDay(),
-                                'room' => $room ? $room->name : 'Room',
-                                'meal' => 'Bed and Breakfast', // Default or fetch if available
-                                'pax' => $itinerary->adult_count
-                            ];
-                        }
-                        $groupedHotels[$nightsKey]['nights'][] = $index + 1;
-                        $groupedHotels[$nightsKey]['checkOut'] = Carbon::parse($entry->date)->addDay();
+                    // Group entries by their option label (e.g. "Option 1", "Option 2")
+                    $entriesByOptionGroup = [];
+                    foreach ($allHotelEntries as $entry) {
+                        $optKey = $entry->option ?? 'Option 1';
+                        $entriesByOptionGroup[$optKey][] = $entry;
                     }
 
-                    foreach ($groupedHotels as $h) {
-                        $nightOrdinals = array_map([$this, 'getOrdinal'], $h['nights']);
-                        $nightStr = implode(', ', $nightOrdinals) . (count($h['nights']) > 1 ? " Nights" : " Night");
-                        
-                        $text .= "*{$nightStr}* _at_ *{$h['location']}*\n";
-                        $text .= "_Check-in: " . $h['checkIn']->format('d M') . "_ & _Check-out: " . $h['checkOut']->format('d M') . "_\n";
-                        $text .= "*{$h['name']}*\n";
-                        $roomCount = ceil($h['pax'] / 2);
-                        $text .= "Option 1 • {$roomCount} {$h['room']} ({$h['pax']} Pax)\n\n";
+                    $hasMultipleOptions = count($entriesByOptionGroup) > 1;
+
+                    foreach ($entriesByOptionGroup as $optionLabel => $optionEntries) {
+                        if ($hasMultipleOptions) {
+                            $text .= "\n*{$optionLabel}*\n";
+                        }
+
+                        // Within each option, merge consecutive stays at the same hotel+room
+                        $groupedHotels = [];
+                        foreach ($optionEntries as $index => $entry) {
+                            $hotel     = \Modules\Settings\Entities\Hotel::find($entry->subject_id);
+                            $room      = \Modules\Settings\Entities\Room::find($entry->room_id);
+                            $hotelName = $hotel ? $hotel->name : 'Hotel';
+                            $location  = $entry->sub_destination_id
+                                ? (\Modules\Settings\Entities\SubDestination::find($entry->sub_destination_id)->name ?? 'Destination')
+                                : 'Destination';
+
+                            $nightsKey = $hotelName . '-' . $location . '-' . ($entry->room_id ?? '');
+                            if (!isset($groupedHotels[$nightsKey])) {
+                                $groupedHotels[$nightsKey] = [
+                                    'name'     => $hotelName,
+                                    'location' => $location,
+                                    'nights'   => [],
+                                    'checkIn'  => Carbon::parse($entry->date),
+                                    'checkOut' => Carbon::parse($entry->date)->addDay(),
+                                    'room'     => optional(optional($room)->room_type)->name ?? ($room ? $room->name : 'Room'),
+                                    'pax'      => $itinerary->adult_count,
+                                    'option'   => $optionLabel,
+                                ];
+                            }
+                            $groupedHotels[$nightsKey]['nights'][]  = $index + 1;
+                            $groupedHotels[$nightsKey]['checkOut']  = Carbon::parse($entry->date)->addDay();
+                        }
+
+                        foreach ($groupedHotels as $h) {
+                            $nightOrdinals = array_map([$this, 'getOrdinal'], $h['nights']);
+                            $nightStr      = implode(', ', $nightOrdinals) . (count($h['nights']) > 1 ? ' Nights' : ' Night');
+                            $roomCount     = max(1, ceil($h['pax'] / 2));
+
+                            $text .= "*{$nightStr}* _at_ *{$h['location']}*\n";
+                            $text .= "_Check-in: " . $h['checkIn']->format('d M') . "_ & _Check-out: " . $h['checkOut']->format('d M') . "_\n";
+                            $text .= "*{$h['name']}*\n";
+                            $text .= "{$h['option']} • {$roomCount} {$h['room']} ({$h['pax']} Pax)\n\n";
+                        }
                     }
                 }
 
