@@ -693,14 +693,32 @@ class ItineraryController extends BaseController
                 if ($quotedOptions && count($quotedOptions) > 0) {
                     $text .= "*Price ({$currencyCode}):*\n";
 
+                    // Pre-fetch hotels grouped by option to show in headers
+                    $allHotels = $itinerary->entries()->where('entry_type', 'HOTEL')->get();
+                    $hotelsByOption = [];
+                    foreach ($allHotels as $hEntry) {
+                        $optKey = $hEntry->option ?? 'Option 1';
+                        $hotel = \Modules\Settings\Entities\Hotel::find($hEntry->subject_id);
+                        if ($hotel) {
+                            $hName = $hotel->name;
+                            if (!isset($hotelsByOption[$optKey])) $hotelsByOption[$optKey] = [];
+                            if (!in_array($hName, $hotelsByOption[$optKey])) {
+                                $hotelsByOption[$optKey][] = $hName;
+                            }
+                        }
+                    }
+
                     foreach ($quotedOptions as $option) {
                         $optionName        = $option['optionName'] ?? 'Option';
                         $optionGrandTotal  = floatval($option['grandTotal'] ?? 0);
                         $rows              = $option['rows'] ?? [];
 
                         // Option header (only when there are multiple options)
+                        $hotelsForThisOption = $hotelsByOption[$optionName] ?? [];
+                        $hotelsStr = count($hotelsForThisOption) > 0 ? " (" . implode(" / ", $hotelsForThisOption) . ")" : "";
+
                         if (count($quotedOptions) > 1) {
-                            $text .= "\n*{$optionName}*\n";
+                            $text .= "\n*{$optionName}{$hotelsStr}*\n";
                         }
 
                         // Per-person / per-type rows
@@ -739,7 +757,18 @@ class ItineraryController extends BaseController
                     if ($exchangeRate > 0 && $exchangeRate != 1 && $itinerary->converted_total) {
                         $fallbackTotal = floatval($itinerary->converted_total);
                     }
-                    $text .= "*Price ({$currencyCode}):*\n";
+
+                    $allHotels = $itinerary->entries()->where('entry_type', 'HOTEL')->get();
+                    $hotelNames = [];
+                    foreach ($allHotels as $hEntry) {
+                        $hotel = \Modules\Settings\Entities\Hotel::find($hEntry->subject_id);
+                        if ($hotel && !in_array($hotel->name, $hotelNames)) {
+                            $hotelNames[] = $hotel->name;
+                        }
+                    }
+                    $hotelsStr = count($hotelNames) > 0 ? " (" . implode(" / ", $hotelNames) . ")" : "";
+
+                    $text .= "*Price{$hotelsStr} ({$currencyCode}):*\n";
                     $text .= "*Total: {$currencySymbol} " . number_format($fallbackTotal, 0) . " /-* _(exc. Vat)_\n\n";
                 }
             }
