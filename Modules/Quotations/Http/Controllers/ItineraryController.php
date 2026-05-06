@@ -722,9 +722,9 @@ class ItineraryController extends BaseController
                                 $countSuffix = $count > 1 ? " x {$count}" : "";
 
                                 if ($isSharing && $isPERMode) {
-                                    $text .= "• *{$label}*\t\t{$currencySymbol} " . number_format($perPerson, 2) . $countSuffix . "\n";
+                                    $text .= "• *{$label}*\t\t{$currencySymbol} " . number_format($perPerson, 0) . $countSuffix . "\n";
                                 } else {
-                                    $text .= "• *{$label}*\t\t- {$currencySymbol} " . number_format($rowTotal, 2) . $countSuffix . "\n";
+                                    $text .= "• *{$label}*\t\t- {$currencySymbol} " . number_format($rowTotal, 0) . $countSuffix . "\n";
                                 }
                             }
                         }
