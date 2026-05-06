@@ -773,6 +773,64 @@ class ItineraryController extends BaseController
                 }
             }
 
+            // ── Tour Cost Includes ──
+            $text .= "✅  *_Tour Cost Includes_*\n";
+            $text .= "-----------\n";
+
+            // 1. Hotels summary (merged by room type) - Matches PDF logic (only first option)
+            $mergedInclusions = [];
+            $firstOptionEntry = $itinerary->entries()->where('entry_type', 'HOTEL')->orderBy('option')->orderBy('date')->first();
+            $firstOptionName = $firstOptionEntry ? ($firstOptionEntry->option ?? 'Option 1') : 'Option 1';
+
+            $hotelEntriesForInclusion = $itinerary->entries()
+                ->where('entry_type', 'HOTEL')
+                ->where('option', $firstOptionName)
+                ->orderBy('date')
+                ->get();
+
+            foreach ($hotelEntriesForInclusion as $entry) {
+                $room = \Modules\Settings\Entities\Room::find($entry->room_id);
+                $roomName = optional(optional($room)->room_type)->name ?? ($room ? $room->name : 'Room');
+                
+                $mealPlanText = '';
+                if ($room && $room->meal_plans && $room->meal_plans->count() > 0) {
+                    $mealPlanNames = $room->meal_plans->map(function ($mp) {
+                        $plan = \Modules\Settings\Entities\MealPlan::find($mp->meal_plan_id);
+                        return $plan ? $plan->name : '';
+                    })->filter()->unique()->toArray();
+                    $mealPlanText = count($mealPlanNames) > 0 ? ' with ' . implode(', ', $mealPlanNames) : '';
+                }
+
+                $key = $roomName . $mealPlanText;
+                if (!isset($mergedInclusions[$key])) {
+                    $mergedInclusions[$key] = ['nights' => 0, 'room' => $roomName, 'meal' => $mealPlanText];
+                }
+                $mergedInclusions[$key]['nights']++;
+            }
+            foreach ($mergedInclusions as $mi) {
+                $text .= "• {$mi['nights']} Night accommodation in BASIC/{$mi['room']} category room{$mi['meal']}\n";
+            }
+
+            // 2. Transfers summary - Matches PDF format
+            $transferEntries = $itinerary->entries()->where('entry_type', 'TRANSFER')->get();
+            foreach ($transferEntries as $te) {
+                $t = \Modules\Settings\Entities\Transfer::find($te->subject_id);
+                $tName = $t ? ($t->description ?? $t->vehicle_name) : 'Transfer';
+                $tType = $te->transfer_type == 'PRIVATE' ? 'PVT' : 'SIC';
+                $text .= "• Transfer from {$tName} by {$tType}\n";
+            }
+
+            // 3. Activities summary
+            $activityEntries = $itinerary->entries()->where('entry_type', 'ACTIVITY')->get();
+            foreach ($activityEntries as $ae) {
+                $a = \Modules\Settings\Entities\Activity::find($ae->subject_id);
+                $aName = $a ? $a->activity_name : 'Activity';
+                $aDesc = $ae->description ? " - " . $ae->description : "";
+                $text .= "• {$aName}{$aDesc}\n";
+            }
+
+            $text .= "• English speaking customer service assistance\n\n";
+
             if ($includeItinerary) {
                 // Hotels Section — grouped by option then by hotel
                 $allHotelEntries = $itinerary->entries()->where('entry_type', 'HOTEL')->orderBy('option')->orderBy('date')->get();
