@@ -569,7 +569,7 @@
                                 $mealPlanText = implode(', ', $mealPlanNames);
                             }
                             
-                            $str = $mealPlanText ? 'Breakfast at hotel' : 'Check-in at ' . optional($sub)->name;
+                            $str = $mealPlanText ? 'Breakfast at hotel' : 'Check-in at hotel';
                             if (!in_array($str, $visibleItems)) {
                                 $visibleItems[] = $str;
                             }
