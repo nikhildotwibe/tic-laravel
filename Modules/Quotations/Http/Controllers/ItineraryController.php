@@ -204,24 +204,30 @@ class ItineraryController extends BaseController
             } elseif ($entry['entry_type'] == 'ACTIVITY') {
 
                 $entryData['description'] = $entry['description'];
+                $entryData['adult_cost'] = $entry['adult_cost'] ?? 0;
+                $entryData['child_cost'] = $entry['child_cost'] ?? 0;
 
 
                 // set pricing
-
                 $entryData['amount'] = 0;
-                $activityStartDate = $entry['start_date'];
-                $activityEndDate = $entry['end_date'];
 
-                $activityEstimation = ActivityEstimation::where('activity_id', $entry['subject_id'])->whereDate('from_date', '<=', $activityStartDate)->whereDate('to_date', '>=', $activityEndDate)->first();
+                if (floatval($entryData['adult_cost']) > 0 || floatval($entryData['child_cost']) > 0) {
+                    $entryData['amount'] = floatval($entryData['adult_cost']) + floatval($entryData['child_cost']);
+                } else {
+                    $activityStartDate = $entry['start_date'];
+                    $activityEndDate = $entry['end_date'];
 
-                if ($activityEstimation) {
+                    $activityEstimation = ActivityEstimation::where('activity_id', $entry['subject_id'])->whereDate('from_date', '<=', $activityStartDate)->whereDate('to_date', '>=', $activityEndDate)->first();
 
-                    $enquiry = Enquiry::findOrFail($requestData['enquiry_id']);
+                    if ($activityEstimation) {
 
-                    $adultActivityAmount = $activityEstimation->adult_cost * $enquiry->adult_count;
-                    $childActivityAmount = $activityEstimation->child_cost * $enquiry->child_count;
+                        $enquiry = Enquiry::findOrFail($requestData['enquiry_id']);
 
-                    $entryData['amount'] = $adultActivityAmount + $childActivityAmount;
+                        $adultActivityAmount = $activityEstimation->adult_cost * $enquiry->adult_count;
+                        $childActivityAmount = $activityEstimation->child_cost * $enquiry->child_count;
+
+                        $entryData['amount'] = $adultActivityAmount + $childActivityAmount;
+                    }
                 }
             } elseif ($entry['entry_type'] == 'TRANSFER') {
 
