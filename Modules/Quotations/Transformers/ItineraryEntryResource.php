@@ -48,6 +48,7 @@ class ItineraryEntryResource extends JsonResource
             'child_n_count' => $this->resource->child_n_count,
             'description' => $this->resource->description,
             'transfer_type' => $this->resource->transfer_type,
+            'vehicle_type' => $this->resource->vehicle_type,
             'cost' => $this->resource->cost,
             'adult_cost' => $this->resource->adult_cost,
             'child_cost' => $this->resource->child_cost,

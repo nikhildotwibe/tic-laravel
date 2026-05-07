@@ -211,6 +211,7 @@ class ItineraryResource extends JsonResource
             'net_amount' => $netAmount,
             'per_person_amounts' => $perPersonAmounts,
             'price_mode' => $this->resource->price_mode,
+            'quoted_options' => $this->resource->quoted_options,
         ];
     }
 }
