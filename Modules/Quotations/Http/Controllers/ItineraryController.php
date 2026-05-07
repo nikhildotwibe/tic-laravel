@@ -205,23 +205,33 @@ class ItineraryController extends BaseController
 
                 $entryData['description'] = $entry['description'];
 
+                // Use explicit adult/child costs from frontend if provided
+                $frontendAdultCost = floatval($entry['adult_cost'] ?? 0);
+                $frontendChildCost = floatval($entry['child_cost'] ?? 0);
 
-                // set pricing
+                if ($frontendAdultCost > 0 || $frontendChildCost > 0) {
+                    // Frontend sent explicit pricing — use it directly
+                    $entryData['adult_cost'] = $frontendAdultCost;
+                    $entryData['child_cost'] = $frontendChildCost;
+                    $entryData['amount'] = $frontendAdultCost + $frontendChildCost;
+                } else {
+                    // Fallback: look up pricing from master ActivityEstimation table
+                    $entryData['amount'] = 0;
+                    $activityStartDate = $entry['start_date'];
+                    $activityEndDate = $entry['end_date'];
 
-                $entryData['amount'] = 0;
-                $activityStartDate = $entry['start_date'];
-                $activityEndDate = $entry['end_date'];
+                    $activityEstimation = ActivityEstimation::where('activity_id', $entry['subject_id'])->whereDate('from_date', '<=', $activityStartDate)->whereDate('to_date', '>=', $activityEndDate)->first();
 
-                $activityEstimation = ActivityEstimation::where('activity_id', $entry['subject_id'])->whereDate('from_date', '<=', $activityStartDate)->whereDate('to_date', '>=', $activityEndDate)->first();
+                    if ($activityEstimation) {
+                        $enquiry = Enquiry::findOrFail($requestData['enquiry_id']);
 
-                if ($activityEstimation) {
+                        $adultActivityAmount = $activityEstimation->adult_cost * $enquiry->adult_count;
+                        $childActivityAmount = $activityEstimation->child_cost * $enquiry->child_count;
 
-                    $enquiry = Enquiry::findOrFail($requestData['enquiry_id']);
-
-                    $adultActivityAmount = $activityEstimation->adult_cost * $enquiry->adult_count;
-                    $childActivityAmount = $activityEstimation->child_cost * $enquiry->child_count;
-
-                    $entryData['amount'] = $adultActivityAmount + $childActivityAmount;
+                        $entryData['adult_cost'] = $adultActivityAmount;
+                        $entryData['child_cost'] = $childActivityAmount;
+                        $entryData['amount'] = $adultActivityAmount + $childActivityAmount;
+                    }
                 }
             } elseif ($entry['entry_type'] == 'TRANSFER') {
 
