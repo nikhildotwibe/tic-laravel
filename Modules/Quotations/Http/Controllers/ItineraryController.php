@@ -221,10 +221,9 @@ class ItineraryController extends BaseController
                     $adultCount = ($entry['adult_count'] !== null) ? $entry['adult_count'] : $requestData['adult_count'];
                     $childCount = ($entry['child_count'] !== null) ? $entry['child_count'] : $requestData['child_count'];
 
-                    $adultActivityAmount = $activityEstimation->adult_cost * $adultCount;
-                    $childActivityAmount = $activityEstimation->child_cost * $childCount;
-
-                    $entryData['amount'] = $adultActivityAmount + $childActivityAmount;
+                    $entryData['adult_cost'] = $activityEstimation->adult_cost * $adultCount;
+                    $entryData['child_cost'] = $activityEstimation->child_cost * $childCount;
+                    $entryData['amount'] = $entryData['adult_cost'] + $entryData['child_cost'];
                 }
             } elseif ($entry['entry_type'] == 'TRANSFER') {
 
