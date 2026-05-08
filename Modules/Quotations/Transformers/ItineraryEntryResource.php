@@ -52,6 +52,8 @@ class ItineraryEntryResource extends JsonResource
             'cost' => $this->resource->cost,
             'adult_cost' => $this->resource->adult_cost,
             'child_cost' => $this->resource->child_cost,
+            'adult_count' => $this->resource->adult_count,
+            'child_count' => $this->resource->child_count,
             'start_date' => $this->resource->start_date,
             'start_time' => $this->resource->start_time,
             'end_date' => $this->resource->end_date,
