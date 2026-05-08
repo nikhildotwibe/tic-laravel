@@ -79,6 +79,8 @@ class ItineraryController extends BaseController
                 // HOTEL Specific
                 'entries.*.room_id' => 'required_if:entries.*.entry_type,HOTEL|exists:rooms,id,deleted_at,NULL',
                 'entries.*.no_of_person' => 'required_if:entries.*.entry_type,HOTEL,ACTIVITY|gte:0',
+                'entries.*.adult_count' => 'nullable|gte:0',
+                'entries.*.child_count' => 'nullable|gte:0',
                 'entries.*.single_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
                 'entries.*.double_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
                 'entries.*.triple_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
@@ -189,9 +191,9 @@ class ItineraryController extends BaseController
                 $entryData['extra_count'] = $entry['extra_count'];
                 $entryData['child_w_count'] = $entry['child_w_count'];
                 $entryData['child_n_count'] = $entry['child_n_count'];
+                $entryData['no_of_person'] = $entry['no_of_person'];
 
                 // set pricing 
-
                 $room = Room::findOrFail($entry['room_id']);
                 $singlePrice = $entry['single_count'] * $room->single_bed_amount;
                 $doublePrice = $entry['double_count'] * $room->double_bed_amount;
@@ -204,34 +206,33 @@ class ItineraryController extends BaseController
             } elseif ($entry['entry_type'] == 'ACTIVITY') {
 
                 $entryData['description'] = $entry['description'];
-                $entryData['adult_cost'] = $entry['adult_cost'] ?? 0;
-                $entryData['child_cost'] = $entry['child_cost'] ?? 0;
-
+                $entryData['adult_count'] = $entry['adult_count'] ?? 0;
+                $entryData['child_count'] = $entry['child_count'] ?? 0;
+                $entryData['no_of_person'] = $entryData['adult_count'] + $entryData['child_count'];
 
                 // set pricing
                 $entryData['amount'] = 0;
+                $activityStartDate = $entry['start_date'];
+                $activityEndDate = $entry['end_date'];
 
-                if (floatval($entryData['adult_cost']) > 0 || floatval($entryData['child_cost']) > 0) {
-                    $entryData['amount'] = floatval($entryData['adult_cost']) + floatval($entryData['child_cost']);
-                } else {
-                    $activityStartDate = $entry['start_date'];
-                    $activityEndDate = $entry['end_date'];
+                $activityEstimation = ActivityEstimation::where('activity_id', $entry['subject_id'])->whereDate('from_date', '<=', $activityStartDate)->whereDate('to_date', '>=', $activityEndDate)->first();
 
-                    $activityEstimation = ActivityEstimation::where('activity_id', $entry['subject_id'])->whereDate('from_date', '<=', $activityStartDate)->whereDate('to_date', '>=', $activityEndDate)->first();
+                if ($activityEstimation) {
+                    $adultCount = ($entry['adult_count'] !== null) ? $entry['adult_count'] : $requestData['adult_count'];
+                    $childCount = ($entry['child_count'] !== null) ? $entry['child_count'] : $requestData['child_count'];
 
-                    if ($activityEstimation) {
+                    $adultActivityAmount = $activityEstimation->adult_cost * $adultCount;
+                    $childActivityAmount = $activityEstimation->child_cost * $childCount;
 
-                        $enquiry = Enquiry::findOrFail($requestData['enquiry_id']);
-
-                        $adultActivityAmount = $activityEstimation->adult_cost * $enquiry->adult_count;
-                        $childActivityAmount = $activityEstimation->child_cost * $enquiry->child_count;
-
-                        $entryData['amount'] = $adultActivityAmount + $childActivityAmount;
-                    }
+                    $entryData['amount'] = $adultActivityAmount + $childActivityAmount;
                 }
             } elseif ($entry['entry_type'] == 'TRANSFER') {
 
                 $entryData['transfer_type'] = $entry['transfer_type'];
+                $entryData['adult_count'] = $entry['adult_count'] ?? $requestData['adult_count'];
+                $entryData['child_count'] = $entry['child_count'] ?? $requestData['child_count'];
+                $entryData['no_of_person'] = $entryData['adult_count'] + $entryData['child_count'];
+
                 if ($entry['transfer_type'] == 'PRIVATE') {
                     $entryData['cost'] = $entry['cost'];
                     $entryData['amount'] = $entry['cost'];
