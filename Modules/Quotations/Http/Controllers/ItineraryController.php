@@ -218,8 +218,12 @@ class ItineraryController extends BaseController
                 $activityEstimation = ActivityEstimation::where('activity_id', $entry['subject_id'])->whereDate('from_date', '<=', $activityStartDate)->whereDate('to_date', '>=', $activityEndDate)->first();
 
                 if ($activityEstimation) {
-                    $adultCount = ($entry['adult_count'] !== null) ? $entry['adult_count'] : $requestData['adult_count'];
-                    $childCount = ($entry['child_count'] !== null) ? $entry['child_count'] : $requestData['child_count'];
+                    $adultCount = (isset($entry['adult_count']) && $entry['adult_count'] !== null) ? $entry['adult_count'] : $requestData['adult_count'];
+                    $childCount = (isset($entry['child_count']) && $entry['child_count'] !== null) ? $entry['child_count'] : $requestData['child_count'];
+
+                    $entryData['adult_count'] = $adultCount;
+                    $entryData['child_count'] = $childCount;
+                    $entryData['no_of_person'] = $adultCount + $childCount;
 
                     $entryData['adult_cost'] = $activityEstimation->adult_cost * $adultCount;
                     $entryData['child_cost'] = $activityEstimation->child_cost * $childCount;
@@ -243,7 +247,7 @@ class ItineraryController extends BaseController
                 }
             }
 
-            $entryData['no_of_person'] = $entry['no_of_person'];
+            $entryData['no_of_person'] = $entryData['no_of_person'] ?? $entry['no_of_person'];
 
             $entryData['start_date'] = $entry['start_date'];
             $entryData['start_time'] = $entry['start_time'];
