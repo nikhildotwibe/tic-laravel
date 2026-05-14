@@ -503,7 +503,8 @@
                         }
 
                         $roomTypeName = optional($room?->room_type)->name ?? 'mentioned';
-                        $key = ($hotel->id ?? 0) . '_' . ($room->id ?? 0);
+                        $location = optional($hotel?->sub_destination)->name ?? optional($hotel?->destination)->name ?? '';
+                        $key = ($hotel->id ?? 0) . '_' . ($room->id ?? 0) . '_' . $location;
                         
                         if (isset($mergedHotelsList[$key])) {
                             $mergedHotelsList[$key]['nights'] += $hotelNights;
@@ -511,13 +512,15 @@
                             $mergedHotelsList[$key] = [
                                 'nights' => $hotelNights,
                                 'room' => $roomTypeName,
-                                'meals' => $mealPlanText
+                                'meals' => $mealPlanText,
+                                'location' => $location
                             ];
                         }
                     }
                 @endphp
                 @foreach ($mergedHotelsList as $mhl)
-                    <li>{{ $mhl['nights'] }} Night accommodation in BASIC/{{ $mhl['room'] }} category room{{ $mhl['meals'] }}</li>
+                    @php $atLocation = $mhl['location'] ? " at " . $mhl['location'] : ""; @endphp
+                    <li>{{ $mhl['nights'] }} Night accommodation in {{ $mhl['room'] }} category room{{ $mhl['meals'] }}{{ $atLocation }}</li>
                 @endforeach
                 @php break; @endphp {{-- Only show first option's inclusions --}}
             @endforeach
