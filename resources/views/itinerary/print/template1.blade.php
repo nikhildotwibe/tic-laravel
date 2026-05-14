@@ -559,10 +559,17 @@
                     foreach ($dayEntries as $item) {
                         if ($item->entry_type == 'TRANSFER') {
                             $sub = Modules\Settings\Entities\Transfer::find($item->subject_id);
-                            $visibleItems[] = optional($sub)->description ?? optional($sub)->vehicle_name ?? 'Transfer';
+                            $transferType = $item->transfer_type == 'PRIVATE' ? 'PVT' : 'SIC';
+                            $desc = optional($sub)->description ?? optional($sub)->vehicle_name ?? 'Transfer';
+                            
+                            $str = $desc;
+                            if (stripos($str, 'Transfer') === false) {
+                                $str = "Transfer from {$str} by {$transferType}";
+                            }
+                            $visibleItems[] = $str;
                         } elseif ($item->entry_type == 'ACTIVITY') {
                             $sub = Modules\Settings\Entities\Activity::find($item->subject_id);
-                            $name = optional($sub)->activity_name ?? 'Activity';
+                            $name = trim(optional($sub)->activity_name ?? 'Activity');
                             if ($item->description) {
                                 $name .= ' - ' . $item->description;
                             }
@@ -572,7 +579,7 @@
                 @endphp
                 @if(count($visibleItems) > 0)
                     <div style="margin-bottom: 8px;">
-                        <span class="day-header">Day {{ $key + 1 }} ({{ $dateFormatted }}) :</span>
+                        <span class="day-header">Day {{ $key + 1 }}:</span>
                         <span>{{ implode(' → ', $visibleItems) }}</span>
                     </div>
                 @endif
