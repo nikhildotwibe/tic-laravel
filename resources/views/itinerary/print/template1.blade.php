@@ -572,7 +572,7 @@
                 @endphp
                 @if(count($visibleItems) > 0)
                     <div style="margin-bottom: 8px;">
-                        <span class="day-header">Day {{ $key + 1 }}:</span>
+                        <span class="day-header">Day {{ $key + 1 }} ({{ $dateFormatted }}):</span>
                         <span>{{ implode(' → ', $visibleItems) }}</span>
                     </div>
                 @endif
