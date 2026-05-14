@@ -557,46 +557,27 @@
                     
                     $visibleItems = [];
                     foreach ($dayEntries as $item) {
-                        if ($item->entry_type == 'HOTEL') {
-                            $sub = Modules\Settings\Entities\Hotel::find($item->subject_id);
-                            $room = $item->room;
-                            $mealPlanText = '';
-                            if ($room && $room->meal_plans && $room->meal_plans->count() > 0) {
-                                $mealPlanNames = $room->meal_plans->map(function ($mp) {
-                                    $plan = Modules\Settings\Entities\MealPlan::find($mp->meal_plan_id);
-                                    return $plan ? $plan->name : '';
-                                })->filter()->unique()->toArray();
-                                $mealPlanText = implode(', ', $mealPlanNames);
-                            }
-                            
-                            $str = $mealPlanText ? 'Breakfast at hotel' : 'Check-in at hotel';
-                            if (!in_array($str, $visibleItems)) {
-                                $visibleItems[] = $str;
-                            }
-                        } elseif ($item->entry_type == 'TRANSFER') {
+                        if ($item->entry_type == 'TRANSFER') {
                             $sub = Modules\Settings\Entities\Transfer::find($item->subject_id);
                             $transferType = $item->transfer_type == 'PRIVATE' ? 'PVT' : 'SIC';
-                            $visibleItems[] = 'Transfer from ' . (optional($sub)->description ?? optional($sub)->vehicle_name) . ' by ' . $transferType . ' basis';
+                            $name = optional($sub)->description ?? optional($sub)->vehicle_name ?? 'Transfer';
+                            $visibleItems[] = "Transfer from {$name} by {$transferType}";
                         } elseif ($item->entry_type == 'ACTIVITY') {
                             $sub = Modules\Settings\Entities\Activity::find($item->subject_id);
-                            $str = optional($sub)->activity_name;
+                            $name = optional($sub)->activity_name ?? 'Activity';
                             if ($item->description) {
-                                $str .= ' - ' . $item->description;
+                                $name .= ' - ' . $item->description;
                             }
-                            $visibleItems[] = $str;
+                            $visibleItems[] = $name;
                         }
                     }
                 @endphp
-                 <div style="margin-bottom: 8px;">
-                    <span class="day-header">Day {{ $key + 1 }} ({{ $dateFormatted }}) :</span>
-                    @foreach ($visibleItems as $index => $text)
-                        @if ($index == 0)
-                            <span>{{ $text }}</span><br>
-                        @else
-                            <span style="margin-left: 120px;">: {{ $text }}</span><br>
-                        @endif
-                    @endforeach
-                </div>
+                @if(count($visibleItems) > 0)
+                    <div style="margin-bottom: 8px;">
+                        <span class="day-header">Day {{ $key + 1 }} ({{ $dateFormatted }}) :</span>
+                        <span>{{ implode(' → ', $visibleItems) }}</span>
+                    </div>
+                @endif
             @endforeach
         </div>
         @endif
