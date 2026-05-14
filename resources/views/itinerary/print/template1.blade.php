@@ -559,9 +559,7 @@
                     foreach ($dayEntries as $item) {
                         if ($item->entry_type == 'TRANSFER') {
                             $sub = Modules\Settings\Entities\Transfer::find($item->subject_id);
-                            $transferType = $item->transfer_type == 'PRIVATE' ? 'PVT' : 'SIC';
-                            $name = optional($sub)->description ?? optional($sub)->vehicle_name ?? 'Transfer';
-                            $visibleItems[] = "Transfer from {$name} by {$transferType}";
+                            $visibleItems[] = optional($sub)->description ?? optional($sub)->vehicle_name ?? 'Transfer';
                         } elseif ($item->entry_type == 'ACTIVITY') {
                             $sub = Modules\Settings\Entities\Activity::find($item->subject_id);
                             $name = optional($sub)->activity_name ?? 'Activity';
