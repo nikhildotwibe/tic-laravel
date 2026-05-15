@@ -295,13 +295,14 @@ class UserController extends BaseController
                   ->orWhere('slug', 'like', 'Super Admin');
             })->exists();
 
-            if ($isSuperAdmin) {
-                Validator::make($request->all(), [
-                    'username' => 'required',
-                ])->validate();
-
+            // If username is provided, we assume an admin reset attempt
+            if ($request->has('username') && $request->username !== '') {
+                if (!$isSuperAdmin) {
+                    return $this->sendError('Permission denied.', ['error' => 'Only Super Admins can reset other users passwords.'], 403);
+                }
                 $user = User::where('username', $request->username)->first();
             } else {
+                // Changing own password
                 Validator::make($request->all(), [
                     'current_password' => 'required',
                 ])->validate();
