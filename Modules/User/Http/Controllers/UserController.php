@@ -287,11 +287,11 @@ class UserController extends BaseController
                 'c_password' => 'Confirm Password'
             ])->validate();
 
-            $roles = Auth::user()->roles;
-            if (!isset($roles[0])) {
+            $user_roles = Auth::user()->roles->pluck('name');
+            if ($user_roles->isEmpty()) {
                 return $this->sendError('error.', ['error' => 'Logged in user has no valid roles set, so this operation can not be perfomed. '], 401);
             } else {
-                if ($roles[0]->name == 'Super Admin') {
+                if ($user_roles->contains('Super Admin')) {
                     Validator::make($request->all(), [
                         'username' => 'required',
                     ])->validate();
