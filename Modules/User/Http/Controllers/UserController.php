@@ -246,7 +246,7 @@ class UserController extends BaseController
                 $user = Auth::user();
                 $user->token = $user->createToken('APP')->plainTextToken;
                 $user->username = $user->username;
-                $user->is_super_admin = $user->roles->whereIn('name', ['Super Admin'])->count() > 0 || $user->roles->whereIn('slug', ['super-admin'])->count() > 0;
+                $user->is_super_admin = $user->roles()->where('name', 'like', 'Super Admin')->orWhere('slug', 'like', 'super-admin')->exists();
                 $user->permissions = PermissionResource::collection($user->permissions);
                 return $this->sendResponse($user, 'User Logged in.');
             } else {
@@ -288,9 +288,11 @@ class UserController extends BaseController
             ])->validate();
 
             $userAuth = Auth::user();
-            // Load roles and check for Super Admin name or slug
             $isSuperAdmin = $userAuth->roles()->where(function($q) {
-                $q->where('name', 'Super Admin')->orWhere('slug', 'super-admin');
+                $q->where('name', 'like', 'Super Admin')
+                  ->orWhere('name', 'like', 'super admin')
+                  ->orWhere('slug', 'like', 'super-admin')
+                  ->orWhere('slug', 'like', 'Super Admin');
             })->exists();
 
             if ($isSuperAdmin) {

@@ -33,7 +33,7 @@ class UserResource extends JsonResource
             'language_name' => optional($this->resource->languages)->language,
             'country_id' => $this->resource->country,
             'country' => $this->resource->countryRelation,
-            'is_super_admin' => $this->resource->roles()->pluck('name')->contains('super admin')
+            'is_super_admin' => $this->resource->roles()->where('name', 'like', 'Super Admin')->orWhere('slug', 'like', 'super-admin')->exists()
         ];
     }
 }
