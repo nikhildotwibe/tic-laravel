@@ -287,11 +287,10 @@ class UserController extends BaseController
                 'c_password' => 'Confirm Password'
             ])->validate();
 
-            $roles = Auth::user()->roles;
-            if (!isset($roles[0])) {
-                return $this->sendError('error.', ['error' => 'Logged in user has no valid roles set, so this operation can not be perfomed. '], 401);
-            } else {
-                if ($roles[0]->name == 'Super Admin') {
+            $userAuth = Auth::user();
+            $isSuperAdmin = $userAuth->roles->contains('name', 'Super Admin');
+
+            if ($isSuperAdmin) {
                     Validator::make($request->all(), [
                         'username' => 'required',
                     ])->validate();
@@ -308,13 +307,12 @@ class UserController extends BaseController
                         return $this->sendError('error.', ['current_password' => 'Incorrect Password'], 401);
                     }
                 }
-                if ($user) {
-                    $user->password = bcrypt($request->new_password);
-                    $user->save();
-                    return $this->sendResponse(UserResource::make($user), 'Password changed successfully.', 200);
-                } else {
-                    return $this->sendError('error.', ['username' => 'No user found with given credentials'], 401);
-                }
+            if ($user) {
+                $user->password = bcrypt($request->new_password);
+                $user->save();
+                return $this->sendResponse(UserResource::make($user), 'Password changed successfully.', 200);
+            } else {
+                return $this->sendError('error.', ['username' => 'No user found with given credentials'], 401);
             }
         } catch (Exception $exception) {
             return $this->HandleException($exception);
