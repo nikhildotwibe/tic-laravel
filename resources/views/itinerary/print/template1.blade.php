@@ -533,7 +533,7 @@
                 @endphp
                 @if($dayTransfers->count() > 0 || $dayActivities->count() > 0)
                     <li style="list-style:none; margin-left:-15px; margin-top:8px; margin-bottom:2px;">
-                        <strong>Day {{ $idx + 1 }} ({{ date('d M Y', strtotime($date)) }}):</strong>
+                        <strong>Day {{ $idx + 1 }} ({{ date('d M', strtotime($date)) }})</strong>
                     </li>
                     @foreach ($dayTransfers as $transferEntry)
                         @php
