@@ -525,22 +525,30 @@
                 @php break; @endphp {{-- Only show first option's inclusions --}}
             @endforeach
 
-            {{-- List transfers --}}
-            @foreach ($itinerary->entries->where('entry_type', 'TRANSFER') as $transferEntry)
+            {{-- List transfers and activities day-wise --}}
+            @foreach ($uniqueDates as $idx => $date)
                 @php
-                    $transfer = Modules\Settings\Entities\Transfer::find($transferEntry->subject_id);
-                    $transferType = $transferEntry->transfer_type == 'PRIVATE' ? 'PVT' : 'SIC';
+                    $dayTransfers = $itinerary->entries->where('date', $date)->where('entry_type', 'TRANSFER');
+                    $dayActivities = $itinerary->entries->where('date', $date)->where('entry_type', 'ACTIVITY');
                 @endphp
-                <li>Transfer from {{ optional($transfer)->description ?? optional($transfer)->vehicle_name }} by {{ $transferType }}</li>
-            @endforeach
-
-            {{-- List activities --}}
-            @foreach ($itinerary->entries->where('entry_type', 'ACTIVITY') as $activityEntry)
-                @php
-                    $activity = Modules\Settings\Entities\Activity::find($activityEntry->subject_id);
-                    $transferType = '';
-                @endphp
-                <li>{{ optional($activity)->activity_name }}{{ $activityEntry->description ? ' - ' . $activityEntry->description : '' }}</li>
+                @if($dayTransfers->count() > 0 || $dayActivities->count() > 0)
+                    <li style="list-style:none; margin-left:-15px; margin-top:8px; margin-bottom:2px;">
+                        <strong>Day {{ $idx + 1 }} ({{ date('d M Y', strtotime($date)) }}):</strong>
+                    </li>
+                    @foreach ($dayTransfers as $transferEntry)
+                        @php
+                            $transfer = Modules\Settings\Entities\Transfer::find($transferEntry->subject_id);
+                            $transferType = $transferEntry->transfer_type == 'PRIVATE' ? 'PVT' : 'SIC';
+                        @endphp
+                        <li>Transfer from {{ optional($transfer)->description ?? optional($transfer)->vehicle_name }} by {{ $transferType }}</li>
+                    @endforeach
+                    @foreach ($dayActivities as $activityEntry)
+                        @php
+                            $activity = Modules\Settings\Entities\Activity::find($activityEntry->subject_id);
+                        @endphp
+                        <li>{{ optional($activity)->activity_name }}{{ $activityEntry->description ? ' - ' . $activityEntry->description : '' }}</li>
+                    @endforeach
+                @endif
             @endforeach
 
             <li>English speaking customer service assistance</li>
