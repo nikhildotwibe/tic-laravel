@@ -246,7 +246,7 @@ class UserController extends BaseController
                 $user = Auth::user();
                 $user->token = $user->createToken('APP')->plainTextToken;
                 $user->username = $user->username;
-                $user->is_super_admin = $user->roles()->where('name', 'like', 'Super Admin')->orWhere('slug', 'like', 'super-admin')->exists();
+                $user->is_super_admin = $user->roles->pluck('name')->contains('Super Admin');
                 $user->permissions = PermissionResource::collection($user->permissions);
                 return $this->sendResponse($user, 'User Logged in.');
             } else {
@@ -287,38 +287,34 @@ class UserController extends BaseController
                 'c_password' => 'Confirm Password'
             ])->validate();
 
-            $userAuth = Auth::user();
-            $isSuperAdmin = $userAuth->roles()->where(function($q) {
-                $q->where('name', 'like', 'Super Admin')
-                  ->orWhere('name', 'like', 'super admin')
-                  ->orWhere('slug', 'like', 'super-admin')
-                  ->orWhere('slug', 'like', 'Super Admin');
-            })->exists();
-
-            // If username is provided, we assume an admin reset attempt
-            if ($request->has('username') && $request->username !== '') {
-                if (!$isSuperAdmin) {
-                    return $this->sendError('Permission denied.', ['error' => 'Only Super Admins can reset other users passwords.'], 403);
-                }
-                $user = User::where('username', $request->username)->first();
+            $roles = Auth::user()->roles;
+            if (!isset($roles[0])) {
+                return $this->sendError('error.', ['error' => 'Logged in user has no valid roles set, so this operation can not be perfomed. '], 401);
             } else {
-                // Changing own password
-                Validator::make($request->all(), [
-                    'current_password' => 'required',
-                ])->validate();
+                if ($roles[0]->name == 'Super Admin') {
+                    Validator::make($request->all(), [
+                        'username' => 'required',
+                    ])->validate();
 
-                if (Hash::check($request->current_password, $userAuth->password)) {
-                    $user = $userAuth;
+                    $user = User::where('username', $request->username)->first();
                 } else {
-                    return $this->sendError('Incorrect current password.', ['current_password' => 'Incorrect Password'], 401);
+                    Validator::make($request->all(), [
+                        'current_password' => 'required',
+                    ])->validate();
+
+                    if (Hash::check($request->current_password, Auth::user()->password)) {
+                        $user = User::findOrFail(Auth::user()->id);
+                    } else {
+                        return $this->sendError('error.', ['current_password' => 'Incorrect Password'], 401);
+                    }
                 }
-            }
-            if ($user) {
-                $user->password = bcrypt($request->new_password);
-                $user->save();
-                return $this->sendResponse(UserResource::make($user), 'Password changed successfully.', 200);
-            } else {
-                return $this->sendError('No user found with username: ' . $request->username, ['username' => 'No user found with given credentials'], 401);
+                if ($user) {
+                    $user->password = bcrypt($request->new_password);
+                    $user->save();
+                    return $this->sendResponse(UserResource::make($user), 'Password changed successfully.', 200);
+                } else {
+                    return $this->sendError('error.', ['username' => 'No user found with given credentials'], 401);
+                }
             }
         } catch (Exception $exception) {
             return $this->HandleException($exception);
