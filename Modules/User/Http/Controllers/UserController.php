@@ -246,7 +246,7 @@ class UserController extends BaseController
                 $user = Auth::user();
                 $user->token = $user->createToken('APP')->plainTextToken;
                 $user->username = $user->username;
-                $user->is_super_admin = $user->roles->pluck('name')->contains('Super Admin');
+                $user->is_super_admin = $user->roles->whereIn('name', ['Super Admin'])->count() > 0 || $user->roles->whereIn('slug', ['super-admin'])->count() > 0;
                 $user->permissions = PermissionResource::collection($user->permissions);
                 return $this->sendResponse($user, 'User Logged in.');
             } else {
@@ -288,31 +288,34 @@ class UserController extends BaseController
             ])->validate();
 
             $userAuth = Auth::user();
-            $isSuperAdmin = $userAuth->roles->contains('name', 'Super Admin');
+            // Load roles and check for Super Admin name or slug
+            $isSuperAdmin = $userAuth->roles()->where(function($q) {
+                $q->where('name', 'Super Admin')->orWhere('slug', 'super-admin');
+            })->exists();
 
             if ($isSuperAdmin) {
-                    Validator::make($request->all(), [
-                        'username' => 'required',
-                    ])->validate();
+                Validator::make($request->all(), [
+                    'username' => 'required',
+                ])->validate();
 
-                    $user = User::where('username', $request->username)->first();
+                $user = User::where('username', $request->username)->first();
+            } else {
+                Validator::make($request->all(), [
+                    'current_password' => 'required',
+                ])->validate();
+
+                if (Hash::check($request->current_password, $userAuth->password)) {
+                    $user = $userAuth;
                 } else {
-                    Validator::make($request->all(), [
-                        'current_password' => 'required',
-                    ])->validate();
-
-                    if (Hash::check($request->current_password, Auth::user()->password)) {
-                        $user = User::findOrFail(Auth::user()->id);
-                    } else {
-                        return $this->sendError('error.', ['current_password' => 'Incorrect Password'], 401);
-                    }
+                    return $this->sendError('Incorrect current password.', ['current_password' => 'Incorrect Password'], 401);
                 }
+            }
             if ($user) {
                 $user->password = bcrypt($request->new_password);
                 $user->save();
                 return $this->sendResponse(UserResource::make($user), 'Password changed successfully.', 200);
             } else {
-                return $this->sendError('error.', ['username' => 'No user found with given credentials'], 401);
+                return $this->sendError('No user found with username: ' . $request->username, ['username' => 'No user found with given credentials'], 401);
             }
         } catch (Exception $exception) {
             return $this->HandleException($exception);
