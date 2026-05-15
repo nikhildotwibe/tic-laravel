@@ -503,7 +503,8 @@
                         }
 
                         $roomTypeName = optional($room?->room_type)->name ?? 'mentioned';
-                        $key = ($hotel->id ?? 0) . '_' . ($room->id ?? 0);
+                        $location = optional($hotel?->sub_destination)->name ?? optional($hotel?->destination)->name ?? '';
+                        $key = ($hotel->id ?? 0) . '_' . ($room->id ?? 0) . '_' . $location;
                         
                         if (isset($mergedHotelsList[$key])) {
                             $mergedHotelsList[$key]['nights'] += $hotelNights;
@@ -511,33 +512,43 @@
                             $mergedHotelsList[$key] = [
                                 'nights' => $hotelNights,
                                 'room' => $roomTypeName,
-                                'meals' => $mealPlanText
+                                'meals' => $mealPlanText,
+                                'location' => $location
                             ];
                         }
                     }
                 @endphp
                 @foreach ($mergedHotelsList as $mhl)
-                    <li>{{ $mhl['nights'] }} Night accommodation in BASIC/{{ $mhl['room'] }} category room{{ $mhl['meals'] }}</li>
+                    @php $atLocation = $mhl['location'] ? " at " . $mhl['location'] : ""; @endphp
+                    <li>{{ $mhl['nights'] }} Night accommodation in {{ $mhl['room'] }} category room{{ $mhl['meals'] }}{{ $atLocation }}</li>
                 @endforeach
                 @php break; @endphp {{-- Only show first option's inclusions --}}
             @endforeach
 
-            {{-- List transfers --}}
-            @foreach ($itinerary->entries->where('entry_type', 'TRANSFER') as $transferEntry)
+            {{-- List transfers and activities day-wise --}}
+            @foreach ($uniqueDates as $idx => $date)
                 @php
-                    $transfer = Modules\Settings\Entities\Transfer::find($transferEntry->subject_id);
-                    $transferType = $transferEntry->transfer_type == 'PRIVATE' ? 'PVT' : 'SIC';
+                    $dayTransfers = $itinerary->entries->where('date', $date)->where('entry_type', 'TRANSFER');
+                    $dayActivities = $itinerary->entries->where('date', $date)->where('entry_type', 'ACTIVITY');
                 @endphp
-                <li>Transfer from {{ optional($transfer)->description ?? optional($transfer)->vehicle_name }} by {{ $transferType }}</li>
-            @endforeach
-
-            {{-- List activities --}}
-            @foreach ($itinerary->entries->where('entry_type', 'ACTIVITY') as $activityEntry)
-                @php
-                    $activity = Modules\Settings\Entities\Activity::find($activityEntry->subject_id);
-                    $transferType = '';
-                @endphp
-                <li>{{ optional($activity)->activity_name }}{{ $activityEntry->description ? ' - ' . $activityEntry->description : '' }}</li>
+                @if($dayTransfers->count() > 0 || $dayActivities->count() > 0)
+                    <li style="list-style:none; margin-left:-15px; margin-top:8px; margin-bottom:2px;">
+                        <strong>Day {{ $idx + 1 }} ({{ date('d M', strtotime($date)) }})</strong>
+                    </li>
+                    @foreach ($dayTransfers as $transferEntry)
+                        @php
+                            $transfer = Modules\Settings\Entities\Transfer::find($transferEntry->subject_id);
+                            $transferType = $transferEntry->transfer_type == 'PRIVATE' ? 'PVT' : 'SIC';
+                        @endphp
+                        <li>Transfer from {{ optional($transfer)->description ?? optional($transfer)->vehicle_name }} by {{ $transferType }}</li>
+                    @endforeach
+                    @foreach ($dayActivities as $activityEntry)
+                        @php
+                            $activity = Modules\Settings\Entities\Activity::find($activityEntry->subject_id);
+                        @endphp
+                        <li>{{ optional($activity)->activity_name }}{{ $activityEntry->description ? ' - ' . $activityEntry->description : '' }}</li>
+                    @endforeach
+                @endif
             @endforeach
 
             <li>English speaking customer service assistance</li>
@@ -557,46 +568,25 @@
                     
                     $visibleItems = [];
                     foreach ($dayEntries as $item) {
-                        if ($item->entry_type == 'HOTEL') {
-                            $sub = Modules\Settings\Entities\Hotel::find($item->subject_id);
-                            $room = $item->room;
-                            $mealPlanText = '';
-                            if ($room && $room->meal_plans && $room->meal_plans->count() > 0) {
-                                $mealPlanNames = $room->meal_plans->map(function ($mp) {
-                                    $plan = Modules\Settings\Entities\MealPlan::find($mp->meal_plan_id);
-                                    return $plan ? $plan->name : '';
-                                })->filter()->unique()->toArray();
-                                $mealPlanText = implode(', ', $mealPlanNames);
-                            }
-                            
-                            $str = $mealPlanText ? 'Breakfast at hotel' : 'Check-in at hotel';
-                            if (!in_array($str, $visibleItems)) {
-                                $visibleItems[] = $str;
-                            }
-                        } elseif ($item->entry_type == 'TRANSFER') {
+                        if ($item->entry_type == 'TRANSFER') {
                             $sub = Modules\Settings\Entities\Transfer::find($item->subject_id);
-                            $transferType = $item->transfer_type == 'PRIVATE' ? 'PVT' : 'SIC';
-                            $visibleItems[] = 'Transfer from ' . (optional($sub)->description ?? optional($sub)->vehicle_name) . ' by ' . $transferType . ' basis';
+                            $visibleItems[] = optional($sub)->vehicle_name ?? optional($sub)->description ?? 'Transfer';
                         } elseif ($item->entry_type == 'ACTIVITY') {
                             $sub = Modules\Settings\Entities\Activity::find($item->subject_id);
-                            $str = optional($sub)->activity_name;
+                            $name = trim(optional($sub)->activity_name ?? 'Activity');
                             if ($item->description) {
-                                $str .= ' - ' . $item->description;
+                                $name .= ' - ' . $item->description;
                             }
-                            $visibleItems[] = $str;
+                            $visibleItems[] = $name;
                         }
                     }
                 @endphp
-                 <div style="margin-bottom: 8px;">
-                    <span class="day-header">Day {{ $key + 1 }} ({{ $dateFormatted }}) :</span>
-                    @foreach ($visibleItems as $index => $text)
-                        @if ($index == 0)
-                            <span>{{ $text }}</span><br>
-                        @else
-                            <span style="margin-left: 120px;">: {{ $text }}</span><br>
-                        @endif
-                    @endforeach
-                </div>
+                @if(count($visibleItems) > 0)
+                    <div style="margin-bottom: 8px;">
+                        <span class="day-header">Day {{ $key + 1 }} ({{ $dateFormatted }}):</span>
+                        <span>{{ implode(' → ', $visibleItems) }}</span>
+                    </div>
+                @endif
             @endforeach
         </div>
         @endif

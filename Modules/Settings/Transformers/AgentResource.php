@@ -21,7 +21,7 @@ class AgentResource extends JsonResource
             'email' => $this->resource->email,
             'address' => $this->resource->address,
             'country_id' => $this->resource->country_id,
-            'country_name' => $this->resource->country->name,
+            'country_name' => $this->resource->country?->name,
         ];
     }
 }
