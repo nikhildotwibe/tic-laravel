@@ -326,4 +326,30 @@ class UserController extends BaseController
             return $this->HandleException($exception);
         }
     }
+
+    public function adminResetPassword(Request $request): JsonResponse
+    {
+        try {
+            Validator::make($request->all(), [
+                'username' => 'required',
+                'new_password' => 'required',
+                'c_password' => 'required|same:new_password',
+            ])->setAttributeNames([
+                'c_password' => 'Confirm Password'
+            ])->validate();
+
+            $user = User::where('username', $request->username)->first();
+
+            if (!$user) {
+                return $this->sendError('error.', ['username' => 'No user found with given username'], 404);
+            }
+
+            $user->password = bcrypt($request->new_password);
+            $user->save();
+
+            return $this->sendResponse(UserResource::make($user), 'Password reset successfully.', 200);
+        } catch (Exception $exception) {
+            return $this->HandleException($exception);
+        }
+    }
 }
