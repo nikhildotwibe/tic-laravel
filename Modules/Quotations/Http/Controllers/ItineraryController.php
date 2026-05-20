@@ -169,40 +169,6 @@ class ItineraryController extends BaseController
         $entriesData = $requestData['entries'];
         unset($requestData['entries']);
 
-        // Auto-versioning: If updating an existing itinerary, create a new version instead
-        if ($id) {
-            $original = Itinerary::find($id);
-            if ($original) {
-                // Only create a new version if there are actually changes, 
-                // but since we can't easily deep-compare everything, we'll just version on every save.
-                
-                $parentId = $original->parent_itinerary_id ?? $original->id;
-                $nextVersion = Itinerary::where('parent_itinerary_id', $parentId)->max('version') + 1;
-                
-                // Mark original and siblings as not current
-                Itinerary::where('parent_itinerary_id', $parentId)->update(['is_current' => false]);
-                
-                // Ensure the original itself has parent_itinerary_id set
-                if (!$original->parent_itinerary_id) {
-                    $original->update(['parent_itinerary_id' => $parentId, 'is_current' => false]);
-                }
-                
-                $requestData['parent_itinerary_id'] = $parentId;
-                $requestData['version'] = $nextVersion;
-                $requestData['is_current'] = true;
-                
-                // Clear the ID so a new Itinerary is created
-                $id = null;
-                
-                // We MUST clear the 'id' from entriesData so they are created as new entries
-                // otherwise they would be moved from the old itinerary to the new one
-                foreach ($entriesData as &$entry) {
-                    unset($entry['id']);
-                }
-                unset($entry); // Break the reference to avoid overwriting the last element in the next loop
-            }
-        }
-
         $itinerary = Itinerary::updateOrCreate(['id' => $id], $requestData);
 
         // If it's a newly created itinerary (or doesn't have a parent ID yet)
@@ -298,17 +264,12 @@ class ItineraryController extends BaseController
             $entryData['sub_destination_id'] = $entry['sub_destination_id'];
 
 
-            $entryId = $entry['id'] ?? \Illuminate\Support\Str::uuid()->toString();
-            $entryData['id'] = $entryId;
-            
-            $itineraryEntry = ItineraryEntry::updateOrCreate(['id' => $entryId], $entryData);
+            $itineraryEntry = ItineraryEntry::updateOrCreate(['id' => $entry['id'] ?? null], $entryData);
 
             $savedItems[] = $itineraryEntry;
         }
 
-        ItineraryEntry::where('itinerary_id', $itinerary->id)
-            ->whereNotIn('id', collect($savedItems)->pluck('id'))
-            ->delete();
+        ItineraryEntry::where('itinerary_id', $id)->whereNotIn('id', collect($savedItems)->pluck('id'))->delete();
 
         return $itinerary;
     }
@@ -524,9 +485,9 @@ class ItineraryController extends BaseController
      */
     public function setPricing(Request $request, $id)
     {
-        DB::beginTransaction();
         try {
-            $original = Itinerary::with('entries')->findOrFail($id);
+
+            $itinerary = Itinerary::findOrFail($id);
 
             Validator::make($request->all(), [
                 'entries' => 'required|array|min:1',
@@ -549,26 +510,13 @@ class ItineraryController extends BaseController
                 'entries.*.markup' => 'Mark Up',
             ])->validate();
 
-            // ── Auto-versioning Logic ──
-            $parentId = $original->parent_itinerary_id ?? $original->id;
-            $nextVersion = Itinerary::where('parent_itinerary_id', $parentId)->max('version') + 1;
-            
-            // Mark original and siblings as not current
-            Itinerary::where('parent_itinerary_id', $parentId)->update(['is_current' => false]);
-            if (!$original->parent_itinerary_id) {
-                $original->update(['parent_itinerary_id' => $parentId, 'is_current' => false]);
+            foreach ($request->entries as $key => $entryData) {
+                $entry = ItineraryEntry::findOrFail($entryData["id"]);
+                $entry->amount = $entryData["amount"];
+                $entry->markup = $entryData["markup"];
+                $entry->save();
             }
 
-            // Create new version
-            $itinerary = $original->replicate();
-            $itinerary->id = \Illuminate\Support\Str::uuid()->toString();
-            $itinerary->parent_itinerary_id = $parentId;
-            $itinerary->version = $nextVersion;
-            $itinerary->is_current = true;
-            $itinerary->created_by = auth()->check() ? auth()->id() : null;
-            $itinerary->updated_by = auth()->check() ? auth()->id() : null;
-
-            // Apply new pricing
             $itinerary->extra_markup_amount = $request->extra_markup_amount;
             $itinerary->extra_markup_percentage = $request->extra_markup_percentage;
             $itinerary->cgst_percentage = $request->cgst_percentage;
@@ -588,30 +536,15 @@ class ItineraryController extends BaseController
             }
             $itinerary->save();
 
-            // ── Duplicate Entries and Apply Pricing ──
-            $requestEntries = collect($request->entries)->keyBy('id');
-            $snapshotEntries = [];
-
-            foreach ($original->entries as $oldEntry) {
-                $newEntry = $oldEntry->replicate();
-                $newEntry->id = \Illuminate\Support\Str::uuid()->toString();
-                $newEntry->itinerary_id = $itinerary->id;
-
-                if ($requestEntries->has($oldEntry->id)) {
-                    $entryData = $requestEntries->get($oldEntry->id);
-                    $newEntry->amount = $entryData['amount'];
-                    $newEntry->markup = $entryData['markup'];
-
-                    $snapshotEntries[] = [
-                        'id' => $newEntry->id, // Use new entry ID for snapshot
-                        'amount' => $newEntry->amount,
-                        'markup' => $newEntry->markup,
-                    ];
-                }
-                $newEntry->save();
-            }
-
             // Auto-create pricing snapshot
+            $snapshotEntries = [];
+            foreach ($request->entries as $entryData) {
+                $snapshotEntries[] = [
+                    'id' => $entryData['id'],
+                    'amount' => $entryData['amount'],
+                    'markup' => $entryData['markup'],
+                ];
+            }
             PricingSnapshot::create([
                 'itinerary_id' => $itinerary->id,
                 'snapshot_data' => json_encode([
@@ -639,10 +572,8 @@ class ItineraryController extends BaseController
                 'created_by' => auth()->check() ? auth()->user()->id : null,
             ]);
 
-            DB::commit();
-            return $this->sendResponse(ItineraryResource::make($itinerary->fresh()), 'Itinerary Pricing updated Successfully', 200);
+            return $this->sendResponse(ItineraryResource::make($itinerary), 'Itinerary Prices Successfully fetched', 200);
         } catch (Exception $exception) {
-            DB::rollBack();
             return $this->HandleException($exception);
         }
     }
