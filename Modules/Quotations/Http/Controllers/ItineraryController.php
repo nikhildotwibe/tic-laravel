@@ -169,6 +169,39 @@ class ItineraryController extends BaseController
         $entriesData = $requestData['entries'];
         unset($requestData['entries']);
 
+        // Auto-versioning: If updating an existing itinerary, create a new version instead
+        if ($id) {
+            $original = Itinerary::find($id);
+            if ($original) {
+                // Only create a new version if there are actually changes, 
+                // but since we can't easily deep-compare everything, we'll just version on every save.
+                
+                $parentId = $original->parent_itinerary_id ?? $original->id;
+                $nextVersion = Itinerary::where('parent_itinerary_id', $parentId)->max('version') + 1;
+                
+                // Mark original and siblings as not current
+                Itinerary::where('parent_itinerary_id', $parentId)->update(['is_current' => false]);
+                
+                // Ensure the original itself has parent_itinerary_id set
+                if (!$original->parent_itinerary_id) {
+                    $original->update(['parent_itinerary_id' => $parentId, 'is_current' => false]);
+                }
+                
+                $requestData['parent_itinerary_id'] = $parentId;
+                $requestData['version'] = $nextVersion;
+                $requestData['is_current'] = true;
+                
+                // Clear the ID so a new Itinerary is created
+                $id = null;
+                
+                // We MUST clear the 'id' from entriesData so they are created as new entries
+                // otherwise they would be moved from the old itinerary to the new one
+                foreach ($entriesData as &$entry) {
+                    unset($entry['id']);
+                }
+            }
+        }
+
         $itinerary = Itinerary::updateOrCreate(['id' => $id], $requestData);
 
         // If it's a newly created itinerary (or doesn't have a parent ID yet)
