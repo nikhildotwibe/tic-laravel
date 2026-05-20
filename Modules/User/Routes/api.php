@@ -37,6 +37,7 @@ Route::prefix('user')->as("user.")->middleware('auth:sanctum')->group(function (
     Route::get('delete/{id}', [UserController::class, 'destroy']);
     Route::post('logout', [UserController::class, 'logout'])->name('logout');
     Route::post('change-password', [UserController::class, 'changePassword'])->name('change-password');
+    Route::post('admin-reset-password', [UserController::class, 'adminResetPassword'])->name('admin-reset-password');
 });
 
 Route::prefix('module')->as("module.")->middleware('auth:sanctum')->group(function () {
