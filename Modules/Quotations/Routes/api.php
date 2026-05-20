@@ -26,6 +26,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('itineraries/{id}/set-pricing', [ItineraryController::class, 'setpricing']);
     Route::get('itineraries/{id}/pricing-history', [ItineraryController::class, 'pricingHistory']);
     Route::post('itineraries/{id}/restore-pricing/{snapshotId}', [ItineraryController::class, 'restorePricing']);
+    // Version history
+    Route::post('itineraries/{id}/new-version', [ItineraryController::class, 'createNewVersion']);
+    Route::put('itineraries/{id}/set-current', [ItineraryController::class, 'setCurrentVersion']);
+
     Route::post('itinerary/print/{id}', [ItineraryController::class, 'print']);
     Route::get('itineraries/{id}/preview-html', [ItineraryController::class, 'previewHtml']);
     Route::get('itineraries/{id}/preview-whatsapp', [ItineraryController::class, 'previewWhatsapp']);
