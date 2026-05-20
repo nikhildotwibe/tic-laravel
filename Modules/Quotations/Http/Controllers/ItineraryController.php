@@ -199,6 +199,7 @@ class ItineraryController extends BaseController
                 foreach ($entriesData as &$entry) {
                     unset($entry['id']);
                 }
+                unset($entry); // Break the reference to avoid overwriting the last element in the next loop
             }
         }
 
@@ -302,7 +303,9 @@ class ItineraryController extends BaseController
             $savedItems[] = $itineraryEntry;
         }
 
-        ItineraryEntry::where('itinerary_id', $id)->whereNotIn('id', collect($savedItems)->pluck('id'))->delete();
+        ItineraryEntry::where('itinerary_id', $itinerary->id)
+            ->whereNotIn('id', collect($savedItems)->pluck('id'))
+            ->delete();
 
         return $itinerary;
     }
