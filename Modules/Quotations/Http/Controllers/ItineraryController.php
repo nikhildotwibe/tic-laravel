@@ -171,6 +171,12 @@ class ItineraryController extends BaseController
 
         $itinerary = Itinerary::updateOrCreate(['id' => $id], $requestData);
 
+        // If it's a newly created itinerary (or doesn't have a parent ID yet)
+        if (!$itinerary->parent_itinerary_id) {
+            $itinerary->parent_itinerary_id = $itinerary->id;
+            $itinerary->saveQuietly(); // Use saveQuietly to avoid triggering updated_at/events
+        }
+
         $savedItems = [];
 
         foreach ($entriesData as $key => $entry) {
