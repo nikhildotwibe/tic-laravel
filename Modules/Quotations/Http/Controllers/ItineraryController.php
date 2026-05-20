@@ -298,7 +298,10 @@ class ItineraryController extends BaseController
             $entryData['sub_destination_id'] = $entry['sub_destination_id'];
 
 
-            $itineraryEntry = ItineraryEntry::updateOrCreate(['id' => $entry['id'] ?? null], $entryData);
+            $entryId = $entry['id'] ?? \Illuminate\Support\Str::uuid()->toString();
+            $entryData['id'] = $entryId;
+            
+            $itineraryEntry = ItineraryEntry::updateOrCreate(['id' => $entryId], $entryData);
 
             $savedItems[] = $itineraryEntry;
         }
