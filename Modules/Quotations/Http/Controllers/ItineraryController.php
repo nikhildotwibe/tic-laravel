@@ -518,9 +518,9 @@ class ItineraryController extends BaseController
      */
     public function setPricing(Request $request, $id)
     {
+        DB::beginTransaction();
         try {
-
-            $itinerary = Itinerary::findOrFail($id);
+            $original = Itinerary::with('entries')->findOrFail($id);
 
             Validator::make($request->all(), [
                 'entries' => 'required|array|min:1',
@@ -543,13 +543,26 @@ class ItineraryController extends BaseController
                 'entries.*.markup' => 'Mark Up',
             ])->validate();
 
-            foreach ($request->entries as $key => $entryData) {
-                $entry = ItineraryEntry::findOrFail($entryData["id"]);
-                $entry->amount = $entryData["amount"];
-                $entry->markup = $entryData["markup"];
-                $entry->save();
+            // ── Auto-versioning Logic ──
+            $parentId = $original->parent_itinerary_id ?? $original->id;
+            $nextVersion = Itinerary::where('parent_itinerary_id', $parentId)->max('version') + 1;
+            
+            // Mark original and siblings as not current
+            Itinerary::where('parent_itinerary_id', $parentId)->update(['is_current' => false]);
+            if (!$original->parent_itinerary_id) {
+                $original->update(['parent_itinerary_id' => $parentId, 'is_current' => false]);
             }
 
+            // Create new version
+            $itinerary = $original->replicate();
+            $itinerary->id = \Illuminate\Support\Str::uuid()->toString();
+            $itinerary->parent_itinerary_id = $parentId;
+            $itinerary->version = $nextVersion;
+            $itinerary->is_current = true;
+            $itinerary->created_by = auth()->check() ? auth()->id() : null;
+            $itinerary->updated_by = auth()->check() ? auth()->id() : null;
+
+            // Apply new pricing
             $itinerary->extra_markup_amount = $request->extra_markup_amount;
             $itinerary->extra_markup_percentage = $request->extra_markup_percentage;
             $itinerary->cgst_percentage = $request->cgst_percentage;
@@ -569,15 +582,30 @@ class ItineraryController extends BaseController
             }
             $itinerary->save();
 
-            // Auto-create pricing snapshot
+            // ── Duplicate Entries and Apply Pricing ──
+            $requestEntries = collect($request->entries)->keyBy('id');
             $snapshotEntries = [];
-            foreach ($request->entries as $entryData) {
-                $snapshotEntries[] = [
-                    'id' => $entryData['id'],
-                    'amount' => $entryData['amount'],
-                    'markup' => $entryData['markup'],
-                ];
+
+            foreach ($original->entries as $oldEntry) {
+                $newEntry = $oldEntry->replicate();
+                $newEntry->id = \Illuminate\Support\Str::uuid()->toString();
+                $newEntry->itinerary_id = $itinerary->id;
+
+                if ($requestEntries->has($oldEntry->id)) {
+                    $entryData = $requestEntries->get($oldEntry->id);
+                    $newEntry->amount = $entryData['amount'];
+                    $newEntry->markup = $entryData['markup'];
+
+                    $snapshotEntries[] = [
+                        'id' => $newEntry->id, // Use new entry ID for snapshot
+                        'amount' => $newEntry->amount,
+                        'markup' => $newEntry->markup,
+                    ];
+                }
+                $newEntry->save();
             }
+
+            // Auto-create pricing snapshot
             PricingSnapshot::create([
                 'itinerary_id' => $itinerary->id,
                 'snapshot_data' => json_encode([
@@ -605,8 +633,10 @@ class ItineraryController extends BaseController
                 'created_by' => auth()->check() ? auth()->user()->id : null,
             ]);
 
-            return $this->sendResponse(ItineraryResource::make($itinerary), 'Itinerary Prices Successfully fetched', 200);
+            DB::commit();
+            return $this->sendResponse(ItineraryResource::make($itinerary->fresh()), 'Itinerary Pricing updated Successfully', 200);
         } catch (Exception $exception) {
+            DB::rollBack();
             return $this->HandleException($exception);
         }
     }
