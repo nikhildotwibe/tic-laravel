@@ -213,7 +213,7 @@ class ItineraryResource extends JsonResource
             'price_mode' => $this->resource->price_mode,
             'quoted_options' => $this->resource->quoted_options,
             'version' => $this->resource->version ?? 1,
-            'is_current' => $this->resource->is_current ?? true,
+            'is_current' => (bool) ($this->resource->is_current ?? true),
             'parent_itinerary_id' => $this->resource->parent_itinerary_id,
             'edited_at' => $this->resource->updated_at ? $this->resource->updated_at->toIso8601String() : null,
         ];

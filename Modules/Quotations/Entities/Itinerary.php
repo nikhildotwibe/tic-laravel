@@ -18,6 +18,10 @@ class Itinerary extends BaseModel
     use SoftDeletes;
     protected $fillable = [];
 
+    protected $casts = [
+        'is_current' => 'boolean',
+    ];
+
     public function destination(): BelongsTo
     {
         return $this->belongsTo(Destination::class, 'destination_id', 'id');
