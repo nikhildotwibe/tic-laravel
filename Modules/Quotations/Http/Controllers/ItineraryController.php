@@ -148,6 +148,15 @@ class ItineraryController extends BaseController
         try {
             $this->requestValidator($request->all())->validate();
             $itinerary = $this->process($request->all());
+
+            // Initialise version tracking for new itineraries
+            if (!$itinerary->parent_itinerary_id) {
+                $itinerary->parent_itinerary_id = $itinerary->id;
+                $itinerary->version    = 1;
+                $itinerary->is_current = true;
+                $itinerary->save();
+            }
+
             DB::commit();
             return $this->sendResponse(ItineraryResource::make($itinerary), 'Itinerary created Successfully', 201);
         } catch (Exception $exception) {
@@ -294,6 +303,11 @@ class ItineraryController extends BaseController
         DB::beginTransaction();
         try {
             $this->requestValidator($request->all())->validate();
+
+            // ── Version History: snapshot current state before overwriting ──
+            $currentItinerary = Itinerary::findOrFail($id);
+            $currentItinerary->createVersionSnapshot();
+
             $itinerary = $this->process($request->all(), $id);
             DB::commit();
             return $this->sendResponse(ItineraryResource::make($itinerary), 'Itinerary updated Successfully', 200);
@@ -390,9 +404,13 @@ class ItineraryController extends BaseController
      */
     public function setPricing(Request $request, $id)
     {
+        DB::beginTransaction();
         try {
 
             $itinerary = Itinerary::findOrFail($id);
+
+            // ── Version History: snapshot current state before pricing changes ──
+            $itinerary->createVersionSnapshot();
 
             Validator::make($request->all(), [
                 'entries' => 'required|array|min:1',
@@ -477,8 +495,10 @@ class ItineraryController extends BaseController
                 'created_by' => auth()->check() ? auth()->user()->id : null,
             ]);
 
+            DB::commit();
             return $this->sendResponse(ItineraryResource::make($itinerary), 'Itinerary Prices Successfully fetched', 200);
         } catch (Exception $exception) {
+            DB::rollBack();
             return $this->HandleException($exception);
         }
     }
@@ -558,6 +578,37 @@ class ItineraryController extends BaseController
 
             return $this->sendResponse(ItineraryResource::make($itinerary), 'Pricing Restored Successfully', 200);
         } catch (Exception $exception) {
+            return $this->HandleException($exception);
+        }
+    }
+
+    /**
+     * Switch the active (current) version for a quotation group.
+     * Sets the selected version as current and all siblings as previous.
+     */
+    public function setCurrent($id)
+    {
+        DB::beginTransaction();
+        try {
+            $selected = Itinerary::findOrFail($id);
+            $parentId = $selected->parent_itinerary_id ?? $selected->id;
+
+            // Set all siblings (including current active) to not-current
+            Itinerary::where('parent_itinerary_id', $parentId)
+                ->update(['is_current' => false]);
+
+            // Promote the selected version
+            $selected->is_current = true;
+            $selected->save();
+
+            DB::commit();
+            return $this->sendResponse(
+                ItineraryResource::make($selected->fresh()),
+                'Version set as current successfully',
+                200
+            );
+        } catch (Exception $exception) {
+            DB::rollBack();
             return $this->HandleException($exception);
         }
     }

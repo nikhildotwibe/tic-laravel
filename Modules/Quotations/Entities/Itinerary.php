@@ -41,4 +41,55 @@ class Itinerary extends BaseModel
     {
         return $this->belongsTo(\Modules\User\Entities\User::class, 'updated_by', 'id');
     }
+
+    // ── Versioning ──────────────────────────────────────────────
+
+    /**
+     * Get all versions that share the same parent (including self).
+     */
+    public function allVersions(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_itinerary_id', 'parent_itinerary_id');
+    }
+
+    /**
+     * Clone the current state into a new "history" row before an update.
+     * The original record keeps its ID and stays is_current=true with an incremented version.
+     *
+     * @return self|null  The newly created history clone, or null if nothing to snapshot.
+     */
+    public function createVersionSnapshot(): ?self
+    {
+        // Reload entries to ensure we have the latest state
+        $this->load('entries');
+
+        // Don't snapshot if there are no entries yet (first-time setup)
+        if ($this->entries->isEmpty()) {
+            return null;
+        }
+
+        // 1. Clone the itinerary record as a history row
+        $clone = $this->replicate(['id', 'seq']);
+        $clone->parent_itinerary_id = $this->parent_itinerary_id ?? $this->id;
+        $clone->version    = $this->version;
+        $clone->is_current = false;
+        $clone->save();
+
+        // 2. Clone all entries, linking them to the new history itinerary
+        foreach ($this->entries as $entry) {
+            $entryClone = $entry->replicate(['id', 'seq']);
+            $entryClone->itinerary_id = $clone->id;
+            $entryClone->save();
+        }
+
+        // 3. Increment version on the original and ensure parent is set
+        $this->version = ($this->version ?? 1) + 1;
+        if (!$this->parent_itinerary_id) {
+            $this->parent_itinerary_id = $this->id;
+        }
+        $this->is_current = true;
+        $this->save();
+
+        return $clone;
+    }
 }
