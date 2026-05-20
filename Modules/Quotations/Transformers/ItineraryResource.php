@@ -215,6 +215,7 @@ class ItineraryResource extends JsonResource
             'version' => $this->resource->version ?? 1,
             'is_current' => $this->resource->is_current ?? true,
             'parent_itinerary_id' => $this->resource->parent_itinerary_id,
+            'edited_at' => $this->resource->updated_at ? $this->resource->updated_at->toIso8601String() : null,
         ];
     }
 }
