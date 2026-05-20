@@ -73,12 +73,20 @@ class Itinerary extends BaseModel
         $clone->parent_itinerary_id = $this->parent_itinerary_id ?? $this->id;
         $clone->version    = $this->version;
         $clone->is_current = false;
+        
+        // Disable timestamps to preserve original edit time on the historical version
+        $clone->timestamps = false;
+        $clone->created_at = $this->created_at;
+        $clone->updated_at = $this->updated_at;
         $clone->save();
 
         // 2. Clone all entries, linking them to the new history itinerary
         foreach ($this->entries as $entry) {
             $entryClone = $entry->replicate(['id', 'seq']);
             $entryClone->itinerary_id = $clone->id;
+            $entryClone->timestamps = false;
+            $entryClone->created_at = $entry->created_at;
+            $entryClone->updated_at = $entry->updated_at;
             $entryClone->save();
         }
 
