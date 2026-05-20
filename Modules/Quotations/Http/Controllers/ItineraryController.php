@@ -171,12 +171,6 @@ class ItineraryController extends BaseController
 
         $itinerary = Itinerary::updateOrCreate(['id' => $id], $requestData);
 
-        // If it's a newly created itinerary (or doesn't have a parent ID yet)
-        if (!$itinerary->parent_itinerary_id) {
-            $itinerary->parent_itinerary_id = $itinerary->id;
-            $itinerary->saveQuietly(); // Use saveQuietly to avoid triggering updated_at/events
-        }
-
         $savedItems = [];
 
         foreach ($entriesData as $key => $entry) {
@@ -324,95 +318,6 @@ class ItineraryController extends BaseController
 
             DB::commit();
             return $this->sendResponse([], 'Itinerary deleted Successfully', 200);
-        } catch (Exception $exception) {
-            DB::rollBack();
-            return $this->HandleException($exception);
-        }
-    }
-
-    /**
-     * Duplicate an itinerary as a new version.
-     * The original becomes a historical snapshot (is_current = false),
-     * and a deep clone is created as the new current version.
-     *
-     * POST /api/itineraries/{id}/new-version
-     */
-    public function createNewVersion($id)
-    {
-        DB::beginTransaction();
-        try {
-            $original = Itinerary::with('entries')->findOrFail($id);
-
-            // Determine the parent group ID
-            $parentId = $original->parent_itinerary_id ?? $original->id;
-            $nextVersion = Itinerary::where('parent_itinerary_id', $parentId)->max('version') + 1;
-
-            // Mark ALL siblings as not current (safety)
-            Itinerary::where('parent_itinerary_id', $parentId)
-                ->update(['is_current' => false]);
-
-            // Also mark the original if it didn't have a parent yet
-            $original->update([
-                'is_current' => false,
-                'parent_itinerary_id' => $parentId,
-            ]);
-
-            // Deep-clone the itinerary
-            $newItinerary = $original->replicate();
-            $newItinerary->id = \Illuminate\Support\Str::uuid()->toString();
-            $newItinerary->parent_itinerary_id = $parentId;
-            $newItinerary->version = $nextVersion;
-            $newItinerary->is_current = true;
-            $newItinerary->created_by = auth()->check() ? auth()->id() : null;
-            $newItinerary->updated_by = auth()->check() ? auth()->id() : null;
-            $newItinerary->save();
-
-            // Deep-clone all entries
-            foreach ($original->entries as $entry) {
-                $newEntry = $entry->replicate();
-                $newEntry->id = \Illuminate\Support\Str::uuid()->toString();
-                $newEntry->itinerary_id = $newItinerary->id;
-                $newEntry->save();
-            }
-
-            DB::commit();
-            return $this->sendResponse(
-                ItineraryResource::make($newItinerary->fresh()),
-                'New version created successfully',
-                201
-            );
-        } catch (Exception $exception) {
-            DB::rollBack();
-            return $this->HandleException($exception);
-        }
-    }
-
-    /**
-     * Set a specific version as the current active quotation.
-     * All other versions in the same group become historical.
-     *
-     * PUT /api/itineraries/{id}/set-current
-     */
-    public function setCurrentVersion($id)
-    {
-        DB::beginTransaction();
-        try {
-            $itinerary = Itinerary::findOrFail($id);
-            $parentId = $itinerary->parent_itinerary_id ?? $itinerary->id;
-
-            // Mark all siblings as not current
-            Itinerary::where('parent_itinerary_id', $parentId)
-                ->update(['is_current' => false]);
-
-            // Set the target as current
-            $itinerary->update(['is_current' => true]);
-
-            DB::commit();
-            return $this->sendResponse(
-                ItineraryResource::make($itinerary->fresh()),
-                'Version set as current successfully',
-                200
-            );
         } catch (Exception $exception) {
             DB::rollBack();
             return $this->HandleException($exception);

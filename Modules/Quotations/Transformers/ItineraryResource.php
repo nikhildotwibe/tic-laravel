@@ -212,10 +212,6 @@ class ItineraryResource extends JsonResource
             'per_person_amounts' => $perPersonAmounts,
             'price_mode' => $this->resource->price_mode,
             'quoted_options' => $this->resource->quoted_options,
-            // Version history fields
-            'version' => $this->resource->version ?? 1,
-            'is_current' => (bool) ($this->resource->is_current ?? true),
-            'parent_itinerary_id' => $this->resource->parent_itinerary_id,
         ];
     }
 }

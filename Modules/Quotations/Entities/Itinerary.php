@@ -41,23 +41,4 @@ class Itinerary extends BaseModel
     {
         return $this->belongsTo(\Modules\User\Entities\User::class, 'updated_by', 'id');
     }
-
-    // ── Version History Relationships ──
-
-    /**
-     * All versions that share the same parent (including self).
-     */
-    public function versionSiblings(): HasMany
-    {
-        return $this->hasMany(self::class, 'parent_itinerary_id', 'parent_itinerary_id');
-    }
-
-    /**
-     * Get the next version number for this version group.
-     */
-    public function getNextVersionNumber(): int
-    {
-        return self::where('parent_itinerary_id', $this->parent_itinerary_id ?? $this->id)
-                    ->max('version') + 1;
-    }
 }
