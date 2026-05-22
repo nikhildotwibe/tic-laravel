@@ -142,7 +142,7 @@ class HotelsController extends BaseController
     {
         // data spliting up
         $roomData = $requestData['rooms'];
-        $hotelAmenitiesData = $requestData['amenities'];
+        $hotelAmenitiesData = $requestData['amenities'] ?? [];
         $document1 = $requestData['document_1'] ?? [];
         $document2 = $requestData['document_2'] ?? [];
         $document3 = $requestData['document_3'] ?? [];
