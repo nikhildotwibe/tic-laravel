@@ -30,4 +30,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('itineraries/{id}/preview-html', [ItineraryController::class, 'previewHtml']);
     Route::get('itineraries/{id}/preview-whatsapp', [ItineraryController::class, 'previewWhatsapp']);
     Route::post('itineraries/{id}/share-email', [ItineraryController::class, 'shareEmail']);
+    Route::put('itineraries/{id}/set-current', [ItineraryController::class, 'setCurrent']);
 });
