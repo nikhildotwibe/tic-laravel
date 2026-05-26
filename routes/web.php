@@ -40,3 +40,60 @@ Route::get('/migrate', function () {
         ]);
     }
 });
+
+// Seed all databases
+Route::get('/db:seed', function () {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'All database seeds ran successfully',
+            'output' => \Illuminate\Support\Facades\Artisan::output()
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Seeding failed',
+            'error' => $e->getMessage()
+        ]);
+    }
+});
+
+Route::get('/db-seed', function () {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'All database seeds ran successfully',
+            'output' => \Illuminate\Support\Facades\Artisan::output()
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Seeding failed',
+            'error' => $e->getMessage()
+        ]);
+    }
+});
+
+// Seed only countries
+Route::get('/db-seed/countries', function () {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('db:seed', [
+            '--class' => 'Modules\Settings\Database\Seeders\CountriesTableSeeder',
+            '--force' => true
+        ]);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Countries seeded successfully',
+            'output' => \Illuminate\Support\Facades\Artisan::output()
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Countries seeding failed',
+            'error' => $e->getMessage()
+        ]);
+    }
+});
+
