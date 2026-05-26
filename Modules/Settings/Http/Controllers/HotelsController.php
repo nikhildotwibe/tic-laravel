@@ -56,8 +56,8 @@ class HotelsController extends BaseController
                 'property_type_id' => 'required|exists:property_types,id,deleted_at,NULL',
                 'sales_email' => 'required|email',
                 'contact_no' => 'nullable|unique:hotels,contact_no,' . $id . ',id,deleted_at,NULL',
-                'reservation_no' => 'nullable|unique:hotels,reservation_no,' . $id . ',id,deleted_at,NULL',
-                'reservation_email' => 'nullable|email|unique:hotels,reservation_email,' . $id . ',id,deleted_at,NULL',
+                'reservation_no' => 'nullable',
+                'reservation_email' => 'nullable|email',
                 'phone_number' => 'required',
 
                 'rooms' => 'required|array',
