@@ -53,7 +53,7 @@ class RolesController extends BaseController
     {
         try {
             Validator::make($request->all(), [
-                'name' => 'required|unique:roles,name',
+                'name' => 'required|unique:roles,name,NULL,id,deleted_at,NULL',
                 'description' => 'nullable|max:300',
                 'is_active' => 'nullable|boolean',
                 'permissions.*' => 'required|exists:permissions,id|distinct',
@@ -164,7 +164,15 @@ class RolesController extends BaseController
     public function destroy($id)
     {
         try {
-            $count = UsersRole::where('role_id', $id)->count();
+            // Count only active (non-soft-deleted) users linked to this role.
+            // UsersRole uses SoftDeletes (filters its own deleted_at), but we also
+            // need to ensure the related user has not been soft-deleted in the users table.
+            $count = UsersRole::where('role_id', $id)
+                ->whereHas('user', function ($query) {
+                    $query->whereNull('deleted_at');
+                })
+                ->count();
+
             if (!$count) {
                 Role::findOrFail($id)->delete();
             } else {

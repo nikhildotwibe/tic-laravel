@@ -19,7 +19,7 @@ class CountriesController extends BaseController
     {
 
         try {
-            $countries = Country::latest()->get();
+            $countries = Country::orderBy('name', 'asc')->get();
             return $this->sendResponse($countries, 'All Countries Fetched', 200);
         } catch (Exception $exception) {
             return $this->HandleException($exception);
