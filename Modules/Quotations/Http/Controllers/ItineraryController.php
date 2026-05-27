@@ -84,6 +84,7 @@ class ItineraryController extends BaseController
                 'entries.*.single_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
                 'entries.*.double_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
                 'entries.*.triple_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
+                'entries.*.quad_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
                 'entries.*.extra_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
                 'entries.*.child_w_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
                 'entries.*.child_n_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
@@ -116,6 +117,7 @@ class ItineraryController extends BaseController
                 'entries.*.single_count' => 'Single Count',
                 'entries.*.double_count' => 'Double Count',
                 'entries.*.triple_count' => 'Triple Count',
+                'entries.*.quad_count' => 'Quad Count',
                 'entries.*.extra_count' => 'Extra Count',
                 'entries.*.child_w_count' => 'Child W Count',
                 'entries.*.child_n_count' => 'Child N Count',
@@ -197,6 +199,7 @@ class ItineraryController extends BaseController
                 $entryData['single_count'] = $entry['single_count'];
                 $entryData['double_count'] = $entry['double_count'];
                 $entryData['triple_count'] = $entry['triple_count'];
+                $entryData['quad_count'] = $entry['quad_count'];
                 $entryData['extra_count'] = $entry['extra_count'];
                 $entryData['child_w_count'] = $entry['child_w_count'];
                 $entryData['child_n_count'] = $entry['child_n_count'];
@@ -207,11 +210,12 @@ class ItineraryController extends BaseController
                 $singlePrice = $entry['single_count'] * $room->single_bed_amount;
                 $doublePrice = $entry['double_count'] * $room->double_bed_amount;
                 $triplePrice = $entry['triple_count'] * $room->triple_bed_amount;
+                $quadPrice = $entry['quad_count'] * $room->quad_bed_amount;
                 $extraPrice = $entry['extra_count'] * $room->extra_bed_amount;
                 $childWPrice = $entry['child_w_count'] * $room->child_w_bed_amount;
                 $childNPrice = $entry['child_n_count'] * $room->child_n_bed_amount;
 
-                $entryData['amount'] = $singlePrice + $doublePrice + $triplePrice + $extraPrice + $childWPrice + $childNPrice;
+                $entryData['amount'] = $singlePrice + $doublePrice + $triplePrice + $quadPrice + $extraPrice + $childWPrice + $childNPrice;
             } elseif ($entry['entry_type'] == 'ACTIVITY') {
 
                 $entryData['description'] = $entry['description'];
@@ -550,6 +554,11 @@ class ItineraryController extends BaseController
             // Restore entry amounts & markup
             foreach ($data['entries'] as $entryData) {
                 $entry = ItineraryEntry::find($entryData['id']);
+                $isSharing = (
+                    $entry->double_count > 0 ||
+                    $entry->triple_count > 0 ||
+                    $entry->quad_count > 0
+                );
                 if ($entry) {
                     $entry->amount = $entryData['amount'];
                     $entry->markup = $entryData['markup'];
@@ -777,9 +786,9 @@ class ItineraryController extends BaseController
                             $perPerson = $rowTotal / $count;
                         }
 
-                        $isDoubleOrTriple = (stripos($label, 'double') !== false || stripos($label, 'triple') !== false);
+                        $isSharing = (stripos($label, 'double') !== false || stripos($label, 'triple') !== false || stripos($label, 'quad') !== false);
 
-                        if ($isDoubleOrTriple && $isPERMode) {
+                        if ($isSharing && $isPERMode) {
                             // Show per-person rate for sharing types
                             $countSuffix = $count > 1 ? " x {$count}" : "";
                             $text .= "• *{$label}*\t\t{$currencySymbol} " . number_format($perPerson, 2) . $countSuffix . "\n";

@@ -43,6 +43,7 @@ class ItineraryEntryResource extends JsonResource
             'single_count' => $this->resource->single_count,
             'double_count' => $this->resource->double_count,
             'triple_count' => $this->resource->triple_count,
+            'quad_count' => $this->resource->quad_count,
             'extra_count' => $this->resource->extra_count,
             'child_w_count' => $this->resource->child_w_count,
             'child_n_count' => $this->resource->child_n_count,

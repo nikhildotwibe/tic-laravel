@@ -103,7 +103,7 @@ class ItineraryResource extends JsonResource
                     $room = Room::find($entry->room_id);
                     if ($room) {
                         info($room);
-                        $adulltPerPersonNetAmount += ($room->single_bed_amount * $entry->single_count) + ($room->double_bed_amount * $entry->double_count) + ($room->triple_bed_amount * $entry->triple_count) + ($room->extra_bed_amount * $entry->extra_count);
+                        $adulltPerPersonNetAmount += ($room->single_bed_amount * $entry->single_count) + ($room->double_bed_amount * $entry->double_count) + ($room->triple_bed_amount * $entry->triple_count) + ($room->quad_bed_amount * $entry->quad_count) + ($room->extra_bed_amount * $entry->extra_count);
                         $childWPerPersonNetAmount += ($room->child_w_bed_amount * $entry->child_w_count);
                         $childNPerPersonNetAmount += ($room->child_n_bed_amount * $entry->child_n_count);
                     }

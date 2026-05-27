@@ -28,6 +28,8 @@ class RoomResource extends JsonResource
             'double_bed_amount' => $this->resource->double_bed_amount,
             'is_triple_bed_available' => $this->resource->is_triple_bed_available,
             'triple_bed_amount' => $this->resource->triple_bed_amount,
+            'is_quad_bed_available' => $this->resource->is_quad_bed_available,
+            'quad_bed_amount' => $this->resource->quad_bed_amount,
             'is_extra_bed_available' => $this->resource->is_extra_bed_available,
             'extra_bed_amount' => $this->resource->extra_bed_amount,
             'is_child_w_bed_available' => $this->resource->is_child_w_bed_available,
