@@ -53,7 +53,7 @@ class RolesController extends BaseController
     {
         try {
             Validator::make($request->all(), [
-                'name' => 'required|unique:roles,name',
+                'name' => 'required|unique:roles,name,NULL,id,deleted_at,NULL',
                 'description' => 'nullable|max:300',
                 'is_active' => 'nullable|boolean',
                 'permissions.*' => 'required|exists:permissions,id|distinct',
