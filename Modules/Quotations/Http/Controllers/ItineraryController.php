@@ -84,7 +84,7 @@ class ItineraryController extends BaseController
                 'entries.*.single_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
                 'entries.*.double_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
                 'entries.*.triple_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
-                'entries.*.quad_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
+                'entries.*.quad_count' => 'nullable|gte:0',
                 'entries.*.extra_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
                 'entries.*.child_w_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
                 'entries.*.child_n_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
