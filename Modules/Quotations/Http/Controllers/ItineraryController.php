@@ -7,10 +7,13 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\View;
 use Illuminate\Validation\Validator as ValidationValidator;
+use Modules\Quotations\Emails\ShareItineraryMail;
 use Modules\Quotations\Entities\Itinerary;
 use Modules\Quotations\Entities\ItineraryEntry;
 use Modules\Quotations\Entities\PricingSnapshot;
@@ -21,16 +24,13 @@ use Modules\Settings\Entities\Enquiry;
 use Modules\Settings\Entities\Hotel;
 use Modules\Settings\Entities\Room;
 use Modules\Settings\Entities\Transfer;
-use \Mpdf\Mpdf as PDF;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\Mail;
-use Modules\Quotations\Emails\ShareItineraryMail;
+use Mpdf\Mpdf as PDF;
 
 class ItineraryController extends BaseController
 {
     /**
      * Display a listing of the resource.
+     *
      * @return JsonResponse
      */
     public function index(Request $request)
@@ -47,17 +47,18 @@ class ItineraryController extends BaseController
             }
 
             if (request()->has('package_name')) {
-                $itinerary = $itinerary->where('package_name', 'LIKE','%'.$request->package_name.'%');
+                $itinerary = $itinerary->where('package_name', 'LIKE', '%'.$request->package_name.'%');
             }
-            
+
             $itinerary = $itinerary->latest()->get();
+
             return $this->sendResponse(ItineraryResource::collection($itinerary), 'All Itineraries Fetched', 200);
         } catch (Exception $exception) {
             return $this->HandleException($exception);
         }
     }
 
-    public function requestValidator($requestData, string|null $id = null): ValidationValidator
+    public function requestValidator($requestData, string $id = null): ValidationValidator
     {
         $rules =
             [
@@ -84,7 +85,6 @@ class ItineraryController extends BaseController
                 'entries.*.single_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
                 'entries.*.double_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
                 'entries.*.triple_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
-                'entries.*.quad_count' => 'nullable|gte:0',
                 'entries.*.extra_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
                 'entries.*.child_w_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
                 'entries.*.child_n_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
@@ -117,7 +117,6 @@ class ItineraryController extends BaseController
                 'entries.*.single_count' => 'Single Count',
                 'entries.*.double_count' => 'Double Count',
                 'entries.*.triple_count' => 'Triple Count',
-                'entries.*.quad_count' => 'Quad Count',
                 'entries.*.extra_count' => 'Extra Count',
                 'entries.*.child_w_count' => 'Child W Count',
                 'entries.*.child_n_count' => 'Child N Count',
@@ -141,7 +140,7 @@ class ItineraryController extends BaseController
 
     /**
      * Store a newly created resource in storage.
-     * @param Request $request
+     *
      * @return JsonResponse
      */
     public function store(Request $request)
@@ -152,26 +151,28 @@ class ItineraryController extends BaseController
             $itinerary = $this->process($request->all());
 
             // Initialise version tracking for new itineraries
-            if (!$itinerary->parent_itinerary_id) {
+            if (! $itinerary->parent_itinerary_id) {
                 $itinerary->parent_itinerary_id = $itinerary->id;
-                $itinerary->version    = 1;
+                $itinerary->version = 1;
                 $itinerary->is_current = true;
                 $itinerary->save();
             }
 
             DB::commit();
+
             return $this->sendResponse(ItineraryResource::make($itinerary), 'Itinerary created Successfully', 201);
         } catch (Exception $exception) {
             DB::rollBack();
+
             return $this->HandleException($exception);
         }
     }
 
-    public function process($requestData, string|null $id = null)
+    public function process($requestData, string $id = null)
     {
 
         if (auth()->check()) {
-            if (!$id) {
+            if (! $id) {
                 $requestData['created_by'] = auth()->id();
             }
             $requestData['updated_by'] = auth()->id();
@@ -199,23 +200,21 @@ class ItineraryController extends BaseController
                 $entryData['single_count'] = $entry['single_count'];
                 $entryData['double_count'] = $entry['double_count'];
                 $entryData['triple_count'] = $entry['triple_count'];
-                $entryData['quad_count'] = $entry['quad_count'];
                 $entryData['extra_count'] = $entry['extra_count'];
                 $entryData['child_w_count'] = $entry['child_w_count'];
                 $entryData['child_n_count'] = $entry['child_n_count'];
                 $entryData['no_of_person'] = $entry['no_of_person'];
 
-                // set pricing 
+                // set pricing
                 $room = Room::findOrFail($entry['room_id']);
                 $singlePrice = $entry['single_count'] * $room->single_bed_amount;
                 $doublePrice = $entry['double_count'] * $room->double_bed_amount;
                 $triplePrice = $entry['triple_count'] * $room->triple_bed_amount;
-                $quadPrice = $entry['quad_count'] * $room->quad_bed_amount;
                 $extraPrice = $entry['extra_count'] * $room->extra_bed_amount;
                 $childWPrice = $entry['child_w_count'] * $room->child_w_bed_amount;
                 $childNPrice = $entry['child_n_count'] * $room->child_n_bed_amount;
 
-                $entryData['amount'] = $singlePrice + $doublePrice + $triplePrice + $quadPrice + $extraPrice + $childWPrice + $childNPrice;
+                $entryData['amount'] = $singlePrice + $doublePrice + $triplePrice + $extraPrice + $childWPrice + $childNPrice;
             } elseif ($entry['entry_type'] == 'ACTIVITY') {
 
                 $entryData['description'] = $entry['description'];
@@ -270,7 +269,6 @@ class ItineraryController extends BaseController
             $entryData['subject_id'] = $entry['subject_id'];
             $entryData['sub_destination_id'] = $entry['sub_destination_id'];
 
-
             $itineraryEntry = ItineraryEntry::updateOrCreate(['id' => $entry['id'] ?? null], $entryData);
 
             $savedItems[] = $itineraryEntry;
@@ -283,13 +281,15 @@ class ItineraryController extends BaseController
 
     /**
      * Show the specified resource.
-     * @param int $id
+     *
+     * @param  int  $id
      * @return JsonResponse
      */
     public function show($id)
     {
         try {
             $itinerary = Itinerary::findOrFail($id);
+
             return $this->sendResponse(ItineraryResource::make($itinerary), 'Itinerary fetched Successfully', 200);
         } catch (Exception $exception) {
             return $this->HandleException($exception);
@@ -298,8 +298,8 @@ class ItineraryController extends BaseController
 
     /**
      * Update the specified resource in storage.
-     * @param Request $request
-     * @param int $id
+     *
+     * @param  int  $id
      * @return JsonResponse
      */
     public function update(Request $request, $id)
@@ -314,16 +314,19 @@ class ItineraryController extends BaseController
 
             $itinerary = $this->process($request->all(), $id);
             DB::commit();
+
             return $this->sendResponse(ItineraryResource::make($itinerary), 'Itinerary updated Successfully', 200);
         } catch (Exception $exception) {
             DB::rollBack();
+
             return $this->HandleException($exception);
         }
     }
 
     /**
      * Remove the specified resource from storage.
-     * @param int $id
+     *
+     * @param  int  $id
      * @return JsonResponse
      */
     public function destroy($id)
@@ -335,16 +338,19 @@ class ItineraryController extends BaseController
             Itinerary::where('id', $id)->delete();
 
             DB::commit();
+
             return $this->sendResponse([], 'Itinerary deleted Successfully', 200);
         } catch (Exception $exception) {
             DB::rollBack();
+
             return $this->HandleException($exception);
         }
     }
 
     /**
      * get pricing the specified resource.
-     * @param int $id
+     *
+     * @param  int  $id
      * @return JsonResponse
      */
     // public function pricing($id)
@@ -400,10 +406,10 @@ class ItineraryController extends BaseController
     //     }
     // }
 
-
     /**
      * Set Pricing the specified resource.
-     * @param int $id
+     *
+     * @param  int  $id
      * @return JsonResponse
      */
     public function setPricing(Request $request, $id)
@@ -438,9 +444,9 @@ class ItineraryController extends BaseController
             ])->validate();
 
             foreach ($request->entries as $key => $entryData) {
-                $entry = ItineraryEntry::findOrFail($entryData["id"]);
-                $entry->amount = $entryData["amount"];
-                $entry->markup = $entryData["markup"];
+                $entry = ItineraryEntry::findOrFail($entryData['id']);
+                $entry->amount = $entryData['amount'];
+                $entry->markup = $entryData['markup'];
                 $entry->save();
             }
 
@@ -500,9 +506,11 @@ class ItineraryController extends BaseController
             ]);
 
             DB::commit();
+
             return $this->sendResponse(ItineraryResource::make($itinerary), 'Itinerary Prices Successfully fetched', 200);
         } catch (Exception $exception) {
             DB::rollBack();
+
             return $this->HandleException($exception);
         }
     }
@@ -523,7 +531,7 @@ class ItineraryController extends BaseController
                         'currency' => $snapshot->currency,
                         'notes' => $snapshot->notes,
                         'created_at' => $snapshot->created_at,
-                        'created_by' => $snapshot->creator ? trim($snapshot->creator->first_name . ' ' . $snapshot->creator->last_name) : null,
+                        'created_by' => $snapshot->creator ? trim($snapshot->creator->first_name.' '.$snapshot->creator->last_name) : null,
                         'snapshot_data' => $snapshot->snapshot_data,
                     ];
                 });
@@ -547,18 +555,13 @@ class ItineraryController extends BaseController
                 ? json_decode($snapshot->snapshot_data, true)
                 : $snapshot->snapshot_data;
 
-            if (!$data || !isset($data['entries']) || !isset($data['itinerary'])) {
+            if (! $data || ! isset($data['entries']) || ! isset($data['itinerary'])) {
                 return $this->sendError('Invalid snapshot data', [], 422);
             }
 
             // Restore entry amounts & markup
             foreach ($data['entries'] as $entryData) {
                 $entry = ItineraryEntry::find($entryData['id']);
-                $isSharing = (
-                    $entry->double_count > 0 ||
-                    $entry->triple_count > 0 ||
-                    $entry->quad_count > 0
-                );
                 if ($entry) {
                     $entry->amount = $entryData['amount'];
                     $entry->markup = $entryData['markup'];
@@ -611,6 +614,7 @@ class ItineraryController extends BaseController
             $selected->save();
 
             DB::commit();
+
             return $this->sendResponse(
                 ItineraryResource::make($selected->fresh()),
                 'Version set as current successfully',
@@ -618,16 +622,17 @@ class ItineraryController extends BaseController
             );
         } catch (Exception $exception) {
             DB::rollBack();
+
             return $this->HandleException($exception);
         }
     }
 
-    public function print(String $id)
+    public function print(string $id)
     {
         $itinerary = Itinerary::findOrFail($id);
 
         // Generate a unique filename to prevent browser caching
-        $documentFileName = "itinerary_" . $itinerary->id . "_" . time() . ".pdf";
+        $documentFileName = 'itinerary_'.$itinerary->id.'_'.time().'.pdf';
 
         // Create the mPDF document
         $document = new PDF([
@@ -651,7 +656,7 @@ class ItineraryController extends BaseController
         // Send the PDF as a response with cache-busting headers
         return response($document->Output($documentFileName, \Mpdf\Output\Destination::STRING_RETURN))
             ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'inline; filename="' . $documentFileName . '"')
+            ->header('Content-Disposition', 'inline; filename="'.$documentFileName.'"')
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
             ->header('Pragma', 'no-cache')
             ->header('Expires', '0');
@@ -659,10 +664,10 @@ class ItineraryController extends BaseController
 
     /**
      * Preview HTML response for Email Sharing
-     * @param String $id
+     *
      * @return JsonResponse
      */
-    public function previewHtml(Request $request, String $id)
+    public function previewHtml(Request $request, string $id)
     {
         try {
             $itinerary = Itinerary::findOrFail($id);
@@ -692,19 +697,18 @@ class ItineraryController extends BaseController
     {
         $ends = ['th', 'st', 'nd', 'rd', 'th', 'th', 'th', 'th', 'th', 'th'];
         if ((($number % 100) >= 11) && (($number % 100) <= 13)) {
-            return $number . 'th';
+            return $number.'th';
         } else {
-            return $number . $ends[$number % 10];
+            return $number.$ends[$number % 10];
         }
     }
 
     /**
      * Preview WhatsApp response
-     * @param Request $request
-     * @param String $id
+     *
      * @return JsonResponse
      */
-    public function previewWhatsapp(Request $request, String $id)
+    public function previewWhatsapp(Request $request, string $id)
     {
         try {
             $itinerary = Itinerary::with(['enquiry', 'destination', 'entries'])->findOrFail($id);
@@ -719,17 +723,17 @@ class ItineraryController extends BaseController
             $nightsCount = $startDate->diffInDays($endDate);
             $daysCount = $nightsCount + 1;
 
-            $text = "Hi " . ($enquiry->customer_name ?? 'Customer') . ",\n\n";
+            $text = 'Hi '.($enquiry->customer_name ?? 'Customer').",\n\n";
             $text .= "Greetings from *TIC Tours.*\n\n";
             $text .= "Thank you for your query with us. As per your requirements, following are the package details.\n\n";
 
-            $text .= "*Trip ID " . ($enquiry->ref_no ?? $itinerary->seq ?? $itinerary->id) . "*\n";
+            $text .= '*Trip ID '.($enquiry->ref_no ?? $itinerary->seq ?? $itinerary->id)."*\n";
             $text .= "----------\n";
-            $text .= "*" . ($itinerary->package_name ?? 'Package') . "*\n";
-            $text .= "• *" . $startDate->format('d M Y') . "* _for_ *{$nightsCount} Nights, {$daysCount} Days*\n";
-            $text .= "• *" . $itinerary->adult_count . " Adults*" . ($itinerary->child_count > 0 ? " and " . $itinerary->child_count . " Child" : "") . "\n\n";
+            $text .= '*'.($itinerary->package_name ?? 'Package')."*\n";
+            $text .= '• *'.$startDate->format('d M Y')."* _for_ *{$nightsCount} Nights, {$daysCount} Days*\n";
+            $text .= '• *'.$itinerary->adult_count.' Adults*'.($itinerary->child_count > 0 ? ' and '.$itinerary->child_count.' Child' : '')."\n\n";
 
-            if (!$hideTotalPrice) {
+            if (! $hideTotalPrice) {
                 // ── Resolve currency and grand total ──
                 // Step 1: Try to get currency from quoted_options JSON (most accurate — matches UI)
                 $currencyCode = 'USD';
@@ -740,7 +744,7 @@ class ItineraryController extends BaseController
 
                 if ($itinerary->quoted_options) {
                     $quotedOptions = is_string($itinerary->quoted_options) ? json_decode($itinerary->quoted_options, true) : $itinerary->quoted_options;
-                    if (is_array($quotedOptions) && !empty($quotedOptions)) {
+                    if (is_array($quotedOptions) && ! empty($quotedOptions)) {
                         $firstOption = $quotedOptions[0];
                         // Currency from quoted_options (this is the converted/display currency from UI)
                         $currencyCode = $firstOption['currencyCode'] ?? $currencyCode;
@@ -786,16 +790,16 @@ class ItineraryController extends BaseController
                             $perPerson = $rowTotal / $count;
                         }
 
-                        $isSharing = (stripos($label, 'double') !== false || stripos($label, 'triple') !== false || stripos($label, 'quad') !== false);
+                        $isDoubleOrTriple = (stripos($label, 'double') !== false || stripos($label, 'triple') !== false);
 
-                        if ($isSharing && $isPERMode) {
+                        if ($isDoubleOrTriple && $isPERMode) {
                             // Show per-person rate for sharing types
-                            $countSuffix = $count > 1 ? " x {$count}" : "";
-                            $text .= "• *{$label}*\t\t{$currencySymbol} " . number_format($perPerson, 2) . $countSuffix . "\n";
+                            $countSuffix = $count > 1 ? " x {$count}" : '';
+                            $text .= "• *{$label}*\t\t{$currencySymbol} ".number_format($perPerson, 2).$countSuffix."\n";
                         } else {
                             // Show total for this person type
-                            $countSuffix = $count > 1 ? " x {$count}" : "";
-                            $text .= "• *{$label}*\t\t- {$currencySymbol} " . number_format($rowTotal, 2) . $countSuffix . "\n";
+                            $countSuffix = $count > 1 ? " x {$count}" : '';
+                            $text .= "• *{$label}*\t\t- {$currencySymbol} ".number_format($rowTotal, 2).$countSuffix."\n";
                         }
                     }
                 } else {
@@ -820,9 +824,9 @@ class ItineraryController extends BaseController
                         $room = \Modules\Settings\Entities\Room::find($entry->room_id);
                         $hotelName = $hotel ? $hotel->name : 'Hotel';
                         $location = $entry->sub_destination_id ? (\Modules\Settings\Entities\SubDestination::find($entry->sub_destination_id)->name ?? 'Destination') : 'Destination';
-                        
-                        $nightsKey = $hotelName . '-' . $location;
-                        if (!isset($groupedHotels[$nightsKey])) {
+
+                        $nightsKey = $hotelName.'-'.$location;
+                        if (! isset($groupedHotels[$nightsKey])) {
                             $groupedHotels[$nightsKey] = [
                                 'name' => $hotelName,
                                 'location' => $location,
@@ -831,7 +835,7 @@ class ItineraryController extends BaseController
                                 'checkOut' => Carbon::parse($entry->date)->addDay(),
                                 'room' => $room ? $room->name : 'Room',
                                 'meal' => 'Bed and Breakfast', // Default or fetch if available
-                                'pax' => $itinerary->adult_count
+                                'pax' => $itinerary->adult_count,
                             ];
                         }
                         $groupedHotels[$nightsKey]['nights'][] = $index + 1;
@@ -840,10 +844,10 @@ class ItineraryController extends BaseController
 
                     foreach ($groupedHotels as $h) {
                         $nightOrdinals = array_map([$this, 'getOrdinal'], $h['nights']);
-                        $nightStr = implode(', ', $nightOrdinals) . (count($h['nights']) > 1 ? " Nights" : " Night");
-                        
+                        $nightStr = implode(', ', $nightOrdinals).(count($h['nights']) > 1 ? ' Nights' : ' Night');
+
                         $text .= "*{$nightStr}* _at_ *{$h['location']}*\n";
-                        $text .= "_Check-in: " . $h['checkIn']->format('d M') . "_ & _Check-out: " . $h['checkOut']->format('d M') . "_\n";
+                        $text .= '_Check-in: '.$h['checkIn']->format('d M').'_ & _Check-out: '.$h['checkOut']->format('d M')."_\n";
                         $text .= "*{$h['name']}*\n";
                         $roomCount = ceil($h['pax'] / 2);
                         $text .= "Option 1 • {$roomCount} {$h['room']} ({$h['pax']} Pax)\n\n";
@@ -858,13 +862,13 @@ class ItineraryController extends BaseController
                     $dayNum = 1;
                     foreach ($entriesByDate as $date => $dayEntries) {
                         $carbonDate = Carbon::parse($date);
-                        $text .= "*" . $this->getOrdinal($dayNum) . " Day - " . $carbonDate->format('D, d M y') . "*\n";
-                        
+                        $text .= '*'.$this->getOrdinal($dayNum).' Day - '.$carbonDate->format('D, d M y')."*\n";
+
                         foreach ($dayEntries as $entry) {
                             if ($entry->entry_type === 'ACTIVITY') {
                                 $text .= "• {$entry->description} - Tour _({$itinerary->adult_count} Adults)_\n";
                             } elseif ($entry->entry_type === 'TRANSFER') {
-                                $text .= "• TRANSFER " . ($entry->transfer_type ?? 'Private') . " - Meals/Transit _({$itinerary->adult_count} Adults)_\n";
+                                $text .= '• TRANSFER '.($entry->transfer_type ?? 'Private')." - Meals/Transit _({$itinerary->adult_count} Adults)_\n";
                             }
                         }
                         $text .= "\n";
@@ -889,8 +893,8 @@ class ItineraryController extends BaseController
 
     /**
      * Share via Email.
-     * @param Request $request
-     * @param int $id
+     *
+     * @param  int  $id
      * @return JsonResponse
      */
     public function shareEmail(Request $request, $id)
