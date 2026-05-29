@@ -4,58 +4,52 @@ namespace Modules\Settings\Http\Controllers;
 
 use App\Http\Controllers\BaseController;
 use Exception;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Validator as ValidationValidator;
 use Modules\Settings\Entities\Draft;
 use Modules\Settings\Entities\Hotel;
-use Modules\Settings\Entities\HotelAmenity;
-use Modules\Settings\Entities\MealPlan;
 use Modules\Settings\Entities\Room;
-use Modules\Settings\Entities\RoomAmenity;
 use Modules\Settings\Entities\RoomMealPlanEntry;
 use Modules\Settings\Transformers\HotelResource;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-
 class HotelsController extends BaseController
 {
-
     public function index(Request $request)
     {
         try {
             $query = Hotel::query();
 
-            if($request->sub_destination_id){
-                $query = $query->where('sub_destination_id',$sub_destination_id);
+            if ($request->sub_destination_id) {
+                $query = $query->where('sub_destination_id', $sub_destination_id);
             }
 
             $hotels = $query->latest()->get();
+
             return $this->sendResponse(HotelResource::collection($hotels), 'All Hotel Fetched', 200);
         } catch (Exception $exception) {
             return $this->HandleException($exception);
         }
     }
 
-    public function requestValidator($requestData, string|null $id = null): ValidationValidator
+    public function requestValidator($requestData, string $id = null): ValidationValidator
     {
         $rules =
             [
                 'draft_id' => 'nullable|exists:drafts,id,deleted_at,NULL',
 
-                'name' => 'required|unique:hotels,name,' . $id . ',id,deleted_at,NULL',
+                'name' => 'required|unique:hotels,name,'.$id.',id,deleted_at,NULL',
                 'destination_id' => 'required|exists:destinations,id,deleted_at,NULL',
                 'sub_destination_id' => 'required|exists:sub_destinations,id,deleted_at,NULL',
                 'place' => 'required|string',
                 'category_id' => 'required|exists:categories,id,deleted_at,NULL',
                 'property_type_id' => 'required|exists:property_types,id,deleted_at,NULL',
                 'sales_email' => 'required|email',
-                'contact_no' => 'nullable|unique:hotels,contact_no,' . $id . ',id,deleted_at,NULL',
+                'contact_no' => 'nullable|unique:hotels,contact_no,'.$id.',id,deleted_at,NULL',
                 'reservation_no' => 'nullable',
                 'reservation_email' => 'nullable|email',
                 'phone_number' => 'required',
@@ -69,7 +63,7 @@ class HotelsController extends BaseController
                 'rooms.*.double_bed_amount' => 'required|gte:0',
                 'rooms.*.is_triple_bed_available' => 'required|boolean',
                 'rooms.*.triple_bed_amount' => 'required_if:rooms.*.is_triple_bed_available,1|gte:0',
-                'rooms.*.is_quad_bed_available' => 'nullable|boolean',
+                'rooms.*.is_quad_bed_available' => 'required|boolean',
                 'rooms.*.quad_bed_amount' => 'required_if:rooms.*.is_quad_bed_available,1|gte:0',
                 'rooms.*.is_extra_bed_available' => 'required|boolean',
                 'rooms.*.extra_bed_amount' => 'required_if:rooms.*.is_extra_bed_available,1|gte:0',
@@ -102,7 +96,6 @@ class HotelsController extends BaseController
 
         $rules['rooms.*.images'] = 'nullable|array';
         $rules['rooms.*.images.*'] = 'nullable|image|mimes:jpeg,jpg,png|max:2000';
-
 
         return Validator::make($requestData, $rules)->setAttributeNames(
             [
@@ -142,7 +135,7 @@ class HotelsController extends BaseController
         );
     }
 
-    public function process($requestData, string|null $id = null)
+    public function process($requestData, string $id = null)
     {
         // data spliting up
         $roomData = $requestData['rooms'];
@@ -165,7 +158,7 @@ class HotelsController extends BaseController
         $hotel = Hotel::updateOrcreate(['id' => $id], $hotelData);
 
         // document 1
-        if (!empty($document1)) {
+        if (! empty($document1)) {
             $hotel->addMediaFromRequest('document_1')->toMediaCollection('hotel-profile-images');
         }
 
@@ -208,18 +201,16 @@ class HotelsController extends BaseController
             unset($room['meal_plans'], $room['amenities'], $room['images']);
 
             $room['hotel_id'] = $hotel->id;
-            $room['is_quad_bed_available'] = $room['is_quad_bed_available'] ?? false;
             // $room = Room::updateOrcreate(['id' => $room['id'] ?? null], $room);
             // $room = $this->updateOrCreate(new Room(), [$room], 'hotel_id', $hotel->id, true)[0];
             $savedObjects[] = $room = Room::updateOrCreate(['id' => $room['id'] ?? null], $room);
 
             // store room images
-            if (!empty($imagesData)) {
+            if (! empty($imagesData)) {
                 foreach ($imagesData as $key => $media) {
                     $room->addMedia($media)->toMediaCollection('room-images');
                 }
             }
-
 
             // sync meal plans
             $mealPlans = [];
@@ -231,9 +222,9 @@ class HotelsController extends BaseController
                 //     'id' => Str::uuid()->toString(),
                 // ];
                 $mealPlan = new RoomMealPlanEntry;
-                $mealPlan->room_id =  $room->id;
-                $mealPlan->meal_plan_id =  $meal['id'];
-                $mealPlan->amount =  $meal['amount'];
+                $mealPlan->room_id = $room->id;
+                $mealPlan->meal_plan_id = $meal['id'];
+                $mealPlan->amount = $meal['amount'];
                 $mealPlan->save();
             }
             // $room->meal_plans()->saveMany($mealPlans);
@@ -260,6 +251,7 @@ class HotelsController extends BaseController
         DB::commit();
 
         $hotel = Hotel::with('rooms.media')->find($hotel->id);
+
         return $hotel;
     }
 
@@ -269,36 +261,38 @@ class HotelsController extends BaseController
         try {
             $this->requestValidator($request->all())->validate();
             $hotel = $this->process($request->all());
+
             return $this->sendResponse(HotelResource::make($hotel), 'Hotel created Successfully', 201);
         } catch (Exception $exception) {
             DB::rollBack();
+
             return $this->HandleException($exception);
         }
     }
 
-
-
     /**
      * Show the specified resource.
-     * @param int $id
+     *
+     * @param  int  $id
      * @return JsonResponse
      */
     public function show($id)
     {
         try {
             $hotel = Hotel::with('rooms.media')->findOrFail($id);
+
             return $this->sendResponse(HotelResource::make($hotel), 'Hotel Fetched', 200);
         } catch (Exception $exception) {
             return $this->HandleException($exception);
         }
     }
 
-
     public function update(Request $request, $id)
     {
         try {
             $this->requestValidator($request->all(), $id)->validate();
             $hotel = $this->process($request->all(), $id);
+
             return $this->sendResponse(HotelResource::make($hotel), 'Hotel Updated', 200);
         } catch (Exception $exception) {
             return $this->HandleException($exception);
@@ -307,13 +301,15 @@ class HotelsController extends BaseController
 
     /**
      * Remove the specified resource from storage.
-     * @param int $id
+     *
+     * @param  int  $id
      * @return JsonResponse
      */
     public function destroy($id)
     {
         try {
             Hotel::findOrFail($id)->delete();
+
             return $this->sendResponse([], 'Hotel Deleted Successfully', 200);
         } catch (Exception $exception) {
             return $this->HandleException($exception);
@@ -321,18 +317,16 @@ class HotelsController extends BaseController
     }
 
     public function deleteImage($id)
-{
-    try {
-        $media = Media::findOrFail($id);
+    {
+        try {
+            $media = Media::findOrFail($id);
 
-        $media->delete();
+            $media->delete();
 
-        return $this->sendResponse([], 'Image deleted successfully', 200);
+            return $this->sendResponse([], 'Image deleted successfully', 200);
 
-    } catch (\Exception $exception) {
-        return $this->HandleException($exception);
+        } catch (\Exception $exception) {
+            return $this->HandleException($exception);
+        }
     }
-}
-
-
 }
