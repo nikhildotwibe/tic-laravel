@@ -69,7 +69,7 @@ class HotelsController extends BaseController
                 'rooms.*.double_bed_amount' => 'required|gte:0',
                 'rooms.*.is_triple_bed_available' => 'required|boolean',
                 'rooms.*.triple_bed_amount' => 'required_if:rooms.*.is_triple_bed_available,1|gte:0',
-                'rooms.*.is_quad_bed_available' => 'required|boolean',
+                'rooms.*.is_quad_bed_available' => 'nullable|boolean',
                 'rooms.*.quad_bed_amount' => 'required_if:rooms.*.is_quad_bed_available,1|gte:0',
                 'rooms.*.is_extra_bed_available' => 'required|boolean',
                 'rooms.*.extra_bed_amount' => 'required_if:rooms.*.is_extra_bed_available,1|gte:0',
@@ -208,6 +208,7 @@ class HotelsController extends BaseController
             unset($room['meal_plans'], $room['amenities'], $room['images']);
 
             $room['hotel_id'] = $hotel->id;
+            $room['is_quad_bed_available'] = $room['is_quad_bed_available'] ?? false;
             // $room = Room::updateOrcreate(['id' => $room['id'] ?? null], $room);
             // $room = $this->updateOrCreate(new Room(), [$room], 'hotel_id', $hotel->id, true)[0];
             $savedObjects[] = $room = Room::updateOrCreate(['id' => $room['id'] ?? null], $room);
