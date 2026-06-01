@@ -525,28 +525,31 @@
                 @php break; @endphp {{-- Only show first option's inclusions --}}
             @endforeach
 
-            {{-- List transfers and activities day-wise --}}
+            {{-- List transfers and activities day-wise — combined in schedule order (by entry id) --}}
             @foreach ($uniqueDates as $idx => $date)
                 @php
-                    $dayTransfers = $itinerary->entries->where('date', $date)->where('entry_type', 'TRANSFER');
-                    $dayActivities = $itinerary->entries->where('date', $date)->where('entry_type', 'ACTIVITY');
+                    $dayEntries = $itinerary->entries
+                        ->where('date', $date)
+                        ->whereIn('entry_type', ['TRANSFER', 'ACTIVITY'])
+                        ->sortBy('id');
+                    $hasItems = $dayEntries->count() > 0;
                 @endphp
-                @if($dayTransfers->count() > 0 || $dayActivities->count() > 0)
+                @if($hasItems)
                     <li style="list-style:none; margin-left:-15px; margin-top:8px; margin-bottom:2px;">
                         <strong>Day {{ $idx + 1 }} ({{ date('d M', strtotime($date)) }})</strong>
                     </li>
-                    @foreach ($dayTransfers as $transferEntry)
-                        @php
-                            $transfer = Modules\Settings\Entities\Transfer::find($transferEntry->subject_id);
-                            $transferType = $transferEntry->transfer_type == 'PRIVATE' ? 'PVT' : 'SIC';
-                        @endphp
-                        <li>{{ optional($transfer)->vehicle_name ?? optional($transfer)->description ?? 'Transfer' }} by {{ $transferType }}</li>
-                    @endforeach
-                    @foreach ($dayActivities as $activityEntry)
-                        @php
-                            $activity = Modules\Settings\Entities\Activity::find($activityEntry->subject_id);
-                        @endphp
-                        <li>{{ optional($activity)->activity_name }}</li>
+                    @foreach ($dayEntries as $entry)
+                        @if($entry->entry_type == 'TRANSFER')
+                            @php
+                                $transfer = Modules\Settings\Entities\Transfer::find($entry->subject_id);
+                            @endphp
+                            <li>{{ optional($transfer)->vehicle_name ?? optional($transfer)->description ?? 'Transfer' }}</li>
+                        @elseif($entry->entry_type == 'ACTIVITY')
+                            @php
+                                $activity = Modules\Settings\Entities\Activity::find($entry->subject_id);
+                            @endphp
+                            <li>{{ optional($activity)->activity_name }}</li>
+                        @endif
                     @endforeach
                 @endif
             @endforeach
