@@ -546,7 +546,7 @@
                         @php
                             $activity = Modules\Settings\Entities\Activity::find($activityEntry->subject_id);
                         @endphp
-                        <li>{{ optional($activity)->activity_name }}{{ $activityEntry->description ? ' - ' . $activityEntry->description : '' }}</li>
+                        <li>{{ optional($activity)->activity_name }}</li>
                     @endforeach
                 @endif
             @endforeach
@@ -567,20 +567,13 @@
                     $dateFormatted = date('d M', strtotime($date));
 
                     $visibleItems = [];
-                    $activityDescriptions = [];
                     foreach ($dayEntries as $item) {
                         if ($item->entry_type == 'TRANSFER') {
                             $sub = Modules\Settings\Entities\Transfer::find($item->subject_id);
                             $visibleItems[] = optional($sub)->vehicle_name ?? optional($sub)->description ?? 'Transfer';
                         } elseif ($item->entry_type == 'ACTIVITY') {
                             $sub = Modules\Settings\Entities\Activity::find($item->subject_id);
-                            $name = trim(optional($sub)->activity_name ?? 'Activity');
-                            $visibleItems[] = $name;
-                            // Collect the activity's own description to display below the day line
-                            $actDesc = trim(optional($sub)->description ?? '');
-                            if ($actDesc) {
-                                $activityDescriptions[] = $actDesc;
-                            }
+                            $visibleItems[] = trim(optional($sub)->activity_name ?? 'Activity');
                         }
                     }
                 @endphp
@@ -588,11 +581,6 @@
                     <div style="margin-bottom: 8px;">
                         <span class="day-header">Day {{ $key + 1 }} ({{ $dateFormatted }}):</span>
                         <span>{{ implode(' → ', $visibleItems) }}</span>
-                        @foreach($activityDescriptions as $actDesc)
-                            <div style="margin-left: 20px; margin-top: 3px; font-style: italic; color: #666; line-height: 1.5;">
-                                {{ $actDesc }}
-                            </div>
-                        @endforeach
                     </div>
                 @endif
             @endforeach
