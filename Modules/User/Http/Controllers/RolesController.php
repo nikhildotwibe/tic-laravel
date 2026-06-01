@@ -68,10 +68,9 @@ class RolesController extends BaseController
 
 
             $rolePermissions = [];
-            if (!empty($request->input('permissions'))) {
-                foreach ($request->input('permissions') as $permission) {
-                    $rolePermissions[] = ['permission_id' => $permission, 'id' => Str::uuid()->toString()];
-                }
+            $permissions = array_filter($request->input('permissions', []), fn($p) => !is_null($p));
+            foreach ($permissions as $permission) {
+                $rolePermissions[] = ['permission_id' => $permission, 'id' => Str::uuid()->toString()];
             }
 
             $role->permissions()->sync($rolePermissions);
@@ -125,10 +124,9 @@ class RolesController extends BaseController
             $role->update();
 
             $rolePermissions = [];
-            if (!empty($request->input('permissions'))) {
-                foreach ($request->input('permissions') as $permission) {
-                    $rolePermissions[] = ['permission_id' => $permission, 'id' => Str::uuid()->toString()];
-                }
+            $permissions = array_filter($request->input('permissions', []), fn($p) => !is_null($p));
+            foreach ($permissions as $permission) {
+                $rolePermissions[] = ['permission_id' => $permission, 'id' => Str::uuid()->toString()];
             }
 
             $role->permissions()->sync($rolePermissions);
