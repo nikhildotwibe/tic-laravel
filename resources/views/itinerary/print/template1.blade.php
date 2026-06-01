@@ -364,11 +364,12 @@
             <table class="hotel-table">
                 <thead>
                     <tr>
-                        <th width="18%">City/Place</th>
-                        <th width="30%">Hotel name</th>
-                        <th width="15%">No of Nights</th>
-                        <th width="18%">Room Type</th>
-                        <th width="19%">Meals Plan</th>
+                        <th width="15%">City/Place</th>
+                        <th width="28%">Hotel name</th>
+                        <th width="10%">No of Nights</th>
+                        <th width="15%">Room Type</th>
+                        <th width="16%">Check In</th>
+                        <th width="16%">Check Out</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -383,25 +384,18 @@
                             $hotelEnd = Carbon\Carbon::parse($hotelEntry->end_date);
                             $hotelNights = $hotelEnd->diffInDays($hotelStart);
 
-                            $mealPlanText = '';
-                            if ($room && $room->meal_plans && $room->meal_plans->count() > 0) {
-                                $mealPlanNames = $room->meal_plans->map(function ($mp) {
-                                    $plan = Modules\Settings\Entities\MealPlan::find($mp->meal_plan_id);
-                                    return $plan ? $plan->name : '';
-                                })->filter()->unique()->toArray();
-                                $mealPlanText = implode(', ', $mealPlanNames);
-                            }
-
                             $key = ($subDest->id ?? 0) . '_' . ($hotel->id ?? 0) . '_' . ($room->id ?? 0);
                             if (isset($mergedHotels[$key])) {
                                 $mergedHotels[$key]['nights'] += $hotelNights;
+                                $mergedHotels[$key]['check_out'] = $hotelEnd->format('d M Y');
                             } else {
                                 $mergedHotels[$key] = [
-                                    'city' => optional($subDest)->name ?? optional($hotel?->sub_destination)->name ?? '',
-                                    'hotel' => optional($hotel)->name ?? 'N/A',
-                                    'nights' => $hotelNights,
-                                    'room' => optional($room?->room_type)->name ?? '',
-                                    'meals' => $mealPlanText
+                                    'city'       => optional($subDest)->name ?? optional($hotel?->sub_destination)->name ?? '',
+                                    'hotel'      => optional($hotel)->name ?? 'N/A',
+                                    'nights'     => $hotelNights,
+                                    'room'       => optional($room?->room_type)->name ?? '',
+                                    'check_in'   => $hotelStart->format('d M Y'),
+                                    'check_out'  => $hotelEnd->format('d M Y'),
                                 ];
                             }
                         }
@@ -412,7 +406,8 @@
                             <td>{{ $mh['hotel'] }}</td>
                             <td>{{ $mh['nights'] }}</td>
                             <td>{{ $mh['room'] }}</td>
-                            <td>{{ $mh['meals'] }}</td>
+                            <td>{{ $mh['check_in'] }}</td>
+                            <td>{{ $mh['check_out'] }}</td>
                         </tr>
                     @endforeach
                 </tbody>
