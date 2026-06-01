@@ -56,7 +56,7 @@ class RolesController extends BaseController
                 'name' => 'required|unique:roles,name,NULL,id,deleted_at,NULL',
                 'description' => 'nullable|max:300',
                 'is_active' => 'nullable|boolean',
-                'permissions.*' => 'nullable|exists:permissions,id|distinct',
+                'permissions.*' => 'required|exists:permissions,id|distinct',
             ])->validate();
 
             $role = new Role();
@@ -112,7 +112,7 @@ class RolesController extends BaseController
                 'description' => 'required|max:300',
                 'is_active' => 'required|boolean',
                 'sync' => 'required|boolean',
-                'permissions.*' => 'nullable|exists:permissions,id|distinct',
+                'permissions.*' => 'required|exists:permissions,id|distinct',
             ])->validate();
 
             $role = Role::findOrFail($id);
