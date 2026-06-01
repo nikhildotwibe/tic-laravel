@@ -515,7 +515,7 @@
                 @endphp
                 @foreach ($mergedHotelsList as $mhl)
                     @php $atLocation = $mhl['location'] ? " at " . $mhl['location'] : ""; @endphp
-                    <li>{{ $mhl['nights'] }} Night accommodation in {{ $mhl['room'] }} category room{{ $mhl['meals'] }}{{ $atLocation }}</li>
+                    <li>✅ {{ $mhl['nights'] }} Night accommodation in {{ $mhl['room'] }} category room{{ $mhl['meals'] }}{{ $atLocation }}</li>
                 @endforeach
                 @php break; @endphp {{-- Only show first option's inclusions --}}
             @endforeach
@@ -526,7 +526,7 @@
                     $dayEntries = $itinerary->entries
                         ->where('date', $date)
                         ->whereIn('entry_type', ['TRANSFER', 'ACTIVITY'])
-                        ->sortBy('id');
+                        ->sortBy('start_time');
                     $hasItems = $dayEntries->count() > 0;
                 @endphp
                 @if($hasItems)
@@ -538,18 +538,18 @@
                             @php
                                 $transfer = Modules\Settings\Entities\Transfer::find($entry->subject_id);
                             @endphp
-                            <li>{{ optional($transfer)->vehicle_name ?? optional($transfer)->description ?? 'Transfer' }}</li>
+                            <li>✅ {{ optional($transfer)->vehicle_name ?? optional($transfer)->description ?? 'Transfer' }}</li>
                         @elseif($entry->entry_type == 'ACTIVITY')
                             @php
                                 $activity = Modules\Settings\Entities\Activity::find($entry->subject_id);
                             @endphp
-                            <li>{{ optional($activity)->activity_name }}</li>
+                            <li>✅ {{ optional($activity)->activity_name }}</li>
                         @endif
                     @endforeach
                 @endif
             @endforeach
 
-            <li>English speaking customer service assistance</li>
+            <li>✅ English speaking customer service assistance</li>
         </ul>
 
         @if($opts['itinerary'])
@@ -561,7 +561,7 @@
         <div class="itinerary-section">
             @foreach ($uniqueDates as $key => $date)
                 @php
-                    $dayEntries = $itinerary->entries->where('date', $date);
+                    $dayEntries = $itinerary->entries->where('date', $date)->sortBy('start_time');
                     $dateFormatted = date('d M', strtotime($date));
 
                     $visibleItems = [];
