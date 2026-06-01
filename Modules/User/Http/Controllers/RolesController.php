@@ -135,8 +135,9 @@ class RolesController extends BaseController
             if ((bool) $request->input('sync')) {
                 $users = $role->users;
                 $userPermissions = [];
+                $filteredPermissions = array_filter($request->input('permissions', []), fn($p) => !is_null($p));
                 foreach ($users as $user) {
-                    foreach ($request->input('permissions') as $permission) {
+                    foreach ($filteredPermissions as $permission) {
                         $userPermissions[$user->seq][] = ['permission_id' => $permission, 'id' => Str::uuid()->toString()];
                     }
                 }
