@@ -540,7 +540,7 @@
                             $transfer = Modules\Settings\Entities\Transfer::find($transferEntry->subject_id);
                             $transferType = $transferEntry->transfer_type == 'PRIVATE' ? 'PVT' : 'SIC';
                         @endphp
-                        <li>Transfer from {{ optional($transfer)->description ?? optional($transfer)->vehicle_name }} by {{ $transferType }}</li>
+                        <li>{{ optional($transfer)->vehicle_name ?? optional($transfer)->description ?? 'Transfer' }} by {{ $transferType }}</li>
                     @endforeach
                     @foreach ($dayActivities as $activityEntry)
                         @php
