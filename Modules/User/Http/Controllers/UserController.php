@@ -99,7 +99,7 @@ class UserController extends BaseController
                 // Seed the user's personal permissions from the assigned role
                 $role = Role::find($roleID);
                 if ($role) {
-                    $rolePermissions = $role->rolesPermissions->pluck('permission_id')->filter()->values();
+                    $rolePermissions = $role->permissions()->pluck('permissions.id')->filter()->values();
                     $userPermissions = $rolePermissions->map(fn($pid) => [
                         'permission_id' => $pid,
                         'id'            => Str::uuid()->toString(),
@@ -214,7 +214,7 @@ class UserController extends BaseController
                 // Re-seed the user's personal permissions from the (possibly new) role
                 $role = Role::find($roleID);
                 if ($role) {
-                    $rolePermissions = $role->rolesPermissions->pluck('permission_id')->filter()->values();
+                    $rolePermissions = $role->permissions()->pluck('permissions.id')->filter()->values();
                     $userPermissions = $rolePermissions->map(fn($pid) => [
                         'permission_id' => $pid,
                         'id'            => Str::uuid()->toString(),
