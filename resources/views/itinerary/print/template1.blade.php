@@ -364,11 +364,12 @@
             <table class="hotel-table">
                 <thead>
                     <tr>
-                        <th width="18%">City/Place</th>
-                        <th width="30%">Hotel name</th>
-                        <th width="15%">No of Nights</th>
-                        <th width="18%">Room Type</th>
-                        <th width="19%">Meals Plan</th>
+                        <th width="15%">City/Place</th>
+                        <th width="28%">Hotel name</th>
+                        <th width="10%">No of Nights</th>
+                        <th width="15%">Room Type</th>
+                        <th width="16%">Check In</th>
+                        <th width="16%">Check Out</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -383,25 +384,18 @@
                             $hotelEnd = Carbon\Carbon::parse($hotelEntry->end_date);
                             $hotelNights = $hotelEnd->diffInDays($hotelStart);
 
-                            $mealPlanText = '';
-                            if ($room && $room->meal_plans && $room->meal_plans->count() > 0) {
-                                $mealPlanNames = $room->meal_plans->map(function ($mp) {
-                                    $plan = Modules\Settings\Entities\MealPlan::find($mp->meal_plan_id);
-                                    return $plan ? $plan->name : '';
-                                })->filter()->unique()->toArray();
-                                $mealPlanText = implode(', ', $mealPlanNames);
-                            }
-
                             $key = ($subDest->id ?? 0) . '_' . ($hotel->id ?? 0) . '_' . ($room->id ?? 0);
                             if (isset($mergedHotels[$key])) {
                                 $mergedHotels[$key]['nights'] += $hotelNights;
+                                $mergedHotels[$key]['check_out'] = $hotelEnd->format('d M Y');
                             } else {
                                 $mergedHotels[$key] = [
-                                    'city' => optional($subDest)->name ?? optional($hotel?->sub_destination)->name ?? '',
-                                    'hotel' => optional($hotel)->name ?? 'N/A',
-                                    'nights' => $hotelNights,
-                                    'room' => optional($room?->room_type)->name ?? '',
-                                    'meals' => $mealPlanText
+                                    'city'       => optional($subDest)->name ?? optional($hotel?->sub_destination)->name ?? '',
+                                    'hotel'      => optional($hotel)->name ?? 'N/A',
+                                    'nights'     => $hotelNights,
+                                    'room'       => optional($room?->room_type)->name ?? '',
+                                    'check_in'   => $hotelStart->format('d M Y'),
+                                    'check_out'  => $hotelEnd->format('d M Y'),
                                 ];
                             }
                         }
@@ -412,7 +406,8 @@
                             <td>{{ $mh['hotel'] }}</td>
                             <td>{{ $mh['nights'] }}</td>
                             <td>{{ $mh['room'] }}</td>
-                            <td>{{ $mh['meals'] }}</td>
+                            <td>{{ $mh['check_in'] }}</td>
+                            <td>{{ $mh['check_out'] }}</td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -520,38 +515,41 @@
                 @endphp
                 @foreach ($mergedHotelsList as $mhl)
                     @php $atLocation = $mhl['location'] ? " at " . $mhl['location'] : ""; @endphp
-                    <li>{{ $mhl['nights'] }} Night accommodation in {{ $mhl['room'] }} category room{{ $mhl['meals'] }}{{ $atLocation }}</li>
+                    <li>✅ {{ $mhl['nights'] }} Night accommodation in {{ $mhl['room'] }} category room{{ $mhl['meals'] }}{{ $atLocation }}</li>
                 @endforeach
                 @php break; @endphp {{-- Only show first option's inclusions --}}
             @endforeach
 
-            {{-- List transfers and activities day-wise --}}
+            {{-- List transfers and activities day-wise — combined in schedule order (by entry id) --}}
             @foreach ($uniqueDates as $idx => $date)
                 @php
-                    $dayTransfers = $itinerary->entries->where('date', $date)->where('entry_type', 'TRANSFER');
-                    $dayActivities = $itinerary->entries->where('date', $date)->where('entry_type', 'ACTIVITY');
+                    $dayEntries = $itinerary->entries
+                        ->where('date', $date)
+                        ->whereIn('entry_type', ['TRANSFER', 'ACTIVITY'])
+                        ->sortBy('start_time');
+                    $hasItems = $dayEntries->count() > 0;
                 @endphp
-                @if($dayTransfers->count() > 0 || $dayActivities->count() > 0)
+                @if($hasItems)
                     <li style="list-style:none; margin-left:-15px; margin-top:8px; margin-bottom:2px;">
                         <strong>Day {{ $idx + 1 }} ({{ date('d M', strtotime($date)) }})</strong>
                     </li>
-                    @foreach ($dayTransfers as $transferEntry)
-                        @php
-                            $transfer = Modules\Settings\Entities\Transfer::find($transferEntry->subject_id);
-                            $transferType = $transferEntry->transfer_type == 'PRIVATE' ? 'PVT' : 'SIC';
-                        @endphp
-                        <li>Transfer from {{ optional($transfer)->description ?? optional($transfer)->vehicle_name }} by {{ $transferType }}</li>
-                    @endforeach
-                    @foreach ($dayActivities as $activityEntry)
-                        @php
-                            $activity = Modules\Settings\Entities\Activity::find($activityEntry->subject_id);
-                        @endphp
-                        <li>{{ optional($activity)->activity_name }}{{ $activityEntry->description ? ' - ' . $activityEntry->description : '' }}</li>
+                    @foreach ($dayEntries as $entry)
+                        @if($entry->entry_type == 'TRANSFER')
+                            @php
+                                $transfer = Modules\Settings\Entities\Transfer::find($entry->subject_id);
+                            @endphp
+                            <li>✅ {{ optional($transfer)->vehicle_name ?? optional($transfer)->description ?? 'Transfer' }}</li>
+                        @elseif($entry->entry_type == 'ACTIVITY')
+                            @php
+                                $activity = Modules\Settings\Entities\Activity::find($entry->subject_id);
+                            @endphp
+                            <li>✅ {{ optional($activity)->activity_name }}</li>
+                        @endif
                     @endforeach
                 @endif
             @endforeach
 
-            <li>English speaking customer service assistance</li>
+            <li>✅ English speaking customer service assistance</li>
         </ul>
 
         @if($opts['itinerary'])
@@ -563,24 +561,17 @@
         <div class="itinerary-section">
             @foreach ($uniqueDates as $key => $date)
                 @php
-                    $dayEntries = $itinerary->entries->where('date', $date);
+                    $dayEntries = $itinerary->entries->where('date', $date)->sortBy('start_time');
                     $dateFormatted = date('d M', strtotime($date));
 
                     $visibleItems = [];
-                    $activityDescriptions = [];
                     foreach ($dayEntries as $item) {
                         if ($item->entry_type == 'TRANSFER') {
                             $sub = Modules\Settings\Entities\Transfer::find($item->subject_id);
                             $visibleItems[] = optional($sub)->vehicle_name ?? optional($sub)->description ?? 'Transfer';
                         } elseif ($item->entry_type == 'ACTIVITY') {
                             $sub = Modules\Settings\Entities\Activity::find($item->subject_id);
-                            $name = trim(optional($sub)->activity_name ?? 'Activity');
-                            $visibleItems[] = $name;
-                            // Collect the activity's own description to display below the day line
-                            $actDesc = trim(optional($sub)->description ?? '');
-                            if ($actDesc) {
-                                $activityDescriptions[] = $actDesc;
-                            }
+                            $visibleItems[] = trim(optional($sub)->activity_name ?? 'Activity');
                         }
                     }
                 @endphp
@@ -588,11 +579,6 @@
                     <div style="margin-bottom: 8px;">
                         <span class="day-header">Day {{ $key + 1 }} ({{ $dateFormatted }}):</span>
                         <span>{{ implode(' → ', $visibleItems) }}</span>
-                        @foreach($activityDescriptions as $actDesc)
-                            <div style="margin-left: 20px; margin-top: 3px; font-style: italic; color: #666; line-height: 1.5;">
-                                {{ $actDesc }}
-                            </div>
-                        @endforeach
                     </div>
                 @endif
             @endforeach

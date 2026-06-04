@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Modules\User\Entities\Role;
 use Modules\User\Entities\User as User;
 use Modules\User\Transformers\UserResource;
 use Illuminate\Support\Facades\DB;
@@ -94,6 +95,17 @@ class UserController extends BaseController
 
             if (!empty($roleID)) {
                 $user->roles()->sync([$roleID => ['id' => Str::uuid()->toString()]]);
+
+                // Seed the user's personal permissions from the assigned role
+                $role = Role::find($roleID);
+                if ($role) {
+                    $rolePermissions = $role->permissions()->pluck('permissions.id')->filter()->values();
+                    $userPermissions = $rolePermissions->map(fn($pid) => [
+                        'permission_id' => $pid,
+                        'id'            => Str::uuid()->toString(),
+                    ])->toArray();
+                    $user->permissions()->sync($userPermissions);
+                }
             }
 
             if ($request->hasFile('profile_picture')) {
@@ -198,6 +210,17 @@ class UserController extends BaseController
 
             if (!empty($roleID)) {
                 $user->roles()->sync([$roleID => ['id' => Str::uuid()->toString()]]);
+
+                // Re-seed the user's personal permissions from the (possibly new) role
+                $role = Role::find($roleID);
+                if ($role) {
+                    $rolePermissions = $role->permissions()->pluck('permissions.id')->filter()->values();
+                    $userPermissions = $rolePermissions->map(fn($pid) => [
+                        'permission_id' => $pid,
+                        'id'            => Str::uuid()->toString(),
+                    ])->toArray();
+                    $user->permissions()->sync($userPermissions);
+                }
             }
 
             if ($request->hasFile('profile_picture')) {

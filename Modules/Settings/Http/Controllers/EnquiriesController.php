@@ -18,9 +18,39 @@ class EnquiriesController extends BaseController
 
     public function index()
     {
-
         try {
-            $enquiry = Enquiry::latest()->get();
+            $user = auth()->user();
+
+            // Super-admin or users with no role → return all
+            $role = $user->roles()->first();
+            if (!$role) {
+                $enquiry = Enquiry::latest()->get();
+                return $this->sendResponse(EnquiryResource::collection($enquiry), 'All Enquiries Fetched', 200);
+            }
+
+            // Find the enquiry-read permission assigned to this role
+            $readPermission = $role->permissions()
+                ->where('slug', 'LIKE', 'enquiry-read-%')
+                ->first();
+
+            $slug = $readPermission ? $readPermission->slug : null;
+
+            $query = Enquiry::query();
+
+            if (!$slug || str_ends_with($slug, '-read-all')) {
+                // No filter — return everything
+            } elseif (str_ends_with($slug, '-read-added-and-assigned')) {
+                $query->where(function ($q) use ($user) {
+                    $q->where('created_by', $user->id)
+                      ->orWhere('assigned_to', $user->id);
+                });
+            } elseif (str_ends_with($slug, '-read-assigned')) {
+                $query->where('assigned_to', $user->id);
+            } elseif (str_ends_with($slug, '-read-added')) {
+                $query->where('created_by', $user->id);
+            }
+
+            $enquiry = $query->latest()->get();
             return $this->sendResponse(EnquiryResource::collection($enquiry), 'All Enquiries Fetched', 200);
         } catch (Exception $exception) {
             return $this->HandleException($exception);
