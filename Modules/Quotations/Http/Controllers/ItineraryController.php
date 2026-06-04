@@ -85,6 +85,9 @@ class ItineraryController extends BaseController
                 'entries.*.double_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
                 'entries.*.triple_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
                 'entries.*.quad_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
+                'entries.*.two_bedroom_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
+                'entries.*.three_bedroom_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
+                'entries.*.four_bedroom_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
                 'entries.*.extra_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
                 'entries.*.child_w_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
                 'entries.*.child_n_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
@@ -118,6 +121,9 @@ class ItineraryController extends BaseController
                 'entries.*.double_count' => 'Double Count',
                 'entries.*.triple_count' => 'Triple Count',
                 'entries.*.quad_count' => 'Quad Count',
+                'entries.*.two_bedroom_count' => 'Two Bedroom Count',
+                'entries.*.three_bedroom_count' => 'Three Bedroom Count',
+                'entries.*.four_bedroom_count' => 'Four Bedroom Count',
                 'entries.*.extra_count' => 'Extra Count',
                 'entries.*.child_w_count' => 'Child W Count',
                 'entries.*.child_n_count' => 'Child N Count',
@@ -200,6 +206,9 @@ class ItineraryController extends BaseController
                 $entryData['double_count'] = $entry['double_count'];
                 $entryData['triple_count'] = $entry['triple_count'];
                 $entryData['quad_count'] = $entry['quad_count'];
+                $entryData['two_bedroom_count'] = $entry['two_bedroom_count'] ?? 0;
+                $entryData['three_bedroom_count'] = $entry['three_bedroom_count'] ?? 0;
+                $entryData['four_bedroom_count'] = $entry['four_bedroom_count'] ?? 0;
                 $entryData['extra_count'] = $entry['extra_count'];
                 $entryData['child_w_count'] = $entry['child_w_count'];
                 $entryData['child_n_count'] = $entry['child_n_count'];
@@ -211,11 +220,14 @@ class ItineraryController extends BaseController
                 $doublePrice = $entry['double_count'] * $room->double_bed_amount;
                 $triplePrice = $entry['triple_count'] * $room->triple_bed_amount;
                 $quadPrice = $entry['quad_count'] * $room->quad_bed_amount;
+                $twoBedroomPrice = ($entry['two_bedroom_count'] ?? 0) * ($room->two_bedroom_amount ?? 0);
+                $threeBedroomPrice = ($entry['three_bedroom_count'] ?? 0) * ($room->three_bedroom_amount ?? 0);
+                $fourBedroomPrice = ($entry['four_bedroom_count'] ?? 0) * ($room->four_bedroom_amount ?? 0);
                 $extraPrice = $entry['extra_count'] * $room->extra_bed_amount;
                 $childWPrice = $entry['child_w_count'] * $room->child_w_bed_amount;
                 $childNPrice = $entry['child_n_count'] * $room->child_n_bed_amount;
 
-                $entryData['amount'] = $singlePrice + $doublePrice + $triplePrice + $quadPrice + $extraPrice + $childWPrice + $childNPrice;
+                $entryData['amount'] = $singlePrice + $doublePrice + $triplePrice + $quadPrice + $twoBedroomPrice + $threeBedroomPrice + $fourBedroomPrice + $extraPrice + $childWPrice + $childNPrice;
             } elseif ($entry['entry_type'] == 'ACTIVITY') {
 
                 $entryData['description'] = $entry['description'];
