@@ -564,21 +564,23 @@
                     $dayEntries = $itinerary->entries->where('date', $date)->sortBy('start_time');
                     $dateFormatted = date('d M', strtotime($date));
 
-                    $visibleItems = [];
-                    $dayDescriptions = [];
+                    // Build paired list: each item has a name and its own description
+                    $dayItems = [];
                     foreach ($dayEntries as $item) {
                         $sub = null;
+                        $itemName = '';
                         if ($item->entry_type == 'TRANSFER') {
                             $sub = Modules\Settings\Entities\Transfer::find($item->subject_id);
-                            $visibleItems[] = optional($sub)->vehicle_name ?? optional($sub)->description ?? 'Transfer';
+                            $itemName = optional($sub)->vehicle_name ?? optional($sub)->description ?? 'Transfer';
                         } elseif ($item->entry_type == 'ACTIVITY') {
                             $sub = Modules\Settings\Entities\Activity::find($item->subject_id);
-                            $visibleItems[] = trim(optional($sub)->activity_name ?? 'Activity');
+                            $itemName = trim(optional($sub)->activity_name ?? 'Activity');
                         }
 
-                        // Mirror WhatsApp logic:
-                        // 1st priority: per-entry description (text editor override saved on the entry)
-                        // 2nd priority: the Activity/Transfer subject's own description field
+                        if (!$itemName) continue;
+
+                        // 1st priority: per-entry text editor description
+                        // 2nd priority: subject's own description field
                         $entryDesc = '';
                         if (!empty($item->description)) {
                             $entryDesc = $item->description;
@@ -588,26 +590,22 @@
                             $entryDesc = $sub->description;
                         }
 
-                        if (!empty($entryDesc)) {
-                            $dayDescriptions[] = $entryDesc;
-                        }
+                        $dayItems[] = ['name' => $itemName, 'desc' => $entryDesc];
                     }
                 @endphp
-                @if(count($visibleItems) > 0 || count($dayDescriptions) > 0)
+                @if(count($dayItems) > 0)
                     <div style="margin-bottom: 10px;">
                         <span class="day-header">Day {{ $key + 1 }} ({{ $dateFormatted }}):</span>
-                        @if(count($visibleItems) > 0)
-                            <div style="margin-top: 3px; margin-left: 10px;">
-                                @foreach($visibleItems as $vi)
-                                    <div style="margin-bottom: 2px;">✓ {{ $vi }}</div>
-                                @endforeach
-                            </div>
-                        @endif
-                        @foreach($dayDescriptions as $desc)
-                            <div style="margin-top: 4px; margin-left: 10px; line-height: 1.7; text-align: justify;">
-                                › {!! $desc !!}
-                            </div>
-                        @endforeach
+                        <div style="margin-top: 3px; margin-left: 10px;">
+                            @foreach($dayItems as $di)
+                                <div style="margin-bottom: 2px;">✓ {{ $di['name'] }}</div>
+                                @if(!empty($di['desc']))
+                                    <div style="margin-bottom: 6px; margin-left: 12px; line-height: 1.7; text-align: justify; color: #555;">
+                                        › {!! $di['desc'] !!}
+                                    </div>
+                                @endif
+                            @endforeach
+                        </div>
                     </div>
                 @endif
             @endforeach
