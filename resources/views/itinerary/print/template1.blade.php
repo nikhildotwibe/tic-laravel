@@ -567,6 +567,7 @@
                     $visibleItems = [];
                     $dayDescriptions = [];
                     foreach ($dayEntries as $item) {
+                        $sub = null;
                         if ($item->entry_type == 'TRANSFER') {
                             $sub = Modules\Settings\Entities\Transfer::find($item->subject_id);
                             $visibleItems[] = optional($sub)->vehicle_name ?? optional($sub)->description ?? 'Transfer';
@@ -574,9 +575,19 @@
                             $sub = Modules\Settings\Entities\Activity::find($item->subject_id);
                             $visibleItems[] = trim(optional($sub)->activity_name ?? 'Activity');
                         }
-                        // Collect entry-level description (from text editor)
+
+                        // Mirror WhatsApp logic:
+                        // 1st priority: per-entry description (text editor override saved on the entry)
+                        // 2nd priority: the Activity/subject's own description field
+                        $entryDesc = '';
                         if (!empty($item->description)) {
-                            $dayDescriptions[] = $item->description;
+                            $entryDesc = $item->description;
+                        } elseif ($item->entry_type == 'ACTIVITY' && $sub && !empty($sub->description)) {
+                            $entryDesc = $sub->description;
+                        }
+
+                        if (!empty($entryDesc)) {
+                            $dayDescriptions[] = $entryDesc;
                         }
                     }
                 @endphp
