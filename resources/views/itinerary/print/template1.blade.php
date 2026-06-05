@@ -565,6 +565,7 @@
                     $dateFormatted = date('d M', strtotime($date));
 
                     $visibleItems = [];
+                    $dayDescriptions = [];
                     foreach ($dayEntries as $item) {
                         if ($item->entry_type == 'TRANSFER') {
                             $sub = Modules\Settings\Entities\Transfer::find($item->subject_id);
@@ -573,12 +574,23 @@
                             $sub = Modules\Settings\Entities\Activity::find($item->subject_id);
                             $visibleItems[] = trim(optional($sub)->activity_name ?? 'Activity');
                         }
+                        // Collect entry-level description (from text editor)
+                        if (!empty($item->description)) {
+                            $dayDescriptions[] = $item->description;
+                        }
                     }
                 @endphp
-                @if(count($visibleItems) > 0)
-                    <div style="margin-bottom: 8px;">
+                @if(count($visibleItems) > 0 || count($dayDescriptions) > 0)
+                    <div style="margin-bottom: 10px;">
                         <span class="day-header">Day {{ $key + 1 }} ({{ $dateFormatted }}):</span>
-                        <span>{{ implode(' → ', $visibleItems) }}</span>
+                        @if(count($visibleItems) > 0)
+                            <span>{{ implode(' → ', $visibleItems) }}</span>
+                        @endif
+                        @foreach($dayDescriptions as $desc)
+                            <div style="margin-top: 4px; margin-left: 10px; line-height: 1.7; text-align: justify;">
+                                {!! $desc !!}
+                            </div>
+                        @endforeach
                     </div>
                 @endif
             @endforeach
