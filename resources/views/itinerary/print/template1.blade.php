@@ -605,7 +605,7 @@
                         @endif
                         @foreach($dayDescriptions as $desc)
                             <div style="margin-top: 4px; margin-left: 10px; line-height: 1.7; text-align: justify;">
-                                {!! $desc !!}
+                                › {!! $desc !!}
                             </div>
                         @endforeach
                     </div>
