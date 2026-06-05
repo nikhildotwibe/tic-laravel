@@ -578,11 +578,13 @@
 
                         // Mirror WhatsApp logic:
                         // 1st priority: per-entry description (text editor override saved on the entry)
-                        // 2nd priority: the Activity/subject's own description field
+                        // 2nd priority: the Activity/Transfer subject's own description field
                         $entryDesc = '';
                         if (!empty($item->description)) {
                             $entryDesc = $item->description;
                         } elseif ($item->entry_type == 'ACTIVITY' && $sub && !empty($sub->description)) {
+                            $entryDesc = $sub->description;
+                        } elseif ($item->entry_type == 'TRANSFER' && $sub && !empty($sub->description)) {
                             $entryDesc = $sub->description;
                         }
 
