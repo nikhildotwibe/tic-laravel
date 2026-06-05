@@ -597,7 +597,11 @@
                     <div style="margin-bottom: 10px;">
                         <span class="day-header">Day {{ $key + 1 }} ({{ $dateFormatted }}):</span>
                         @if(count($visibleItems) > 0)
-                            <span>{{ implode(' → ', $visibleItems) }}</span>
+                            <div style="margin-top: 3px; margin-left: 10px;">
+                                @foreach($visibleItems as $vi)
+                                    <div style="margin-bottom: 2px;">✓ {{ $vi }}</div>
+                                @endforeach
+                            </div>
                         @endif
                         @foreach($dayDescriptions as $desc)
                             <div style="margin-top: 4px; margin-left: 10px; line-height: 1.7; text-align: justify;">
