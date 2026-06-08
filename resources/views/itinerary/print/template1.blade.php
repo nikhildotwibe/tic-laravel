@@ -426,22 +426,58 @@
             @endphp
             <div class="rate-section">
                 <span class="rate-label">Rate</span><br>
-                @if($opts['priceBreakup'])
+                    @if($opts['priceBreakup'])
                     @if($matchedQOpt && !empty($matchedQOpt['rows']))
+                        @php
+                            // Occupancy per room type key — persons that share one room
+                            $occupancyPerRoom = [
+                                'single' => 1, 'double' => 2, 'triple' => 3, 'quad' => 4,
+                                'twoB'   => 2, 'threeB' => 3, 'extra'  => 1,
+                                'childW' => 1, 'childN' => 1,
+                            ];
+
+                            // Distribute total pax across rows (greedy: highest occupancy first)
+                            // e.g. 7 pax, [double(2), extra(1)] → double: floor(7/2)=3, extra: 7%2=1
+                            $totalPaxForDist = ($adultCount + $childCount) ?: 1;
+                            $remainingPax    = $totalPaxForDist;
+
+                            // Sort rows by occupancy descending
+                            $sortedRows = collect($matchedQOpt['rows'])->sortByDesc(function ($r) use ($occupancyPerRoom) {
+                                return $occupancyPerRoom[$r['key'] ?? ''] ?? 1;
+                            })->values()->all();
+
+                            $roomCountMap = [];
+                            foreach ($sortedRows as $r) {
+                                $occ = $occupancyPerRoom[$r['key'] ?? ''] ?? 1;
+                                $rooms = (int) floor($remainingPax / $occ);
+                                $roomCountMap[$r['key'] ?? ''] = $rooms;
+                                $remainingPax -= $rooms * $occ;
+                            }
+                        @endphp
+
                         @foreach($matchedQOpt['rows'] as $row)
-                            @if ($itinerary->price_mode == "TOTAL_PRICE")
-                                {{ $currency }} {{ number_format($row['total'], 0) }} {{ trim(str_ireplace('person', '', $row['label'])) }}
-                            @else
-                                @php
-                                    $perPerson = $row['perPerson'] ?? ($row['count'] > 0 ? $row['total'] / $row['count'] : $row['total']);
-                                @endphp
-                                {{ $currency }} {{ number_format($perPerson, 0) }} per {{ $row['label'] }}
+                            @php
+                                $rowKey     = $row['key'] ?? '';
+                                $roomCount  = $roomCountMap[$rowKey] ?? 0;
+
+                                if ($itinerary->price_mode == "TOTAL_PRICE") {
+                                    $displayAmt = number_format($row['total'], 0);
+                                    $labelStr   = trim(str_ireplace('person', '', $row['label']));
+                                    $lineText   = "{$currency} {$displayAmt} {$labelStr}";
+                                } else {
+                                    $perPerson  = $row['perPerson'] ?? ($row['count'] > 0 ? $row['total'] / $row['count'] : $row['total']);
+                                    $lineText   = "{$currency} " . number_format($perPerson, 0) . " per {$row['label']}";
+                                }
+
+                                if ($roomCount > 0) {
+                                    $lineText .= " * {$roomCount}";
+                                }
+                            @endphp
+                            @if($roomCount > 0)
+                                {{ $lineText }}<br>
                             @endif
-                            @if(isset($row['count']) && $row['count'] > 1)
-                                * {{ $row['count'] }}
-                            @endif
-                            <br>
                         @endforeach
+
                     @else
                         @if ($itinerary->price_mode == "TOTAL_PRICE")
                             {{ $currency }} {{ number_format($adultPerPerson, 0) }} on double/twin sharing basis
