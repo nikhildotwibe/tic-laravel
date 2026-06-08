@@ -457,8 +457,10 @@
 
                         @foreach($matchedQOpt['rows'] as $row)
                             @php
-                                $rowKey     = $row['key'] ?? '';
-                                $roomCount  = $roomCountMap[$rowKey] ?? 0;
+                                $rowKey        = $row['key'] ?? '';
+                                $occ           = $occupancyPerRoom[$rowKey] ?? 1;
+                                $roomCount     = $roomCountMap[$rowKey] ?? 0;
+                                $personsInType = $roomCount * $occ;  // e.g. 3 double rooms × 2 = 6 persons
 
                                 if ($itinerary->price_mode == "TOTAL_PRICE") {
                                     $displayAmt = number_format($row['total'], 0);
@@ -469,11 +471,12 @@
                                     $lineText   = "{$currency} " . number_format($perPerson, 0) . " per {$row['label']}";
                                 }
 
-                                if ($roomCount > 0) {
-                                    $lineText .= " * {$roomCount}";
+                                // Show persons in this room type (e.g. * 6 for 3 double rooms with 2 pax each)
+                                if ($personsInType > 0) {
+                                    $lineText .= " * {$personsInType}";
                                 }
                             @endphp
-                            @if($roomCount > 0)
+                            @if($personsInType > 0)
                                 {{ $lineText }}<br>
                             @endif
                         @endforeach
