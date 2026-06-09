@@ -33,7 +33,7 @@ class Itinerary extends BaseModel
 
     public function entries(): HasMany
     {
-        return $this->hasMany(ItineraryEntry::class, 'itinerary_id', 'id');
+        return $this->hasMany(ItineraryEntry::class, 'itinerary_id', 'id')->orderBy('sort_order', 'asc');
     }
 
     public function creator(): BelongsTo

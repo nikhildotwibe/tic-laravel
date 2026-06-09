@@ -189,6 +189,12 @@ class ItineraryController extends BaseController
         $entriesData = $requestData['entries'];
         unset($requestData['entries']);
 
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('itinerary_entries', 'sort_order')) {
+            \Illuminate\Support\Facades\Schema::table('itinerary_entries', function (\Illuminate\Database\Schema\Blueprint $table) {
+                $table->integer('sort_order')->default(0);
+            });
+        }
+
         $itinerary = Itinerary::updateOrCreate(['id' => $id], $requestData);
 
         $savedItems = [];
@@ -284,6 +290,7 @@ class ItineraryController extends BaseController
 
             $entryData['subject_id'] = $entry['subject_id'];
             $entryData['sub_destination_id'] = $entry['sub_destination_id'];
+            $entryData['sort_order'] = $entry['seq'] ?? 0;
 
             $itineraryEntry = ItineraryEntry::updateOrCreate(['id' => $entry['id'] ?? null], $entryData);
 

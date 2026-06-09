@@ -31,6 +31,7 @@ class ItineraryEntryResource extends JsonResource
 
         return [
             'id' => $this->resource->id,
+            'seq' => $this->resource->sort_order,
             'date' => $this->resource->date,
             'itinerary_id' => $this->resource->itinerary_id,
             'entry_type' => $this->resource->entry_type,
