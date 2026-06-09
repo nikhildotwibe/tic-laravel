@@ -17,7 +17,6 @@ class ItineraryEntry extends BaseModel
     use HasFactory;
     use UseUuidTrait;
     use SoftDeletes;
-    protected $fillable = [];
 
     public function itinerary(): BelongsTo
     {
