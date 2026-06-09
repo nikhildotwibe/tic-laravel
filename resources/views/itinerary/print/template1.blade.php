@@ -476,9 +476,7 @@
                                     $lineText .= " * {$personsInType}";
                                 }
                             @endphp
-                            @if($personsInType > 0)
-                                {{ $lineText }}<br>
-                            @endif
+                            {{ $lineText }}<br>
                         @endforeach
 
                     @else
