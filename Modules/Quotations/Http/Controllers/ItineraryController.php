@@ -101,6 +101,7 @@ class ItineraryController extends BaseController
                 'entries.*.cost' => 'required_if:entries.*.entry_type,TRANSFER|required_if:entries.*.transfer_type,PRIVATE|gte:0',
                 'entries.*.adult_cost' => 'required_if:entries.*.entry_type,TRANSFER|required_if:entries.*.transfer_type,SIC|gte:0',
                 'entries.*.child_cost' => 'required_if:entries.*.entry_type,TRANSFER|required_if:entries.*.transfer_type,SIC|gte:0',
+                'entries.*.vehicle_count' => 'nullable|integer',
 
                 'entries.*.start_date' => 'required|date_format:Y-m-d',
                 'entries.*.start_time' => 'required|date_format:H:i:s',
@@ -269,6 +270,7 @@ class ItineraryController extends BaseController
                 $entryData['adult_count'] = $entry['adult_count'] ?? $requestData['adult_count'];
                 $entryData['child_count'] = $entry['child_count'] ?? $requestData['child_count'];
                 $entryData['no_of_person'] = $entryData['adult_count'] + $entryData['child_count'];
+                $entryData['vehicle_count'] = $entry['vehicle_count'] ?? 1;
 
                 if ($entry['transfer_type'] == 'PRIVATE') {
                     $entryData['cost'] = $entry['cost'];

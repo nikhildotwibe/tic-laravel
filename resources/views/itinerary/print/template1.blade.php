@@ -537,8 +537,12 @@
                         @if($entry->entry_type == 'TRANSFER')
                             @php
                                 $transfer = Modules\Settings\Entities\Transfer::find($entry->subject_id);
+                                $tName = optional($transfer)->vehicle_name ?? optional($transfer)->description ?? 'Transfer';
+                                if (isset($entry->vehicle_count) && $entry->vehicle_count > 1) {
+                                    $tName .= ' * ' . $entry->vehicle_count;
+                                }
                             @endphp
-                            <li>✅ {{ optional($transfer)->vehicle_name ?? optional($transfer)->description ?? 'Transfer' }}</li>
+                            <li>✅ {{ $tName }}</li>
                         @elseif($entry->entry_type == 'ACTIVITY')
                             @php
                                 $activity = Modules\Settings\Entities\Activity::find($entry->subject_id);
@@ -572,6 +576,9 @@
                         if ($item->entry_type == 'TRANSFER') {
                             $sub = Modules\Settings\Entities\Transfer::find($item->subject_id);
                             $itemName = optional($sub)->vehicle_name ?? optional($sub)->description ?? 'Transfer';
+                            if (isset($item->vehicle_count) && $item->vehicle_count > 1) {
+                                $itemName .= ' * ' . $item->vehicle_count;
+                            }
                         } elseif ($item->entry_type == 'ACTIVITY') {
                             $sub = Modules\Settings\Entities\Activity::find($item->subject_id);
                             $itemName = trim(optional($sub)->activity_name ?? 'Activity');
