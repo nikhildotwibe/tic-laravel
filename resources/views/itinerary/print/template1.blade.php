@@ -439,15 +439,25 @@
                 @if($opts['priceBreakup'])
                     @if($matchedQOpt && !empty($matchedQOpt['rows']))
                         @foreach($matchedQOpt['rows'] as $row)
-                            @if ($itinerary->price_mode == "TOTAL_PRICE")
-                                {{ $currency }} {{ number_format($row['total'], 0) }} {{ trim(str_ireplace('person', '', $row['label'])) }}
+                            @php
+                                $count = isset($row['count']) && $row['count'] > 0 ? $row['count'] : 1;
+                                $isPerMode = ($itinerary->price_mode != "TOTAL_PRICE");
+                                if ($isPerMode) {
+                                    $perPerson = $row['perPerson'] ?? $row['total'] ?? 0;
+                                } else {
+                                    $rowTotal = $row['total'] ?? (($row['perPerson'] ?? 0) * $count);
+                                    $perPerson = $count > 0 ? $rowTotal / $count : 0;
+                                }
+                                $label = $row['label'] ?? 'Person';
+                            @endphp
+                            {{ $currency }} {{ number_format($perPerson, 0) }} 
+                            @if(stripos($label, 'child') !== false || stripos($label, 'person') !== false)
+                                per {{ $label }}
                             @else
-                                @php
-                                    $perPerson = $row['perPerson'] ?? ($row['count'] > 0 ? $row['total'] / $row['count'] : $row['total']);
-                                @endphp
-                                {{ $currency }} {{ number_format($perPerson, 0) }} per {{ $row['label'] }}
+                                per Person ({{ $label }})
                             @endif
-                            @if(isset($row['count']) && $row['count'] > 1)
+                            
+                            @if(isset($row['count']) && $row['count'] > 0)
                                 * {{ $row['count'] }}
                             @endif
                             <br>
