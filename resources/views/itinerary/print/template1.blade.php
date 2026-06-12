@@ -303,12 +303,20 @@
 
         @php
             $quotedOptionsStr = $itinerary->quoted_options;
-            $quotedOptions = is_string($quotedOptionsStr) ? json_decode($quotedOptionsStr, true) : $quotedOptionsStr;
+            $quotedOptions = is_string($quotedOptionsStr) ? json_decode($quotedOptionsStr, true) : ($quotedOptionsStr ?: []);
+
+            $optionLabels = $options->keys()->toArray();
+            $optCount = max(count($optionLabels), count($quotedOptions));
+            if ($optCount == 0) {
+                $optCount = 1;
+            }
         @endphp
 
-        @foreach ($options as $optionName => $optionEntries)
+        @for ($i = 0; $i < $optCount; $i++)
             @php
-                $optionIndex = $loop->iteration;
+                $optionIndex = $i + 1;
+                $optionName = $optionLabels[$i] ?? ('Option ' . $optionIndex);
+                $optionEntries = isset($options[$optionName]) ? $options[$optionName] : collect();
 
                 // 1. Calculate base total for this option (Hotels + Transfers + Activities)
                 $optionBaseAmount = 0;
@@ -361,6 +369,7 @@
             @endphp
 
             <p class="option-label">Option {{ $optionIndex }}</p>
+            @if(count($optionEntries) > 0)
             <table class="hotel-table">
                 <thead>
                     <tr>
@@ -412,13 +421,14 @@
                     @endforeach
                 </tbody>
             </table>
+            @endif
 
             @if(!$opts['hideTotalPrice'])
             @php
                 // Look up the matching quoted option for this iteration (needed for both breakup rows and total)
                 $matchedQOpt = null;
                 if ($quotedOptions) {
-                    $idx = $loop->iteration - 1;
+                    $idx = $i;
                     if (isset($quotedOptions[$idx])) {
                         $matchedQOpt = $quotedOptions[$idx];
                     }
@@ -463,7 +473,7 @@
                 <span class="rate-label">Total Package Cost for {{ $totalPax }} pax: {{ $currency }} {{ number_format($displayGrandTotal, 0) }}</span>
             </div>
             @endif
-        @endforeach
+        @endfor
 
 
 
