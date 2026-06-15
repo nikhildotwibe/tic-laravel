@@ -150,6 +150,13 @@ class HotelsController extends BaseController
         $document2 = $requestData['document_2'] ?? [];
         $document3 = $requestData['document_3'] ?? [];
         $document4 = $requestData['document_4'] ?? [];
+        try {
+            $this->requestValidator($requestData, $id)->validate();
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            file_put_contents(storage_path('logs/validation_errors.txt'), json_encode($e->errors()).PHP_EOL, FILE_APPEND);
+            throw $e;
+        }
+
         unset(
             $requestData['rooms'],
             $requestData['amenities'],
@@ -218,6 +225,7 @@ class HotelsController extends BaseController
             }
 
             $room['hotel_id'] = $hotel->id;
+            file_put_contents(storage_path('logs/debug_room.txt'), json_encode($room).PHP_EOL, FILE_APPEND);
             // $room = Room::updateOrcreate(['id' => $room['id'] ?? null], $room);
             // $room = $this->updateOrCreate(new Room(), [$room], 'hotel_id', $hotel->id, true)[0];
             $savedObjects[] = $room = Room::updateOrCreate(['id' => $room['id'] ?? null], $room);
