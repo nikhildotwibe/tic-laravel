@@ -16,7 +16,6 @@ class Room extends BaseModel
     use HasFactory;
     use UseUuidTrait;
     use SoftDeletes;
-    protected $fillable = [];
 
     /** 
      * @return void
