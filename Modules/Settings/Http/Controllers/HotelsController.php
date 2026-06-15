@@ -150,6 +150,13 @@ class HotelsController extends BaseController
         $document2 = $requestData['document_2'] ?? [];
         $document3 = $requestData['document_3'] ?? [];
         $document4 = $requestData['document_4'] ?? [];
+        try {
+            $this->requestValidator($requestData, $id)->validate();
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            file_put_contents(storage_path('logs/validation_errors.txt'), json_encode($e->errors()).PHP_EOL, FILE_APPEND);
+            throw $e;
+        }
+
         unset(
             $requestData['rooms'],
             $requestData['amenities'],
@@ -206,7 +213,19 @@ class HotelsController extends BaseController
             $imagesData = $room['images'] ?? null;
             unset($room['meal_plans'], $room['amenities'], $room['images']);
 
+            // These flags don't have DB columns — unset them to prevent SQL errors
+            unset($room['is_two_bedroom_available'], $room['is_three_bedroom_available'], $room['is_four_bedroom_available']);
+
+            // Convert empty-string bedroom amounts to null so the DB stores NULL
+            // (frontend sends "" when bedroom type is disabled, a value when enabled)
+            foreach (['two_bedroom_amount', 'three_bedroom_amount', 'four_bedroom_amount'] as $bedroomField) {
+                if (array_key_exists($bedroomField, $room) && ($room[$bedroomField] === '' || $room[$bedroomField] === null)) {
+                    $room[$bedroomField] = null;
+                }
+            }
+
             $room['hotel_id'] = $hotel->id;
+            file_put_contents(storage_path('logs/debug_room.txt'), json_encode($room).PHP_EOL, FILE_APPEND);
             // $room = Room::updateOrcreate(['id' => $room['id'] ?? null], $room);
             // $room = $this->updateOrCreate(new Room(), [$room], 'hotel_id', $hotel->id, true)[0];
             $savedObjects[] = $room = Room::updateOrCreate(['id' => $room['id'] ?? null], $room);
