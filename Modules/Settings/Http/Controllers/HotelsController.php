@@ -206,6 +206,9 @@ class HotelsController extends BaseController
             $imagesData = $room['images'] ?? null;
             unset($room['meal_plans'], $room['amenities'], $room['images']);
 
+            // These flags don't have DB columns — unset them to prevent SQL errors
+            unset($room['is_two_bedroom_available'], $room['is_three_bedroom_available'], $room['is_four_bedroom_available']);
+
             // Convert empty-string bedroom amounts to null so the DB stores NULL
             // (frontend sends "" when bedroom type is disabled, a value when enabled)
             foreach (['two_bedroom_amount', 'three_bedroom_amount', 'four_bedroom_amount'] as $bedroomField) {
