@@ -206,6 +206,14 @@ class HotelsController extends BaseController
             $imagesData = $room['images'] ?? null;
             unset($room['meal_plans'], $room['amenities'], $room['images']);
 
+            // Convert empty-string bedroom amounts to null so the DB stores NULL
+            // (frontend sends "" when bedroom type is disabled, a value when enabled)
+            foreach (['two_bedroom_amount', 'three_bedroom_amount', 'four_bedroom_amount'] as $bedroomField) {
+                if (array_key_exists($bedroomField, $room) && ($room[$bedroomField] === '' || $room[$bedroomField] === null)) {
+                    $room[$bedroomField] = null;
+                }
+            }
+
             $room['hotel_id'] = $hotel->id;
             // $room = Room::updateOrcreate(['id' => $room['id'] ?? null], $room);
             // $room = $this->updateOrCreate(new Room(), [$room], 'hotel_id', $hotel->id, true)[0];
