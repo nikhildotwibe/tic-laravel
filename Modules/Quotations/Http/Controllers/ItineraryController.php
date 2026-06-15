@@ -24,7 +24,6 @@ use Modules\Settings\Entities\Enquiry;
 use Modules\Settings\Entities\Hotel;
 use Modules\Settings\Entities\Room;
 use Modules\Settings\Entities\Transfer;
-use Modules\Settings\Entities\PackageTerm;
 use Mpdf\Mpdf as PDF;
 
 class ItineraryController extends BaseController
@@ -677,13 +676,10 @@ class ItineraryController extends BaseController
             'margin_footer' => '2',
         ]);
 
-        $packageTerms = PackageTerm::latest()->first();
-
         $html = View::make(
             'itinerary.print.template1',
             [
-                'itinerary'    => $itinerary,
-                'packageTerms' => $packageTerms,
+                'itinerary' => $itinerary,
             ]
         )->render();
         $document->WriteHTML($html);
@@ -714,14 +710,11 @@ class ItineraryController extends BaseController
                 'terms' => $request->query('terms', 'false') === 'true',
             ];
 
-            $packageTerms = PackageTerm::latest()->first();
-
             $html = View::make(
                 'itinerary.print.template1',
                 [
-                    'itinerary'    => $itinerary,
-                    'options'      => $options,
-                    'packageTerms' => $packageTerms,
+                    'itinerary' => $itinerary,
+                    'options'   => $options,
                 ]
             )->render();
 

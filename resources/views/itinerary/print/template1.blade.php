@@ -641,13 +641,6 @@
 
         @if($opts['terms'])
         {{-- ============================================ --}}
-        {{-- PACKAGE TERMS & CONDITIONS (from Settings > Package Terms) --}}
-        {{-- ============================================ --}}
-        @if(!empty(optional($packageTerms)->package_terms))
-            {!! $packageTerms->package_terms !!}
-        @else
-        {{-- Fallback: hardcoded terms --}}
-        {{-- ============================================ --}}
         {{-- TOUR COST EXCLUDES --}}
         {{-- ============================================ --}}
         <p class="section-header">Tour Cost Excludes:</p>
@@ -707,7 +700,6 @@
                 </ol>
             </div>
         </div>
-        @endif
         @endif
 
     </div>
