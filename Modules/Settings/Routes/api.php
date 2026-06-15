@@ -26,6 +26,7 @@ use Modules\Settings\Http\Controllers\RoomTypesController;
 use Modules\Settings\Http\Controllers\SubDestinationsController;
 use Modules\Settings\Http\Controllers\SupplierController;
 use Modules\Settings\Http\Controllers\SystemSettingsController;
+use Modules\Settings\Http\Controllers\PackageTermsController;
 use Modules\Settings\Http\Controllers\TaxController;
 use Modules\Settings\Http\Controllers\TransfersController;
 
@@ -89,4 +90,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('additional-taxes/{id}', [TaxController::class, 'showAdditional']);
     Route::put('additional-taxes/{id}', [TaxController::class, 'updateAdditional']);
     Route::delete('additional-taxes/{id}', [TaxController::class, 'destroyAdditional']);
+
+    // Package Terms (Invoice Terms, Package Terms, Bank Info)
+    Route::get('package-terms', [PackageTermsController::class, 'index']);
+    Route::put('package-terms', [PackageTermsController::class, 'update']);
 });
