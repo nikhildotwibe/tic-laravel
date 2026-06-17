@@ -224,6 +224,7 @@ class ItineraryController extends BaseController
                 $entryData['child_w_count'] = $entry['child_w_count'];
                 $entryData['child_n_count'] = $entry['child_n_count'];
                 $entryData['no_of_person'] = $entry['no_of_person'];
+                $entryData['description'] = $entry['description'] ?? null;
 
                 // set pricing
                 $room = Room::findOrFail($entry['room_id']);
