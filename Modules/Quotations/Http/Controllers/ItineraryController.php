@@ -211,7 +211,7 @@ class ItineraryController extends BaseController
             if ($entry['entry_type'] == 'HOTEL') {
 
                 // $entryData['no_of_person'] = $entry['no_of_person'];
-                $entryData['description'] = $entry['description'] ?? null;
+                $entryData['description'] = !empty($entry['description']) ? $entry['description'] : null;
                 $entryData['option'] = $entry['option'] ?? 'option 1';
                 $entryData['room_id'] = $entry['room_id'];
                 $entryData['single_count'] = $entry['single_count'];
