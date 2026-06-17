@@ -92,6 +92,7 @@ class ItineraryController extends BaseController
                 'entries.*.extra_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
                 'entries.*.child_w_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
                 'entries.*.child_n_count' => 'required_if:entries.*.entry_type,HOTEL|gte:0',
+                'entries.*.room_rows' => 'nullable|string',
 
                 // ACTIVITY Specific
                 // 'entries.*.description' => 'required_if:entries.*.entry_type,ACTIVITY',
@@ -223,6 +224,7 @@ class ItineraryController extends BaseController
                 $entryData['extra_count'] = $entry['extra_count'];
                 $entryData['child_w_count'] = $entry['child_w_count'];
                 $entryData['child_n_count'] = $entry['child_n_count'];
+                $entryData['room_rows'] = $entry['room_rows'] ?? null;
                 $entryData['no_of_person'] = $entry['no_of_person'];
                 $entryData['description'] = $entry['description'] ?? null;
 

@@ -51,6 +51,7 @@ class ItineraryEntryResource extends JsonResource
             'extra_count' => $this->resource->extra_count,
             'child_w_count' => $this->resource->child_w_count,
             'child_n_count' => $this->resource->child_n_count,
+            'room_rows' => $this->resource->room_rows ? json_decode($this->resource->room_rows, true) : null,
             'description' => $this->resource->description,
             'transfer_type' => $this->resource->transfer_type,
             'vehicle_type' => $this->resource->vehicle_type,
