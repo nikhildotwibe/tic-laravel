@@ -224,6 +224,8 @@ class ItineraryController extends BaseController
                 $entryData['extra_count'] = $entry['extra_count'];
                 $entryData['child_w_count'] = $entry['child_w_count'];
                 $entryData['child_n_count'] = $entry['child_n_count'];
+                $entryData['adult_count'] = $entry['adult_count'] ?? 0;
+                $entryData['child_count'] = $entry['child_count'] ?? 0;
                 $entryData['no_of_person'] = $entry['no_of_person'];
 
                 // set pricing
