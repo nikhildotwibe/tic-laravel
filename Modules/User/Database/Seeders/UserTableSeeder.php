@@ -27,7 +27,7 @@ class UserTableSeeder extends Seeder
                 'username' => 'super_admin',
                 'first_name' => 'Super Admin',
                 'email' => 'super-admin@tictours.com',
-                'password' => Hash::make('123456'),
+                'password' => Hash::make('test@12'),
             ],
         ];
 
