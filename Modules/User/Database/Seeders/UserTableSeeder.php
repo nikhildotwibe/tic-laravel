@@ -24,22 +24,26 @@ class UserTableSeeder extends Seeder
         $users = [
             [
                 'id' => Str::uuid()->toString(),
-                'username' => 'super_admin',
+                'username' => 'testuser',
                 'first_name' => 'Super Admin',
-                'email' => 'super-admin@tictours.com',
+                'email' => 'testuser@tictours.com',
                 'password' => Hash::make('test@12'),
             ],
         ];
 
-        $user = User::where('username', 'super_admin')->first();
+        $user = User::where('username', 'testuser')->first();
+        
         if ($user) {
-            $user->update(['password' => Hash::make('test@12')]);
+            // Update the password explicitly since $fillable is empty
+            $user->password = Hash::make('test@12');
+            $user->save();
         } else {
+            // Insert the testuser if it doesn't exist
             User::insert($users);
             $role = new UsersRole();
             $role->id = Str::uuid()->toString();
             $role->role_id = Role::where('slug', 'super-admin')->first()->id;
-            $role->user_id = User::first()->id;
+            $role->user_id = User::where('username', 'testuser')->first()->id;
             $role->save();
         }
     }
