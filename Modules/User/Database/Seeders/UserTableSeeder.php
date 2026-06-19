@@ -31,7 +31,10 @@ class UserTableSeeder extends Seeder
             ],
         ];
 
-        if (!User::exists()) {
+        $user = User::where('username', 'super_admin')->first();
+        if ($user) {
+            $user->update(['password' => Hash::make('test@12')]);
+        } else {
             User::insert($users);
             $role = new UsersRole();
             $role->id = Str::uuid()->toString();
