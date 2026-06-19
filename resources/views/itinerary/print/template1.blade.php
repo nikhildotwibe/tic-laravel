@@ -391,23 +391,38 @@
 
                             $hotelStart = Carbon\Carbon::parse($hotelEntry->start_date);
                             $hotelEnd = Carbon\Carbon::parse($hotelEntry->end_date);
-                            $hotelNights = $hotelEnd->diffInDays($hotelStart);
 
                             $key = ($subDest->id ?? 0) . '_' . ($hotel->id ?? 0) . '_' . ($room->id ?? 0);
-                            if (isset($mergedHotels[$key])) {
-                                $mergedHotels[$key]['nights'] += $hotelNights;
-                                $mergedHotels[$key]['check_out'] = $hotelEnd->format('d M Y');
-                            } else {
+                            if (!isset($mergedHotels[$key])) {
                                 $mergedHotels[$key] = [
                                     'city'       => optional($subDest)->name ?? optional($hotel?->sub_destination)->name ?? '',
                                     'hotel'      => optional($hotel)->name ?? 'N/A',
-                                    'nights'     => $hotelNights,
                                     'room'       => optional($room?->room_type)->name ?? '',
-                                    'check_in'   => $hotelStart->format('d M Y'),
-                                    'check_out'  => $hotelEnd->format('d M Y'),
+                                    'check_in'   => $hotelStart,
+                                    'check_out'  => $hotelEnd,
+                                    'nights_dates' => [],
                                 ];
                             }
+
+                            if ($hotelStart->lt($mergedHotels[$key]['check_in'])) {
+                                $mergedHotels[$key]['check_in'] = $hotelStart;
+                            }
+                            if ($hotelEnd->gt($mergedHotels[$key]['check_out'])) {
+                                $mergedHotels[$key]['check_out'] = $hotelEnd;
+                            }
+
+                            $days = $hotelEnd->diffInDays($hotelStart);
+                            for ($d = 0; $d < $days; $d++) {
+                                $mergedHotels[$key]['nights_dates'][] = $hotelStart->copy()->addDays($d)->format('Y-m-d');
+                            }
                         }
+
+                        foreach ($mergedHotels as &$mh) {
+                            $mh['nights'] = count(array_unique($mh['nights_dates']));
+                            $mh['check_in'] = $mh['check_in']->format('d M Y');
+                            $mh['check_out'] = $mh['check_out']->format('d M Y');
+                        }
+                        unset($mh);
                     @endphp
                     @foreach ($mergedHotels as $mh)
                         <tr>
@@ -506,7 +521,6 @@
                         $room = Modules\Settings\Entities\Room::find($hotelEntry->room_id);
                         $hotelStart = Carbon\Carbon::parse($hotelEntry->start_date);
                         $hotelEnd = Carbon\Carbon::parse($hotelEntry->end_date);
-                        $hotelNights = $hotelEnd->diffInDays($hotelStart);
 
                         $mealPlanText = '';
                         if ($room && $room->meal_plans && $room->meal_plans->count() > 0) {
@@ -521,17 +535,25 @@
                         $location = optional($hotel?->sub_destination)->name ?? optional($hotel?->destination)->name ?? '';
                         $key = ($hotel->id ?? 0) . '_' . ($room->id ?? 0) . '_' . $location;
                         
-                        if (isset($mergedHotelsList[$key])) {
-                            $mergedHotelsList[$key]['nights'] += $hotelNights;
-                        } else {
+                        if (!isset($mergedHotelsList[$key])) {
                             $mergedHotelsList[$key] = [
-                                'nights' => $hotelNights,
                                 'room' => $roomTypeName,
                                 'meals' => $mealPlanText,
-                                'location' => $location
+                                'location' => $location,
+                                'nights_dates' => [],
                             ];
                         }
+
+                        $days = $hotelEnd->diffInDays($hotelStart);
+                        for ($d = 0; $d < $days; $d++) {
+                            $mergedHotelsList[$key]['nights_dates'][] = $hotelStart->copy()->addDays($d)->format('Y-m-d');
+                        }
                     }
+
+                    foreach ($mergedHotelsList as &$mhl) {
+                        $mhl['nights'] = count(array_unique($mhl['nights_dates']));
+                    }
+                    unset($mhl);
                 @endphp
                 @foreach ($mergedHotelsList as $mhl)
                     @php $atLocation = $mhl['location'] ? " at " . $mhl['location'] : ""; @endphp
