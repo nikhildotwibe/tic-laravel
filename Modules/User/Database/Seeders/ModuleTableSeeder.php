@@ -46,9 +46,8 @@ class ModuleTableSeeder extends Seeder
         ];
 
         foreach ($modules as $module) {
-            Module::updateOrCreate(
-                ['name' => $module['name']],
-                ['id' => Str::uuid()->toString()]
+            Module::firstOrCreate(
+                ['name' => $module['name']]
             );
         }
         // $this->call("OthersTableSeeder");
