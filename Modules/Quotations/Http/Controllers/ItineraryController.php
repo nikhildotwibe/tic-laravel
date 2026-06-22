@@ -829,18 +829,18 @@ class ItineraryController extends BaseController
                         if ($isSharing && $isPERMode) {
                             // Show per-person rate for sharing types
                             $countSuffix = $count > 1 ? " x {$count}" : '';
-                            $text .= "• *{$label}*\t\t{$currencySymbol} ".number_format($perPerson, 2).$countSuffix."\n";
+                            $text .= "• *{$label}*\t\t{$currencySymbol} ".number_format(floor($perPerson), 0).$countSuffix."\n";
                         } else {
                             // Show total for this person type
                             $countSuffix = $count > 1 ? " x {$count}" : '';
-                            $text .= "• *{$label}*\t\t- {$currencySymbol} ".number_format($rowTotal, 2).$countSuffix."\n";
+                            $text .= "• *{$label}*\t\t- {$currencySymbol} ".number_format(floor($rowTotal), 0).$countSuffix."\n";
                         }
                     }
                 } else {
                     $text .= "*Price ({$currencyCode}):*\n";
                 }
 
-                $total = number_format($finalGrandTotal, 0);
+                $total = number_format(floor($finalGrandTotal), 0);
                 $text .= "*Total: {$currencySymbol} {$total} /-* _(exc. Vat)_\n\n";
             }
 
