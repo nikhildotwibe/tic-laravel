@@ -465,7 +465,7 @@
                                 }
                                 $label = $row['label'] ?? 'Person';
                             @endphp
-                            {{ $currency }} {{ number_format($perPerson, 0) }} 
+                            {{ $currency }} {{ number_format(floor($perPerson), 0) }} 
                             @if(stripos($label, 'child') !== false || stripos($label, 'person') !== false)
                                 per {{ $label }}
                             @else
@@ -479,9 +479,9 @@
                         @endforeach
                     @else
                         @if ($itinerary->price_mode == "TOTAL_PRICE")
-                            {{ $currency }} {{ number_format($adultPerPerson, 0) }} on double/twin sharing basis
+                            {{ $currency }} {{ number_format(floor($adultPerPerson), 0) }} on double/twin sharing basis
                         @else
-                            {{ $currency }} {{ number_format($adultPerPerson, 0) }} per person on double/twin sharing basis
+                            {{ $currency }} {{ number_format(floor($adultPerPerson), 0) }} per person on double/twin sharing basis
                         @endif
                         @if($totalPax > 1)
                             * {{ $totalPax }}
@@ -495,7 +495,7 @@
                         ? $matchedQOpt['grandTotal']
                         : $convertedGrandTotal;
                 @endphp
-                <span class="rate-label">Total Package Cost for {{ $totalPax }} pax: {{ $currency }} {{ number_format($displayGrandTotal, 0) }}</span>
+                <span class="rate-label">Total Package Cost for {{ $totalPax }} pax: {{ $currency }} {{ number_format(floor($displayGrandTotal), 0) }}</span>
             </div>
             @endif
         @endfor

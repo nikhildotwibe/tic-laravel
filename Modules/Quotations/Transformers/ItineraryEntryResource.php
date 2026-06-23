@@ -67,6 +67,10 @@ class ItineraryEntryResource extends JsonResource
             'end_time' => $this->resource->end_time,
             'amount' => $this->resource->amount,
             'markup' => $this->resource->markup,
+            // base_amount / base_markup: canonical TOTAL values regardless of price mode.
+            // The frontend uses these on load to avoid re-dividing already-per-person amounts.
+            'base_amount' => $this->resource->base_amount,
+            'base_markup' => $this->resource->base_markup ?? 0,
             'sub_destination_id' => $this->resource->destination_id,
             'sub_destination' => $this->resource->sub_destination,
         ];

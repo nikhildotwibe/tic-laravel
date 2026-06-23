@@ -457,6 +457,9 @@ class ItineraryController extends BaseController
                 'entries.*.id' => 'required|exists:itinerary_entries,id,deleted_at,NULL',
                 'entries.*.amount' => 'required|gte:0',
                 'entries.*.markup' => 'required|min:0|max:100',
+                // base_amount / base_markup are optional — older clients won't send them
+                'entries.*.base_amount' => 'nullable|numeric|gte:0',
+                'entries.*.base_markup' => 'nullable|numeric|min:0',
                 'extra_markup_percentage' => 'required|min:0|max:100',
                 'extra_markup_amount' => 'required|gte:0',
                 'cgst_percentage' => 'required|min:0|max:100',
@@ -477,6 +480,10 @@ class ItineraryController extends BaseController
                 $entry = ItineraryEntry::findOrFail($entryData['id']);
                 $entry->amount = $entryData['amount'];
                 $entry->markup = $entryData['markup'];
+                // Persist canonical totals so the frontend never needs to re-derive them on reload.
+                // base_amount is always the TOTAL cost regardless of PER/TOTAL price mode.
+                $entry->base_amount = isset($entryData['base_amount']) ? $entryData['base_amount'] : $entryData['amount'];
+                $entry->base_markup = isset($entryData['base_markup']) ? $entryData['base_markup'] : $entryData['markup'];
                 $entry->save();
             }
 
@@ -829,18 +836,18 @@ class ItineraryController extends BaseController
                         if ($isSharing && $isPERMode) {
                             // Show per-person rate for sharing types
                             $countSuffix = $count > 1 ? " x {$count}" : '';
-                            $text .= "• *{$label}*\t\t{$currencySymbol} ".number_format($perPerson, 2).$countSuffix."\n";
+                            $text .= "• *{$label}*\t\t{$currencySymbol} ".number_format(floor($perPerson), 0).$countSuffix."\n";
                         } else {
                             // Show total for this person type
                             $countSuffix = $count > 1 ? " x {$count}" : '';
-                            $text .= "• *{$label}*\t\t- {$currencySymbol} ".number_format($rowTotal, 2).$countSuffix."\n";
+                            $text .= "• *{$label}*\t\t- {$currencySymbol} ".number_format(floor($rowTotal), 0).$countSuffix."\n";
                         }
                     }
                 } else {
                     $text .= "*Price ({$currencyCode}):*\n";
                 }
 
-                $total = number_format($finalGrandTotal, 0);
+                $total = number_format(floor($finalGrandTotal), 0);
                 $text .= "*Total: {$currencySymbol} {$total} /-* _(exc. Vat)_\n\n";
             }
 
