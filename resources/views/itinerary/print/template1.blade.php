@@ -557,7 +557,7 @@
                 @endphp
                 @foreach ($mergedHotelsList as $mhl)
                     @php $atLocation = $mhl['location'] ? " at " . $mhl['location'] : ""; @endphp
-                    <li>✅ {{ $mhl['nights'] }} Night accommodation in {{ $mhl['room'] }} category room{{ $mhl['meals'] }}{{ $atLocation }}</li>
+                    <li>✅ {{ $mhl['nights'] }} Night accommodation in the above mentioned hotel{{ $mhl['meals'] }}{{ $atLocation }}</li>
                 @endforeach
                 @php break; @endphp {{-- Only show first option's inclusions --}}
             @endforeach
