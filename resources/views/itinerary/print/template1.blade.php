@@ -448,6 +448,8 @@
                         $matchedQOpt = $quotedOptions[$idx];
                     }
                 }
+                // Option A: accumulate floor(perPerson)*count so the total always matches what is shown
+                $displayGrandTotal = 0;
             @endphp
             <div class="rate-section">
                 <span class="rate-label">Rate</span><br>
@@ -464,6 +466,8 @@
                                     $perPerson = $count > 0 ? $rowTotal / $count : 0;
                                 }
                                 $label = $row['label'] ?? 'Person';
+                                // Option A: add the floored per-person cost × pax count
+                                $displayGrandTotal += floor($perPerson) * $count;
                             @endphp
                             {{ $currency }} {{ number_format(floor($perPerson), 0) }} 
                             @if(stripos($label, 'child') !== false || stripos($label, 'person') !== false)
@@ -490,10 +494,14 @@
                     @endif
                 @endif
                 @php
-                    // Use the occupancy-aware grand total from quoted_options when available
-                    $displayGrandTotal = ($matchedQOpt && isset($matchedQOpt['grandTotal']))
-                        ? $matchedQOpt['grandTotal']
-                        : $convertedGrandTotal;
+                    // Option A: $displayGrandTotal was built from floor(perPerson)*count above.
+                    // Fall back to saved grandTotal only when no rows were available
+                    // (e.g. priceBreakup is disabled or quoted_options has no rows data).
+                    if ($displayGrandTotal == 0) {
+                        $displayGrandTotal = ($matchedQOpt && isset($matchedQOpt['grandTotal']))
+                            ? $matchedQOpt['grandTotal']
+                            : $convertedGrandTotal;
+                    }
                 @endphp
                 <span class="rate-label">Total Package Cost for {{ $totalPax }} pax: {{ $currency }} {{ number_format(floor($displayGrandTotal), 0) }}</span>
             </div>
