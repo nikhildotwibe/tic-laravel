@@ -16,16 +16,23 @@ use Modules\Settings\Transformers\EnquiryResource;
 class EnquiriesController extends BaseController
 {
 
-    public function index()
+    public function index(Request $request)
     {
         try {
             $user = auth()->user();
+            $perPage = (int) $request->get('per_page', 8);
 
-            // Super-admin or users with no role → return all
+            // Super-admin or users with no role → return all (paginated)
             $role = $user->roles()->first();
             if (!$role) {
-                $enquiry = Enquiry::with(['agent', 'destination', 'sub_destinations', 'sub_destination', 'customer', 'assigned_to_user', 'lead_source', 'requirements', 'priority'])->latest()->get();
-                return $this->sendResponse(EnquiryResource::collection($enquiry), 'All Enquiries Fetched', 200);
+                $enquiry = Enquiry::with(['agent', 'destination', 'sub_destinations', 'sub_destination', 'customer', 'assigned_to_user', 'lead_source', 'requirements', 'priority'])->latest()->paginate($perPage);
+                return $this->sendResponse([
+                    'data'         => EnquiryResource::collection($enquiry->items()),
+                    'current_page' => $enquiry->currentPage(),
+                    'last_page'    => $enquiry->lastPage(),
+                    'total'        => $enquiry->total(),
+                    'per_page'     => $enquiry->perPage(),
+                ], 'All Enquiries Fetched', 200);
             }
 
             // Find the enquiry-read permission assigned to this role
@@ -50,8 +57,14 @@ class EnquiriesController extends BaseController
                 $query->where('created_by', $user->id);
             }
 
-            $enquiry = $query->with(['agent', 'destination', 'sub_destinations', 'sub_destination', 'customer', 'assigned_to_user', 'lead_source', 'requirements', 'priority'])->latest()->get();
-            return $this->sendResponse(EnquiryResource::collection($enquiry), 'All Enquiries Fetched', 200);
+            $enquiry = $query->with(['agent', 'destination', 'sub_destinations', 'sub_destination', 'customer', 'assigned_to_user', 'lead_source', 'requirements', 'priority'])->latest()->paginate($perPage);
+            return $this->sendResponse([
+                'data'         => EnquiryResource::collection($enquiry->items()),
+                'current_page' => $enquiry->currentPage(),
+                'last_page'    => $enquiry->lastPage(),
+                'total'        => $enquiry->total(),
+                'per_page'     => $enquiry->perPage(),
+            ], 'All Enquiries Fetched', 200);
         } catch (Exception $exception) {
             return $this->HandleException($exception);
         }
