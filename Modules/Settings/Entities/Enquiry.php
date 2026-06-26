@@ -65,6 +65,7 @@ class Enquiry extends BaseModel
     public function latestItinerary(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(\Modules\Quotations\Entities\Itinerary::class, 'enquiry_id', 'id')
+            ->whereNull('deleted_at')
             ->orderBy('created_at', 'desc');
     }
 
