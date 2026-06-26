@@ -46,6 +46,11 @@ class Itinerary extends BaseModel
         return $this->belongsTo(\Modules\User\Entities\User::class, 'updated_by', 'id');
     }
 
+    public function currency_obj(): BelongsTo
+    {
+        return $this->belongsTo(\Modules\Settings\Entities\Currency::class, 'currency', 'id');
+    }
+
     // ── Versioning ──────────────────────────────────────────────
 
     /**

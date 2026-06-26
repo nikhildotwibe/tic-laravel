@@ -55,10 +55,11 @@ class ItineraryController extends BaseController
                 'destination',
                 'creator',
                 'updater',
+                'currency_obj',
                 'entries.room',
                 'entries.sub_destination',
                 'entries.hotel',
-                'entries.activity',
+                'entries.activity.estimations',
                 'entries.transfer',
             ])->latest()->get();
 
@@ -333,10 +334,11 @@ class ItineraryController extends BaseController
                 'destination',
                 'creator',
                 'updater',
+                'currency_obj',
                 'entries.room',
                 'entries.sub_destination',
                 'entries.hotel',
-                'entries.activity',
+                'entries.activity.estimations',
                 'entries.transfer',
             ])->findOrFail($id);
 
