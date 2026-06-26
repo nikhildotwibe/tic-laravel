@@ -97,3 +97,19 @@ Route::get('/db-seed/countries', function () {
     }
 });
 
+Route::get('/clear-cache', function () {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Cache cleared successfully!',
+            'output' => \Illuminate\Support\Facades\Artisan::output()
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Cache clearing failed',
+            'error' => $e->getMessage()
+        ]);
+    }
+});
