@@ -21,10 +21,10 @@ class Enquiry extends BaseModel
         return $this->belongsTo(Destination::class, 'destination_id', 'id');
     }
 
-    // public function sub_destination(): BelongsTo
-    // {
-    //     return $this->belongsTo(SubDestination::class, 'sub_destination_id', 'id');
-    // }
+    public function sub_destination(): BelongsTo
+    {
+        return $this->belongsTo(SubDestination::class, 'sub_destination_id', 'id');
+    }
 
     public function sub_destinations(): BelongsToMany
     {
@@ -60,5 +60,10 @@ class Enquiry extends BaseModel
     public function itineraries(): HasMany
     {
         return $this->hasMany(\Modules\Quotations\Entities\Itinerary::class, 'enquiry_id', 'id');
+    }
+
+    public function priority(): BelongsTo
+    {
+        return $this->belongsTo(\Modules\Settings\Entities\Priority::class, 'priority_id', 'id');
     }
 }
