@@ -16,23 +16,16 @@ use Modules\Settings\Transformers\EnquiryResource;
 class EnquiriesController extends BaseController
 {
 
-    public function index(Request $request)
+    public function index()
     {
         try {
             $user = auth()->user();
-            $perPage = (int) $request->get('per_page', 8);
 
-            // Super-admin or users with no role → return all (paginated)
+            // Super-admin or users with no role → return all
             $role = $user->roles()->first();
             if (!$role) {
-                $enquiry = Enquiry::with(['agent', 'destination', 'sub_destinations', 'sub_destination', 'customer', 'assigned_to_user', 'lead_source', 'requirements', 'priority'])->latest()->paginate($perPage);
-                return $this->sendResponse([
-                    'data'         => EnquiryResource::collection($enquiry->items()),
-                    'current_page' => $enquiry->currentPage(),
-                    'last_page'    => $enquiry->lastPage(),
-                    'total'        => $enquiry->total(),
-                    'per_page'     => $enquiry->perPage(),
-                ], 'All Enquiries Fetched', 200);
+                $enquiry = Enquiry::with(['agent', 'destination', 'sub_destinations', 'sub_destination', 'customer', 'assigned_to_user', 'lead_source', 'requirements', 'priority'])->latest()->get();
+                return $this->sendResponse(EnquiryResource::collection($enquiry), 'All Enquiries Fetched', 200);
             }
 
             // Find the enquiry-read permission assigned to this role
@@ -49,7 +42,7 @@ class EnquiriesController extends BaseController
             } elseif (str_ends_with($slug, '-read-added-and-assigned')) {
                 $query->where(function ($q) use ($user) {
                     $q->where('created_by', $user->id)
-                      ->orWhere('assigned_to', $user->id);
+                        ->orWhere('assigned_to', $user->id);
                 });
             } elseif (str_ends_with($slug, '-read-assigned')) {
                 $query->where('assigned_to', $user->id);
@@ -57,14 +50,8 @@ class EnquiriesController extends BaseController
                 $query->where('created_by', $user->id);
             }
 
-            $enquiry = $query->with(['agent', 'destination', 'sub_destinations', 'sub_destination', 'customer', 'assigned_to_user', 'lead_source', 'requirements', 'priority'])->latest()->paginate($perPage);
-            return $this->sendResponse([
-                'data'         => EnquiryResource::collection($enquiry->items()),
-                'current_page' => $enquiry->currentPage(),
-                'last_page'    => $enquiry->lastPage(),
-                'total'        => $enquiry->total(),
-                'per_page'     => $enquiry->perPage(),
-            ], 'All Enquiries Fetched', 200);
+            $enquiry = $query->with(['agent', 'destination', 'sub_destinations', 'sub_destination', 'customer', 'assigned_to_user', 'lead_source', 'requirements', 'priority'])->latest()->get();
+            return $this->sendResponse(EnquiryResource::collection($enquiry), 'All Enquiries Fetched', 200);
         } catch (Exception $exception) {
             return $this->HandleException($exception);
         }
@@ -101,13 +88,13 @@ class EnquiriesController extends BaseController
                 $rules['name'] = 'required';
                 $rules['email'] = 'required|email';
                 $rules['mobile'] = 'required';
-               
-            }  elseif ($request->type == 'B2C' && !request()->filled('customer_id')) {
+
+            } elseif ($request->type == 'B2C' && !request()->filled('customer_id')) {
                 $rules['name'] = 'required';
                 $rules['email'] = 'required|email';
                 $rules['mobile'] = 'required';
                 $rules['salute'] = 'required|in:Mr,Ms';
-            
+
             } elseif ($request->type == 'B2C' && request()->filled('customer_id')) {
                 $rules['customer_id'] = 'required|exists:customers,id,deleted_at,NULL';
                 $rules['salute'] = 'required|in:Mr,Ms';
@@ -211,7 +198,7 @@ class EnquiriesController extends BaseController
 
                 'requirements' => 'nullable|array',
                 'requirements.*' => 'nullable|exists:requirements,id,deleted_at,NULL',
-                
+
                 'sub_destinations' => 'required|array',
                 'sub_destinations.*' => 'required|exists:sub_destinations,id,deleted_at,NULL',
             ];
@@ -263,7 +250,7 @@ class EnquiriesController extends BaseController
                 $enquiryRequirement->requirement_id = $req;
                 $enquiryRequirement->save();
             }
-            
+
             $enquiry = Enquiry::findOrFail($id);
 
             return $this->sendResponse(EnquiryResource::make($enquiry), 'Enquiry updated Successfully', 200);
