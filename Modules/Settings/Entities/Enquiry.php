@@ -62,6 +62,11 @@ class Enquiry extends BaseModel
         return $this->hasMany(\Modules\Quotations\Entities\Itinerary::class, 'enquiry_id', 'id');
     }
 
+    public function latestItinerary(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(\Modules\Quotations\Entities\Itinerary::class, 'enquiry_id', 'id')->latestOfMany();
+    }
+
     public function priority(): BelongsTo
     {
         return $this->belongsTo(\Modules\Settings\Entities\Priority::class, 'priority_id', 'id');
