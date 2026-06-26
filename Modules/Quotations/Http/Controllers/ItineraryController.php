@@ -50,7 +50,7 @@ class ItineraryController extends BaseController
                 $itinerary = $itinerary->where('package_name', 'LIKE', '%'.$request->package_name.'%');
             }
 
-            $itinerary = $itinerary->latest()->get();
+            $itinerary = $itinerary->with(['enquiry', 'entries', 'destination'])->latest()->get();
 
             return $this->sendResponse(ItineraryResource::collection($itinerary), 'All Itineraries Fetched', 200);
         } catch (Exception $exception) {
@@ -318,7 +318,7 @@ class ItineraryController extends BaseController
     public function show($id)
     {
         try {
-            $itinerary = Itinerary::findOrFail($id);
+            $itinerary = Itinerary::with(['enquiry', 'entries', 'destination'])->findOrFail($id);
 
             return $this->sendResponse(ItineraryResource::make($itinerary), 'Itinerary fetched Successfully', 200);
         } catch (Exception $exception) {
