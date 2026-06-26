@@ -23,20 +23,22 @@ class ItineraryEntryResource extends JsonResource
     public function toArray($request)
     {
 
-        [$subjectModel, $subjectResource] = match ($this->resource->entry_type) {
-            'HOTEL' => [Hotel::class, HotelResource::class],
-            'ACTIVITY' => [Activity::class, ActivityResource::class],
-            'TRANSFER' => [Transfer::class, TransferResource::class],
+        // Use pre-loaded relations to avoid N+1 queries
+        $subject = match ($this->resource->entry_type) {
+            'HOTEL'    => $this->resource->hotel,
+            'ACTIVITY' => $this->resource->activity,
+            'TRANSFER' => $this->resource->transfer,
+            default    => null,
         };
 
         return [
-            'id' => $this->resource->id,
-            'seq' => $this->resource->sort_order,
-            'date' => $this->resource->date,
+            'id'           => $this->resource->id,
+            'seq'          => $this->resource->sort_order,
+            'date'         => $this->resource->date,
             'itinerary_id' => $this->resource->itinerary_id,
-            'entry_type' => $this->resource->entry_type,
-            'subject_id' => $this->resource->subject_id,
-            'subject' => $subjectResource::make($subjectModel::find($this->resource->subject_id)),
+            'entry_type'   => $this->resource->entry_type,
+            'subject_id'   => $this->resource->subject_id,
+            'subject'      => $subjectResource::make($subject),
             'option' => $this->resource->option,
             'room_id' => $this->resource->room_id,
             'room' => RoomResource::make($this->resource->room),
