@@ -24,7 +24,7 @@ class EnquiriesController extends BaseController
             // Super-admin or users with no role → return all
             $role = $user->roles()->first();
             if (!$role) {
-                $enquiry = Enquiry::with(['sub_destinations', 'agent', 'destination', 'lead_source', 'requirements', 'customer', 'assigned_to_user'])->latest()->get();
+                $enquiry = Enquiry::latest()->get();
                 return $this->sendResponse(EnquiryResource::collection($enquiry), 'All Enquiries Fetched', 200);
             }
 
@@ -35,7 +35,7 @@ class EnquiriesController extends BaseController
 
             $slug = $readPermission ? $readPermission->slug : null;
 
-            $query = Enquiry::with(['sub_destinations', 'agent', 'destination', 'lead_source', 'requirements', 'customer', 'assigned_to_user']);
+            $query = Enquiry::query();
 
             if (!$slug || str_ends_with($slug, '-read-all')) {
                 // No filter — return everything
