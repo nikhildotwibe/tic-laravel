@@ -83,23 +83,9 @@ class ItineraryResource extends JsonResource
 
             $perPersonAmounts = [];
             foreach ($this->resource->entries as $key => $entry) {
-                // if($entry->entry_type=='ACTIVITY' || $entry->entry_type=='TRANSFER'){
-                //     $adulltNetAmount += $entry->estimations->sum('adult_cost');
-                //     $childNetAmount += $entry->estimations->sum('child_cost');
-                // }
-                // if($entry->entry_type=='HOTEL'){
-                //$adultNetAmount = $childNetAmount = 0;
-                // if($entry->estimations){
-                    // $adulltNetAmount += $entry->estimations->sum('adult_cost');
-                    // $childNetAmount += $entry->estimations->sum('child_cost');
-                    // }
-                // }
-                
-                
-                
                 if($entry->entry_type=='HOTEL'){
-                    
-                    $room = Room::find($entry->room_id);
+                    // Use pre-loaded room relation — no extra query
+                    $room = $entry->room;
                     if ($room) {
                         $adulltPerPersonNetAmount += ($room->single_bed_amount * $entry->single_count) + ($room->double_bed_amount * $entry->double_count) + ($room->triple_bed_amount * $entry->triple_count) + ($room->quad_bed_amount * $entry->quad_count) + (($room->two_bedroom_amount ?? 0) * ($entry->two_bedroom_count ?? 0)) + (($room->three_bedroom_amount ?? 0) * ($entry->three_bedroom_count ?? 0)) + (($room->four_bedroom_amount ?? 0) * ($entry->four_bedroom_count ?? 0)) + ($room->extra_bed_amount * $entry->extra_count);
                         $childWPerPersonNetAmount += ($room->child_w_bed_amount * $entry->child_w_count);
@@ -109,22 +95,23 @@ class ItineraryResource extends JsonResource
                 
                 if($entry->entry_type=='TRANSFER'){
                     $transferCost = $entry->transfer_type == 'PRIVATE' ? $entry->cost : $entry->adult_cost;
-                    
                     $adulltPerPersonNetAmount += $transferCost;
                     $childWPerPersonNetAmount += $transferCost;
                     $childNPerPersonNetAmount += $transferCost;
                 }
 
                 if($entry->entry_type=='ACTIVITY'){
+                    // Use pre-loaded activity relation — no extra query
+                    $activityEstimations = $entry->activity?->estimations ?? collect();
                     $activityStartDate = $entry['start_date'];
                     $activityEndDate = $entry['end_date'];
-                    $activityEstimation = ActivityEstimation::where('activity_id', $entry['subject_id'])->whereDate('from_date', '<=', $activityStartDate)->whereDate('to_date', '>=', $activityEndDate)->first();
+                    $activityEstimation = $activityEstimations
+                        ->filter(fn($e) => $e->from_date <= $activityStartDate && $e->to_date >= $activityEndDate)
+                        ->first();
                     $adulltPerPersonNetAmount += $activityEstimation?->adult_cost;
                     $childWPerPersonNetAmount += $activityEstimation?->child_cost;
                     $childNPerPersonNetAmount += $activityEstimation?->child_cost;
                 }
-
-               
             }
 
             if ($adultCount != 0) {
@@ -161,19 +148,9 @@ class ItineraryResource extends JsonResource
             $editedBy = trim($this->resource->updater->first_name . ' ' . $this->resource->updater->last_name);
         } elseif ($this->resource->creator) {
             $editedBy = trim($this->resource->creator->first_name . ' ' . $this->resource->creator->last_name);
-        } else {
-            // Fallback for older itineraries before created_by/updated_by was reliably populated
-            $snapshot = \Modules\Quotations\Entities\PricingSnapshot::where('itinerary_id', $this->resource->id)
-                ->orderBy('created_at', 'desc')
-                ->first();
-            
-            if ($snapshot && $snapshot->creator) {
-                $editedBy = trim($snapshot->creator->first_name . ' ' . $snapshot->creator->last_name);
-            } elseif ($this->resource->enquiry && $this->resource->enquiry->assigned_to_user) {
-                // Ultimate fallback: Assigned user of the enquiry
-                $user = $this->resource->enquiry->assigned_to_user;
-                $editedBy = trim($user->first_name . ' ' . $user->last_name);
-            }
+        } elseif ($this->resource->enquiry && $this->resource->enquiry->assigned_to_user) {
+            $user = $this->resource->enquiry->assigned_to_user;
+            $editedBy = trim($user->first_name . ' ' . $user->last_name);
         }
 
         return [
@@ -203,7 +180,7 @@ class ItineraryResource extends JsonResource
             'total_amount' => $this->resource->total_amount,
             'exchange_rate' => $this->resource->exchange_rate,
             'currency' => $this->resource->currency,
-            'currency_code' => optional(\Modules\Settings\Entities\Currency::find($this->resource->currency))->code,
+            'currency_code' => optional($this->resource->currency_obj)->code,
             'description' => $this->resource->description,
             'entries' => ItineraryEntryResource::collection($this->resource->entries),
             'net_amount' => $netAmount,
