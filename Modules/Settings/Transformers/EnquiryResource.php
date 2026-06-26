@@ -41,6 +41,7 @@ class EnquiryResource extends JsonResource
             'customer' => CustomerResource::make($this->resource->customer),
             'assigned_to' => $this->resource->assigned_to,
             'assigned_to_user' => UserResource::make($this->resource->assigned_to_user),
+            'package_name' => $this->resource->itineraries->first()->package_name ?? null,
             'created_at' => $this->resource->created_at,
         ];
     }

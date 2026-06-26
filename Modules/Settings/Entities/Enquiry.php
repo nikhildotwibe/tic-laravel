@@ -56,4 +56,9 @@ class Enquiry extends BaseModel
     {
         return $this->belongsToMany(Requirement::class, EnquiryRequirement::class);
     }
+
+    public function itineraries(): HasMany
+    {
+        return $this->hasMany(\Modules\Quotations\Entities\Itinerary::class, 'enquiry_id', 'id');
+    }
 }
