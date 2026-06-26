@@ -24,7 +24,16 @@ class EnquiriesController extends BaseController
             // Super-admin or users with no role → return all
             $role = $user->roles()->first();
             if (!$role) {
-                $enquiry = Enquiry::with(['agent', 'destination', 'sub_destinations', 'sub_destination', 'customer', 'assigned_to_user', 'lead_source', 'requirements', 'itineraries', 'priority'])->latest()->get();
+                $enquiry = Enquiry::select('enquiries.*')
+                    ->addSelect([
+                        'package_name' => \Modules\Quotations\Entities\Itinerary::select('package_name')
+                            ->whereColumn('enquiry_id', 'enquiries.id')
+                            ->latest()
+                            ->take(1)
+                    ])
+                    ->with(['agent', 'destination', 'sub_destinations', 'sub_destination', 'customer', 'assigned_to_user', 'lead_source', 'requirements', 'priority'])
+                    ->latest()
+                    ->get();
                 return $this->sendResponse(EnquiryResource::collection($enquiry), 'All Enquiries Fetched', 200);
             }
 
@@ -35,7 +44,12 @@ class EnquiriesController extends BaseController
 
             $slug = $readPermission ? $readPermission->slug : null;
 
-            $query = Enquiry::query();
+            $query = Enquiry::select('enquiries.*')->addSelect([
+                'package_name' => \Modules\Quotations\Entities\Itinerary::select('package_name')
+                    ->whereColumn('enquiry_id', 'enquiries.id')
+                    ->latest()
+                    ->take(1)
+            ]);
 
             if (!$slug || str_ends_with($slug, '-read-all')) {
                 // No filter — return everything
@@ -50,7 +64,7 @@ class EnquiriesController extends BaseController
                 $query->where('created_by', $user->id);
             }
 
-            $enquiry = $query->with(['agent', 'destination', 'sub_destinations', 'sub_destination', 'customer', 'assigned_to_user', 'lead_source', 'requirements', 'itineraries', 'priority'])->latest()->get();
+            $enquiry = $query->with(['agent', 'destination', 'sub_destinations', 'sub_destination', 'customer', 'assigned_to_user', 'lead_source', 'requirements', 'priority'])->latest()->get();
             return $this->sendResponse(EnquiryResource::collection($enquiry), 'All Enquiries Fetched', 200);
         } catch (Exception $exception) {
             return $this->HandleException($exception);
@@ -169,7 +183,15 @@ class EnquiriesController extends BaseController
     public function show($id)
     {
         try {
-            $enquiry = Enquiry::with(['agent', 'destination', 'sub_destinations', 'sub_destination', 'customer', 'assigned_to_user', 'lead_source', 'requirements', 'itineraries', 'priority'])->findOrFail($id);
+            $enquiry = Enquiry::select('enquiries.*')
+                ->addSelect([
+                    'package_name' => \Modules\Quotations\Entities\Itinerary::select('package_name')
+                        ->whereColumn('enquiry_id', 'enquiries.id')
+                        ->latest()
+                        ->take(1)
+                ])
+                ->with(['agent', 'destination', 'sub_destinations', 'sub_destination', 'customer', 'assigned_to_user', 'lead_source', 'requirements', 'priority'])
+                ->findOrFail($id);
             return $this->sendResponse(EnquiryResource::make($enquiry), 'Enquiry Fetched', 200);
         } catch (Exception $exception) {
             return $this->HandleException($exception);
