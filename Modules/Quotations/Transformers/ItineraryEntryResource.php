@@ -31,6 +31,13 @@ class ItineraryEntryResource extends JsonResource
             default    => null,
         };
 
+        $subjectData = match ($this->resource->entry_type) {
+            'HOTEL'    => HotelResource::make($subject),
+            'ACTIVITY' => ActivityResource::make($subject),
+            'TRANSFER' => TransferResource::make($subject),
+            default    => null,
+        };
+
         return [
             'id'           => $this->resource->id,
             'seq'          => $this->resource->sort_order,
@@ -38,7 +45,7 @@ class ItineraryEntryResource extends JsonResource
             'itinerary_id' => $this->resource->itinerary_id,
             'entry_type'   => $this->resource->entry_type,
             'subject_id'   => $this->resource->subject_id,
-            'subject'      => $subjectResource::make($subject),
+            'subject'      => $subjectData,
             'option' => $this->resource->option,
             'room_id' => $this->resource->room_id,
             'room' => RoomResource::make($this->resource->room),
