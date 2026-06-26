@@ -51,6 +51,14 @@ class ItineraryController extends BaseController
             }
 
             $itinerary = $itinerary->with([
+                'enquiry.agent',
+                'enquiry.customer',
+                'enquiry.destination',
+                'enquiry.sub_destination',
+                'enquiry.sub_destinations',
+                'enquiry.lead_source',
+                'enquiry.requirements',
+                'enquiry.priority',
                 'enquiry.assigned_to_user',
                 'destination',
                 'creator',
@@ -330,6 +338,14 @@ class ItineraryController extends BaseController
     {
         try {
             $itinerary = Itinerary::with([
+                'enquiry.agent',
+                'enquiry.customer',
+                'enquiry.destination',
+                'enquiry.sub_destination',
+                'enquiry.sub_destinations',
+                'enquiry.lead_source',
+                'enquiry.requirements',
+                'enquiry.priority',
                 'enquiry.assigned_to_user',
                 'destination',
                 'creator',
