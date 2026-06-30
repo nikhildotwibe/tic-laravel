@@ -986,9 +986,14 @@ class ItineraryController extends BaseController
         if ($val1 === $val2) {
             return true;
         }
-        if (($val1 === null || $val1 === '') && ($val2 === null || $val2 === '')) {
+        
+        // Normalize null, empty string, and 0 for loose comparison if they are equivalent
+        $norm1 = ($val1 === null || $val1 === '' || $val1 === 0 || $val1 === 0.0 || $val1 === '0') ? null : $val1;
+        $norm2 = ($val2 === null || $val2 === '' || $val2 === 0 || $val2 === 0.0 || $val2 === '0') ? null : $val2;
+        if ($norm1 === null && $norm2 === null) {
             return true;
         }
+
         // Decode JSON if one is string and the other is array/object
         if (is_string($val1) && isset($val1[0]) && ($val1[0] === '[' || $val1[0] === '{')) {
             $decoded = json_decode($val1, true);
@@ -1008,6 +1013,15 @@ class ItineraryController extends BaseController
             ksort($val1);
             ksort($val2);
             return json_encode($val1) === json_encode($val2);
+        }
+
+        // Normalize date/time strings if they look like dates
+        if (is_string($val1) && is_string($val2) && (str_contains($val1, '-') || str_contains($val1, '/')) && (str_contains($val2, '-') || str_contains($val2, '/'))) {
+            $t1 = strtotime($val1);
+            $t2 = strtotime($val2);
+            if ($t1 !== false && $t2 !== false) {
+                return $t1 === $t2;
+            }
         }
         
         if (is_numeric($val1) && is_numeric($val2)) {
@@ -1029,6 +1043,7 @@ class ItineraryController extends BaseController
         foreach ($fields as $field) {
             if (array_key_exists($field, $requestData)) {
                 if (!$this->valuesAreEqual($itinerary->$field, $requestData[$field])) {
+                    \Illuminate\Support\Facades\Log::info("Itinerary diff - Field '{$field}': DB = '" . json_encode($itinerary->$field) . "', Request = '" . json_encode($requestData[$field]) . "'");
                     return true;
                 }
             }
@@ -1043,7 +1058,8 @@ class ItineraryController extends BaseController
         
         foreach ($entriesData as $entry) {
             if (empty($entry['id'])) {
-                return true; // New entry added
+                \Illuminate\Support\Facades\Log::info("Itinerary diff - New entry added (no ID in request)");
+                return true;
             }
             $requestEntryIds[] = $entry['id'];
         }
@@ -1051,6 +1067,7 @@ class ItineraryController extends BaseController
         // Check if any existing entry is deleted
         $deletedIds = array_diff($existingEntryIds, $requestEntryIds);
         if (!empty($deletedIds)) {
+            \Illuminate\Support\Facades\Log::info("Itinerary diff - Deleted entries: " . json_encode($deletedIds));
             return true;
         }
 
@@ -1058,6 +1075,7 @@ class ItineraryController extends BaseController
         foreach ($entriesData as $entry) {
             $existingEntry = $currentEntries->firstWhere('id', $entry['id']);
             if (!$existingEntry) {
+                \Illuminate\Support\Facades\Log::info("Itinerary diff - Entry {$entry['id']} not found in DB");
                 return true;
             }
 
@@ -1148,6 +1166,7 @@ class ItineraryController extends BaseController
 
             foreach ($expectedFields as $f => $val) {
                 if (!$this->valuesAreEqual($existingEntry->$f, $val)) {
+                    \Illuminate\Support\Facades\Log::info("Itinerary diff - Entry ID {$entry['id']} Field '{$f}': DB = '" . json_encode($existingEntry->$f) . "', Expected = '" . json_encode($val) . "'");
                     return true;
                 }
             }
@@ -1167,6 +1186,7 @@ class ItineraryController extends BaseController
         foreach ($pricingFields as $field) {
             if (array_key_exists($field, $requestData)) {
                 if (!$this->valuesAreEqual($itinerary->$field, $requestData[$field])) {
+                    \Illuminate\Support\Facades\Log::info("Pricing diff - Field '{$field}': DB = '" . json_encode($itinerary->$field) . "', Request = '" . json_encode($requestData[$field]) . "'");
                     return true;
                 }
             }
@@ -1174,6 +1194,7 @@ class ItineraryController extends BaseController
         
         if (array_key_exists('quoted_options', $requestData)) {
             if (!$this->valuesAreEqual($itinerary->quoted_options, $requestData['quoted_options'])) {
+                \Illuminate\Support\Facades\Log::info("Pricing diff - quoted_options: DB = '" . json_encode($itinerary->quoted_options) . "', Request = '" . json_encode($requestData['quoted_options']) . "'");
                 return true;
             }
         }
@@ -1182,10 +1203,12 @@ class ItineraryController extends BaseController
         $currentEntries = $itinerary->entries;
         foreach ($entries as $entryData) {
             if (empty($entryData['id'])) {
+                \Illuminate\Support\Facades\Log::info("Pricing diff - New entry added (no ID in request)");
                 return true;
             }
             $entry = $currentEntries->firstWhere('id', $entryData['id']);
             if (!$entry) {
+                \Illuminate\Support\Facades\Log::info("Pricing diff - Entry {$entryData['id']} not found in DB");
                 return true;
             }
             
@@ -1198,6 +1221,7 @@ class ItineraryController extends BaseController
                 !$this->valuesAreEqual($entry->markup, $expectedMarkup) ||
                 !$this->valuesAreEqual($entry->base_amount, $expectedBaseAmount) ||
                 !$this->valuesAreEqual($entry->base_markup, $expectedBaseMarkup)) {
+                \Illuminate\Support\Facades\Log::info("Pricing diff - Entry ID {$entryData['id']}: DB amount = {$entry->amount}, Req = {$expectedAmount}; DB markup = {$entry->markup}, Req = {$expectedMarkup}");
                 return true;
             }
         }
