@@ -520,9 +520,6 @@ class ItineraryController extends BaseController
 
             $itinerary = Itinerary::findOrFail($id);
 
-            // ── Version History: snapshot current state before pricing changes ──
-            $itinerary->createVersionSnapshot();
-
             Validator::make($request->all(), [
                 'entries' => 'required|array|min:1',
                 'entries.*.id' => 'required|exists:itinerary_entries,id,deleted_at,NULL',
@@ -546,6 +543,81 @@ class ItineraryController extends BaseController
                 'entries.*.amount' => 'Amount',
                 'entries.*.markup' => 'Mark Up',
             ])->validate();
+
+            // Check if there are any actual changes before snapshotting
+            $hasChanges = false;
+            $itineraryFields = [
+                'extra_markup_amount',
+                'extra_markup_percentage',
+                'cgst_percentage',
+                'sgst_percentage',
+                'igst_percentage',
+                'tcs_percentage',
+                'discount_amount',
+                'currency',
+                'description',
+                'price_mode',
+                'total_amount',
+                'grand_total',
+                'converted_total',
+                'exchange_rate',
+            ];
+
+            foreach ($itineraryFields as $field) {
+                if ($request->has($field)) {
+                    $oldVal = $itinerary->$field;
+                    $newVal = $request->input($field);
+                    if (is_numeric($oldVal) && is_numeric($newVal)) {
+                        if (abs((float)$oldVal - (float)$newVal) > 0.0001) {
+                            $hasChanges = true;
+                            break;
+                        }
+                    } else {
+                        if (strval($oldVal) !== strval($newVal)) {
+                            $hasChanges = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!$hasChanges && $request->has('quoted_options')) {
+                $oldQuoted = $itinerary->quoted_options;
+                $newQuoted = $request->quoted_options;
+                $oldDecoded = is_string($oldQuoted) ? json_decode($oldQuoted, true) : $oldQuoted;
+                $newDecoded = is_string($newQuoted) ? json_decode($newQuoted, true) : $newQuoted;
+                if ($oldDecoded != $newDecoded) {
+                    $hasChanges = true;
+                }
+            }
+
+            if (!$hasChanges && $request->has('entries')) {
+                foreach ($request->entries as $entryData) {
+                    if (isset($entryData['id'])) {
+                        $entry = ItineraryEntry::find($entryData['id']);
+                        if ($entry) {
+                            $amountDiff = abs((float)$entry->amount - (float)($entryData['amount'] ?? 0)) > 0.0001;
+                            $markupDiff = abs((float)$entry->markup - (float)($entryData['markup'] ?? 0)) > 0.0001;
+                            
+                            $reqBaseAmount = $entryData['base_amount'] ?? $entryData['amount'] ?? 0;
+                            $baseAmountDiff = abs((float)($entry->base_amount ?? $entry->amount) - (float)$reqBaseAmount) > 0.0001;
+                            
+                            $reqBaseMarkup = $entryData['base_markup'] ?? $entryData['markup'] ?? 0;
+                            $baseMarkupDiff = abs((float)($entry->base_markup ?? $entry->markup) - (float)$reqBaseMarkup) > 0.0001;
+
+                            if ($amountDiff || $markupDiff || $baseAmountDiff || $baseMarkupDiff) {
+                                $hasChanges = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if ($hasChanges) {
+                // ── Version History: snapshot current state before pricing changes ──
+                $itinerary->createVersionSnapshot();
+            }
 
             foreach ($request->entries as $key => $entryData) {
                 $entry = ItineraryEntry::findOrFail($entryData['id']);
