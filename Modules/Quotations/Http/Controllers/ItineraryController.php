@@ -376,9 +376,12 @@ class ItineraryController extends BaseController
         try {
             $this->requestValidator($request->all())->validate();
 
-            // ── Version History: snapshot current state before overwriting ──
-            $currentItinerary = Itinerary::findOrFail($id);
-            $currentItinerary->createVersionSnapshot();
+            $currentItinerary = Itinerary::with('entries')->findOrFail($id);
+            
+            // Only snapshot if something actually changed
+            if ($this->hasItineraryChanges($currentItinerary, $request->all())) {
+                $currentItinerary->createVersionSnapshot();
+            }
 
             $itinerary = $this->process($request->all(), $id);
             DB::commit();
@@ -485,10 +488,12 @@ class ItineraryController extends BaseController
         DB::beginTransaction();
         try {
 
-            $itinerary = Itinerary::findOrFail($id);
+            $itinerary = Itinerary::with('entries')->findOrFail($id);
 
-            // ── Version History: snapshot current state before pricing changes ──
-            $itinerary->createVersionSnapshot();
+            // Only snapshot if pricing actually changed
+            if ($this->hasPricingChanges($itinerary, $request->all())) {
+                $itinerary->createVersionSnapshot();
+            }
 
             Validator::make($request->all(), [
                 'entries' => 'required|array|min:1',
@@ -976,6 +981,230 @@ class ItineraryController extends BaseController
      * @param  int  $id
      * @return JsonResponse
      */
+    private function valuesAreEqual($val1, $val2): bool
+    {
+        if ($val1 === $val2) {
+            return true;
+        }
+        if (($val1 === null || $val1 === '') && ($val2 === null || $val2 === '')) {
+            return true;
+        }
+        // Decode JSON if one is string and the other is array/object
+        if (is_string($val1) && isset($val1[0]) && ($val1[0] === '[' || $val1[0] === '{')) {
+            $decoded = json_decode($val1, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $val1 = $decoded;
+            }
+        }
+        if (is_string($val2) && isset($val2[0]) && ($val2[0] === '[' || $val2[0] === '{')) {
+            $decoded = json_decode($val2, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $val2 = $decoded;
+            }
+        }
+        
+        if (is_array($val1) && is_array($val2)) {
+            // Sort keys to compare
+            ksort($val1);
+            ksort($val2);
+            return json_encode($val1) === json_encode($val2);
+        }
+        
+        if (is_numeric($val1) && is_numeric($val2)) {
+            return (float)$val1 === (float)$val2;
+        }
+        if (is_bool($val1) || is_bool($val2)) {
+            return (bool)$val1 === (bool)$val2;
+        }
+        return trim((string)$val1) === trim((string)$val2);
+    }
+
+    private function hasItineraryChanges(Itinerary $itinerary, array $requestData): bool
+    {
+        // 1. Check itinerary-level changes
+        $fields = [
+            'package_name', 'enquiry_id', 'start_date', 'end_date', 'adult_count', 
+            'child_count', 'destination_id', 'valid_until', 'price_mode', 'currency'
+        ];
+        foreach ($fields as $field) {
+            if (array_key_exists($field, $requestData)) {
+                if (!$this->valuesAreEqual($itinerary->$field, $requestData[$field])) {
+                    return true;
+                }
+            }
+        }
+
+        // 2. Check entries changes
+        $entriesData = $requestData['entries'] ?? [];
+        $currentEntries = $itinerary->entries;
+
+        $existingEntryIds = $currentEntries->pluck('id')->toArray();
+        $requestEntryIds = [];
+        
+        foreach ($entriesData as $entry) {
+            if (empty($entry['id'])) {
+                return true; // New entry added
+            }
+            $requestEntryIds[] = $entry['id'];
+        }
+
+        // Check if any existing entry is deleted
+        $deletedIds = array_diff($existingEntryIds, $requestEntryIds);
+        if (!empty($deletedIds)) {
+            return true;
+        }
+
+        // Compare each entry
+        foreach ($entriesData as $entry) {
+            $existingEntry = $currentEntries->firstWhere('id', $entry['id']);
+            if (!$existingEntry) {
+                return true;
+            }
+
+            // We need to compute amount just like in process() because it's calculated on save
+            $expectedAmount = 0;
+            if (($entry['entry_type'] ?? '') == 'HOTEL') {
+                $room = Room::find($entry['room_id']);
+                if ($room) {
+                    $singlePrice = ($entry['single_count'] ?? 0) * $room->single_bed_amount;
+                    $doublePrice = ($entry['double_count'] ?? 0) * $room->double_bed_amount;
+                    $triplePrice = ($entry['triple_count'] ?? 0) * $room->triple_bed_amount;
+                    $quadPrice = ($entry['quad_count'] ?? 0) * $room->quad_bed_amount;
+                    $twoBedroomPrice = ($entry['two_bedroom_count'] ?? 0) * ($room->two_bedroom_amount ?? 0);
+                    $threeBedroomPrice = ($entry['three_bedroom_count'] ?? 0) * ($room->three_bedroom_amount ?? 0);
+                    $fourBedroomPrice = ($entry['four_bedroom_count'] ?? 0) * ($room->four_bedroom_amount ?? 0);
+                    $extraPrice = ($entry['extra_count'] ?? 0) * $room->extra_bed_amount;
+                    $childWPrice = ($entry['child_w_count'] ?? 0) * $room->child_w_bed_amount;
+                    $childNPrice = ($entry['child_n_count'] ?? 0) * $room->child_n_bed_amount;
+                    $expectedAmount = $singlePrice + $doublePrice + $triplePrice + $quadPrice + $twoBedroomPrice + $threeBedroomPrice + $fourBedroomPrice + $extraPrice + $childWPrice + $childNPrice;
+                }
+            } elseif (($entry['entry_type'] ?? '') == 'ACTIVITY') {
+                $activityStartDate = $entry['start_date'] ?? null;
+                $activityEndDate = $entry['end_date'] ?? null;
+                $activityEstimation = ActivityEstimation::where('activity_id', $entry['subject_id'])->whereDate('from_date', '<=', $activityStartDate)->whereDate('to_date', '>=', $activityEndDate)->first();
+
+                if ($activityEstimation) {
+                    $adultCount = (isset($entry['adult_count']) && $entry['adult_count'] !== null) ? $entry['adult_count'] : ($requestData['adult_count'] ?? 0);
+                    $childCount = (isset($entry['child_count']) && $entry['child_count'] !== null) ? $entry['child_count'] : ($requestData['child_count'] ?? 0);
+                    $expectedAmount = ($activityEstimation->adult_cost * $adultCount) + ($activityEstimation->child_cost * $childCount);
+                }
+            } elseif (($entry['entry_type'] ?? '') == 'TRANSFER') {
+                if (($entry['transfer_type'] ?? '') == 'PRIVATE') {
+                    $expectedAmount = $entry['cost'] ?? 0;
+                } elseif (($entry['transfer_type'] ?? '') == 'SIC') {
+                    $expectedAmount = ($entry['adult_cost'] ?? 0) + ($entry['child_cost'] ?? 0);
+                }
+            }
+
+            // Compare fields set in process()
+            $expectedFields = [
+                'date' => $entry['date'] ?? null,
+                'entry_type' => $entry['entry_type'] ?? null,
+                'start_date' => $entry['start_date'] ?? null,
+                'start_time' => $entry['start_time'] ?? null,
+                'end_date' => $entry['end_date'] ?? null,
+                'end_time' => $entry['end_time'] ?? null,
+                'subject_id' => $entry['subject_id'] ?? null,
+                'sub_destination_id' => $entry['sub_destination_id'] ?? null,
+                'sort_order' => $entry['seq'] ?? 0,
+                'amount' => $expectedAmount,
+            ];
+
+            if (($entry['entry_type'] ?? '') == 'HOTEL') {
+                $expectedFields['option'] = $entry['option'] ?? 'option 1';
+                $expectedFields['room_id'] = $entry['room_id'] ?? null;
+                $expectedFields['single_count'] = $entry['single_count'] ?? 0;
+                $expectedFields['double_count'] = $entry['double_count'] ?? 0;
+                $expectedFields['triple_count'] = $entry['triple_count'] ?? 0;
+                $expectedFields['quad_count'] = $entry['quad_count'] ?? 0;
+                $expectedFields['two_bedroom_count'] = $entry['two_bedroom_count'] ?? 0;
+                $expectedFields['three_bedroom_count'] = $entry['three_bedroom_count'] ?? 0;
+                $expectedFields['four_bedroom_count'] = $entry['four_bedroom_count'] ?? 0;
+                $expectedFields['extra_count'] = $entry['extra_count'] ?? 0;
+                $expectedFields['child_w_count'] = $entry['child_w_count'] ?? 0;
+                $expectedFields['child_n_count'] = $entry['child_n_count'] ?? 0;
+                $expectedFields['room_rows'] = $entry['room_rows'] ?? null;
+                $expectedFields['no_of_person'] = $entry['no_of_person'] ?? 0;
+                $expectedFields['description'] = $entry['description'] ?? null;
+            } elseif (($entry['entry_type'] ?? '') == 'ACTIVITY') {
+                $expectedFields['description'] = $entry['description'] ?? null;
+                $expectedFields['adult_count'] = $entry['adult_count'] ?? 0;
+                $expectedFields['child_count'] = $entry['child_count'] ?? 0;
+                $expectedFields['no_of_person'] = $expectedFields['adult_count'] + $expectedFields['child_count'];
+            } elseif (($entry['entry_type'] ?? '') == 'TRANSFER') {
+                $expectedFields['transfer_type'] = $entry['transfer_type'] ?? null;
+                $expectedFields['adult_count'] = $entry['adult_count'] ?? ($requestData['adult_count'] ?? 0);
+                $expectedFields['child_count'] = $entry['child_count'] ?? ($requestData['child_count'] ?? 0);
+                $expectedFields['no_of_person'] = $expectedFields['adult_count'] + $expectedFields['child_count'];
+                $expectedFields['vehicle_count'] = $entry['vehicle_count'] ?? 1;
+                $expectedFields['vehicle_type'] = $entry['vehicle_type'] ?? null;
+                if (($entry['transfer_type'] ?? '') == 'PRIVATE') {
+                    $expectedFields['cost'] = $entry['cost'] ?? 0;
+                } elseif (($entry['transfer_type'] ?? '') == 'SIC') {
+                    $expectedFields['adult_cost'] = $entry['adult_cost'] ?? 0;
+                    $expectedFields['child_cost'] = $entry['child_cost'] ?? 0;
+                }
+            }
+
+            foreach ($expectedFields as $f => $val) {
+                if (!$this->valuesAreEqual($existingEntry->$f, $val)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function hasPricingChanges(Itinerary $itinerary, array $requestData): bool
+    {
+        $pricingFields = [
+            'extra_markup_amount', 'extra_markup_percentage', 'cgst_percentage', 'sgst_percentage',
+            'igst_percentage', 'tcs_percentage', 'discount_amount', 'currency', 'description',
+            'price_mode', 'total_amount', 'grand_total', 'converted_total', 'exchange_rate'
+        ];
+        
+        foreach ($pricingFields as $field) {
+            if (array_key_exists($field, $requestData)) {
+                if (!$this->valuesAreEqual($itinerary->$field, $requestData[$field])) {
+                    return true;
+                }
+            }
+        }
+        
+        if (array_key_exists('quoted_options', $requestData)) {
+            if (!$this->valuesAreEqual($itinerary->quoted_options, $requestData['quoted_options'])) {
+                return true;
+            }
+        }
+
+        $entries = $requestData['entries'] ?? [];
+        $currentEntries = $itinerary->entries;
+        foreach ($entries as $entryData) {
+            if (empty($entryData['id'])) {
+                return true;
+            }
+            $entry = $currentEntries->firstWhere('id', $entryData['id']);
+            if (!$entry) {
+                return true;
+            }
+            
+            $expectedAmount = $entryData['amount'];
+            $expectedMarkup = $entryData['markup'];
+            $expectedBaseAmount = isset($entryData['base_amount']) ? $entryData['base_amount'] : $entryData['amount'];
+            $expectedBaseMarkup = isset($entryData['base_markup']) ? $entryData['base_markup'] : $entryData['markup'];
+            
+            if (!$this->valuesAreEqual($entry->amount, $expectedAmount) ||
+                !$this->valuesAreEqual($entry->markup, $expectedMarkup) ||
+                !$this->valuesAreEqual($entry->base_amount, $expectedBaseAmount) ||
+                !$this->valuesAreEqual($entry->base_markup, $expectedBaseMarkup)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function shareEmail(Request $request, $id)
     {
         try {
