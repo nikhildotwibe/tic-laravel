@@ -416,6 +416,39 @@ class ItineraryController extends BaseController
     }
 
     /**
+     * Remove the specified resources from storage.
+     *
+     * @param  Request  $request
+     * @return JsonResponse
+     */
+    public function bulkDestroy(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $validator = Validator::make($request->all(), [
+                'ids' => 'required|array',
+                'ids.*' => 'exists:itineraries,id,deleted_at,NULL',
+            ]);
+            if ($validator->fails()) {
+                return $this->sendError('Validation Error.', $validator->errors(), 422);
+            }
+
+            $ids = $request->input('ids');
+            ItineraryEntry::whereIn('itinerary_id', $ids)->delete();
+            Itinerary::whereIn('id', $ids)->delete();
+
+            DB::commit();
+
+            return $this->sendResponse([], 'Itineraries deleted Successfully', 200);
+        } catch (Exception $exception) {
+            DB::rollBack();
+
+            return $this->HandleException($exception);
+        }
+    }
+
+
+    /**
      * get pricing the specified resource.
      *
      * @param  int  $id
