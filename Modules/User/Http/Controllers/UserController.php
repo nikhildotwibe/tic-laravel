@@ -32,7 +32,7 @@ class UserController extends BaseController
                 $query = $query->where('name', 'LIKE', '%' . request()->name . '%');
             }
 
-            $data = $query->paginate(pageLength());
+            $data = $query->paginate(1000); // Return all users; frontend handles its own client-side pagination
 
             return $this->sendResponse(
                 $this->paginatedResourceCollection(UserResource::class, $data),
