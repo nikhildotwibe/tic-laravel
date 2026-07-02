@@ -674,7 +674,8 @@
             $packageTerm = Modules\Settings\Entities\PackageTerm::latest()->first();
         @endphp
         @if($packageTerm && !empty($packageTerm->package_terms))
-            <div class="package-terms-section" style="margin-top: 15px; line-height: 1.8;">
+            <p class="section-header" style="font-size:12px; margin-top:20px;">Package Terms &amp; Condition</p>
+            <div class="package-terms-section" style="margin-top: 10px; line-height: 1.8;">
                 {!! $packageTerm->package_terms !!}
             </div>
         @endif
