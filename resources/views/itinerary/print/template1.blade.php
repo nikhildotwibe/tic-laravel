@@ -457,27 +457,48 @@
                     @if($matchedQOpt && !empty($matchedQOpt['rows']))
                         @foreach($matchedQOpt['rows'] as $row)
                             @php
-                                $count = isset($row['count']) && $row['count'] > 0 ? $row['count'] : 1;
+                                $rawCount = isset($row['count']) && $row['count'] > 0 ? (int)$row['count'] : 1;
+                                $rowKey   = $row['key'] ?? '';
+                                $label    = $row['label'] ?? 'Person';
                                 $isPerMode = ($itinerary->price_mode != "TOTAL_PRICE");
+
+                                // Reverse the occupancy-factor multiplication that PaymentForm applies
+                                // when saving quoted_options (double→×2, triple→×3, quad→×4, etc.)
+                                $occupancyFactors = [
+                                    'single'        => 1,
+                                    'double'        => 2,
+                                    'triple'        => 3,
+                                    'quad'          => 4,
+                                    'two_bedroom'   => 2,
+                                    'three_bedroom' => 3,
+                                    'four_bedroom'  => 4,
+                                    'extra'         => 1,
+                                    'childW'        => 1,
+                                    'childN'        => 1,
+                                    'adult'         => 1,
+                                    'child'         => 1,
+                                ];
+                                $occupancyFactor = $occupancyFactors[$rowKey] ?? 1;
+                                $personCount     = (int) round($rawCount / $occupancyFactor);
+                                if ($personCount < 1) $personCount = 1;
+
+                                // Recover the true row total (consistent regardless of factor)
+                                $rowTotal = $row['total'] ?? (($row['perPerson'] ?? 0) * $rawCount);
+
                                 if ($isPerMode) {
-                                    $perPerson = $row['perPerson'] ?? $row['total'] ?? 0;
+                                    // Stored perPerson = total / rawCount; multiply back by factor = real per-person price
+                                    $storedPerPerson = $row['perPerson'] ?? $row['total'] ?? 0;
+                                    $perPerson = $storedPerPerson * $occupancyFactor;
                                 } else {
-                                    $rowTotal = $row['total'] ?? (($row['perPerson'] ?? 0) * $count);
-                                    $perPerson = $count > 0 ? $rowTotal / $count : 0;
+                                    $perPerson = $personCount > 0 ? $rowTotal / $personCount : 0;
                                 }
-                                $label = $row['label'] ?? 'Person';
-                                // Option A: add the floored per-person cost × pax count
-                                $displayGrandTotal += floor($perPerson) * $count;
+
+                                // Accumulate grand total using real person count × real per-person price
+                                $displayGrandTotal += floor($perPerson) * $personCount;
                             @endphp
-                            {{ $currency }} {{ number_format(floor($perPerson), 0) }} 
-                            @if(stripos($label, 'child') !== false || stripos($label, 'person') !== false)
-                                per {{ $label }}
-                            @else
-                                per Person ({{ $label }})
-                            @endif
-                            
-                            @if(isset($row['count']) && $row['count'] > 0)
-                                * {{ $row['count'] }}
+                            {{ $currency }} {{ number_format(floor($perPerson), 0) }} per {{ $label }}
+                            @if($personCount > 0)
+                                * {{ $personCount }}
                             @endif
                             <br>
                         @endforeach
