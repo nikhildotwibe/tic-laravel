@@ -670,66 +670,14 @@
         @endif
 
         @if($opts['terms'])
-        {{-- ============================================ --}}
-        {{-- TOUR COST EXCLUDES --}}
-        {{-- ============================================ --}}
-        <p class="section-header">Tour Cost Excludes:</p>
-        <ul class="cost-list" style="list-style-type: '· ';">
-            <li>Any Airfare / Visa fee</li>
-            <li>Our services cover accidental insurance, if any hospital case guests have to pay and the insurance company will reimburse after checking the documents. It is advisable for you to take an insurance cover for total travel including air.</li>
-            <li>Any meals other than those mentioned in Menu.</li>
-            <li>Any portage at airports and hotels, tips, insurance, wine, mineral water, telephone charges, and all items of personal nature.</li>
-            <li>Expenses caused by factors beyond our control like rail and flight delays, roadblocks, vehicle mal-functions, political disturbances etc.</li>
-            <li>Any services not specifically mentioned in the inclusions.</li>
-        </ul>
-
-        {{-- ============================================ --}}
-        {{-- IMPORTANT NOTE --}}
-        {{-- ============================================ --}}
-        <div class="important-note">
-            <p class="section-header">Important Note:</p>
-            <div style="margin-left: 15px; line-height: 1.8;">
-                · <span class="highlight"><strong>The above package is only an offer and not a confirmation</strong></span>. <em>We shall proceed with your booking only after we receive your confirmation.</em><br>
-                · The airfare quoted, if any, is as of now and is subject to change.<br>
-                · In case of non-availability of rooms at the hotels mentioned, we shall provide you alternate hotels of similar category.<br>
-                · <span class="highlight">Check-in time at the hotel is 14:00/15:00 hrs & Check-out time at the hotel is 11:00/12.00 hrs As per the hotel policy</span><br>
-                · Booking confirmation is subject to availability.<br>
-                · The above rates are valid for the mentioned period only.<br>
-                · 100% Package cost should be paid <u>07 Days</u> prior to departure or mentioned cut off date<br>
-                · TIC Tours Reserves the right to change/modify or terminate the offer any time at its own discretion and without any prior notice.<br>
-                · <span class="highlight">Infants are free (Below 02 years/below 90 CM), If the height is more than 90 CM is considered as a child & The Child height is more than 120/130 CM is considered as an adult and pay the difference at the counter directly.</span><br>
-                · All the Island Tours and ferry transfers depend on the weather condition. If Pattaya Coral Island does not operate due to Heavy Waves/Wind/Thunderstorm we can refund THB 200/USD 6 Per person only.<br>
+        @php
+            $packageTerm = Modules\Settings\Entities\PackageTerm::latest()->first();
+        @endphp
+        @if($packageTerm && !empty($packageTerm->package_terms))
+            <div class="package-terms-section" style="margin-top: 15px; line-height: 1.8;">
+                {!! $packageTerm->package_terms !!}
             </div>
-        </div>
-
-        {{-- ============================================ --}}
-        {{-- CANCELLATION POLICY --}}
-        {{-- ============================================ --}}
-        <div class="cancellation-section">
-            <p class="cancellation-title">CANCELLATION POLICY</p>
-            <p>Cancellation charges per person will be applicable as follows:</p>
-            <div class="cancellation-items">
-                · If cancellation is made any time not less than 16 days prior to departure, 20-30% of Package Cost shall be deducted.<br>
-                · If cancellation is made 15 to 07 days prior to departure, 50-60% of tour cost shall be deducted.<br>
-                · If cancellation is made 06 to 03 day prior to departure, 75-85% of tour cost shall be deducted.<br>
-                · In case a passenger is no show at the time of departure, 100% of tour cost shall be deducted.<br>
-            </div>
-        </div>
-
-        {{-- ============================================ --}}
-        {{-- PAYMENT NOTE --}}
-        {{-- ============================================ --}}
-        <div class="payment-note">
-            <p class="payment-title">Payment Note:</p>
-            <div class="payment-list">
-                <ol>
-                    <li>Online Payment available - use Credit/Debit Card - <strong>No Additional charge</strong></li>
-                    <li>For Indian Payment 5% GST is applicable and ROE will be <u>xe.com</u> +1.5 on the day of deposit. TCS Declaration is required</li>
-                    <li>Every swift transaction adds USD 35 as bank charges. <u>Outward Remittance charge to be borne by Transferor</u></li>
-                    <li>Confirmed tour vouchers will be issued 3 days before the travel date.</li>
-                </ol>
-            </div>
-        </div>
+        @endif
         @endif
 
     </div>
