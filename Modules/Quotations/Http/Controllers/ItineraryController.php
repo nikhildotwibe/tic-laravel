@@ -219,6 +219,29 @@ class ItineraryController extends BaseController
 
         $itinerary = Itinerary::updateOrCreate(['id' => $id], $requestData);
 
+        // Sync main details back to Enquiry
+        if ($itinerary->enquiry_id) {
+            $enquiry = Enquiry::find($itinerary->enquiry_id);
+            if ($enquiry) {
+                if (isset($requestData['start_date'])) {
+                    $enquiry->start_date = $requestData['start_date'];
+                }
+                if (isset($requestData['end_date'])) {
+                    $enquiry->end_date = $requestData['end_date'];
+                }
+                if (isset($requestData['adult_count'])) {
+                    $enquiry->adult_count = $requestData['adult_count'];
+                }
+                if (isset($requestData['child_count'])) {
+                    $enquiry->child_count = $requestData['child_count'];
+                }
+                if (isset($requestData['destination_id'])) {
+                    $enquiry->destination_id = $requestData['destination_id'];
+                }
+                $enquiry->save();
+            }
+        }
+
         $savedItems = [];
 
         foreach ($entriesData as $key => $entry) {
