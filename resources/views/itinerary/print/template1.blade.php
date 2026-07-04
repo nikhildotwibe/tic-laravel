@@ -457,43 +457,18 @@
                     @if($matchedQOpt && !empty($matchedQOpt['rows']))
                         @foreach($matchedQOpt['rows'] as $row)
                             @php
-                                $rawCount = isset($row['count']) && $row['count'] > 0 ? (int)$row['count'] : 1;
-                                $rowKey   = $row['key'] ?? '';
-                                $label    = $row['label'] ?? 'Person';
-                                $isPerMode = ($itinerary->price_mode != "TOTAL_PRICE");
+                                $rawCount    = isset($row['count']) && $row['count'] > 0 ? (int)$row['count'] : 1;
+                                $rowKey      = $row['key'] ?? '';
+                                $label       = $row['label'] ?? 'Person';
 
-                                // Reverse the occupancy-factor multiplication that PaymentForm applies
-                                // when saving quoted_options (double→×2, triple→×3, quad→×4, etc.)
-                                $occupancyFactors = [
-                                    'single'        => 1,
-                                    'double'        => 2,
-                                    'triple'        => 3,
-                                    'quad'          => 4,
-                                    'two_bedroom'   => 2,
-                                    'three_bedroom' => 3,
-                                    'four_bedroom'  => 4,
-                                    'extra'         => 1,
-                                    'childW'        => 1,
-                                    'childN'        => 1,
-                                    'adult'         => 1,
-                                    'child'         => 1,
-                                ];
-                                $occupancyFactor = $occupancyFactors[$rowKey] ?? 1;
-                                $personCount     = (int) round($rawCount / $occupancyFactor);
-                                if ($personCount < 1) $personCount = 1;
+                                // row['total'] is the grand total for ALL persons of this type.
+                                // row['count'] is the actual number of persons (e.g. 4 for 4 pax in double).
+                                // perPerson = total / count  — simple and correct.
+                                $rowTotal    = (float)($row['total'] ?? 0);
+                                $personCount = $rawCount; // display count = actual person count
+                                $perPerson   = $rawCount > 0 ? $rowTotal / $rawCount : 0;
 
-                                // Recover the true row total (consistent regardless of factor)
-                                $rowTotal = $row['total'] ?? (($row['perPerson'] ?? 0) * $rawCount);
-
-                                if ($isPerMode) {
-                                    // Stored perPerson = total / rawCount; multiply back by factor = real per-person price
-                                    $storedPerPerson = $row['perPerson'] ?? $row['total'] ?? 0;
-                                    $perPerson = $storedPerPerson * $occupancyFactor;
-                                } else {
-                                    $perPerson = $personCount > 0 ? $rowTotal / $personCount : 0;
-                                }
-
-                                // Accumulate grand total using real person count × real per-person price
+                                // Accumulate grand total
                                 $displayGrandTotal += floor($perPerson) * $personCount;
                             @endphp
                             {{ $currency }} {{ number_format(floor($perPerson), 0) }} per {{ $label }}
