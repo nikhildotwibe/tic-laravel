@@ -14,7 +14,7 @@ class RoomMealPlanEntry extends BaseModel
     use HasFactory;
     use UseUuidTrait;
     use SoftDeletes;
-    protected $fillable = [];
+    protected $fillable = ['room_id', 'meal_plan_id', 'amount', 'child_amount'];
 
 
 

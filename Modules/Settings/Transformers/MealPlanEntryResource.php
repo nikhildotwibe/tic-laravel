@@ -20,6 +20,7 @@ class MealPlanEntryResource extends JsonResource
             'meal_plan_entry_id' => $this->resource->id,
             'name' => $this->resource->meal_plan->name,
             'amount' => $this->resource->amount,
+            'child_amount' => $this->resource->child_amount ?? 0,
         ];
     }
 }

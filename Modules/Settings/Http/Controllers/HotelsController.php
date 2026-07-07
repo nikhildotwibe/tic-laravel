@@ -83,6 +83,7 @@ class HotelsController extends BaseController
 
                 'rooms.*.meal_plans.*.id' => 'required|exists:meal_plans,id,deleted_at,NULL',
                 'rooms.*.meal_plans.*.amount' => 'required|gt:0',
+                'rooms.*.meal_plans.*.child_amount' => 'nullable|numeric|gte:0',
 
                 'rooms.*.amenities.*' => 'required|exists:room_amenities,id,deleted_at,NULL',
 
@@ -250,6 +251,7 @@ class HotelsController extends BaseController
                 $mealPlan->room_id = $room->id;
                 $mealPlan->meal_plan_id = $meal['id'];
                 $mealPlan->amount = $meal['amount'];
+                $mealPlan->child_amount = $meal['child_amount'] ?? 0;
                 $mealPlan->save();
             }
             // $room->meal_plans()->saveMany($mealPlans);
