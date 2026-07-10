@@ -117,17 +117,17 @@ class ItineraryController extends BaseController
                 // 'entries.*.description' => 'required_if:entries.*.entry_type,ACTIVITY',
 
                 // TRANSFER specific
-                'entries.*.transfer_type' => 'required_if:entries.*.entry_type,TRANSFER|in:PRIVATE,SIC',
-                'entries.*.cost' => 'required_if:entries.*.entry_type,TRANSFER|required_if:entries.*.transfer_type,PRIVATE|gte:0',
-                'entries.*.adult_cost' => 'required_if:entries.*.entry_type,TRANSFER|required_if:entries.*.transfer_type,SIC|gte:0',
-                'entries.*.child_cost' => 'required_if:entries.*.entry_type,TRANSFER|required_if:entries.*.transfer_type,SIC|gte:0',
+                'entries.*.transfer_type' => 'nullable|in:PRIVATE,SIC',
+                'entries.*.cost' => 'nullable|gte:0',
+                'entries.*.adult_cost' => 'nullable|gte:0',
+                'entries.*.child_cost' => 'nullable|gte:0',
                 'entries.*.vehicle_count' => 'nullable|integer',
                 'entries.*.vehicle_type' => 'nullable|string',
 
-                'entries.*.start_date' => 'required|date_format:Y-m-d',
-                'entries.*.start_time' => 'required|date_format:H:i:s',
-                'entries.*.end_date' => 'required|date_format:Y-m-d',
-                'entries.*.end_time' => 'required|date_format:H:i:s',
+                'entries.*.start_date' => 'nullable|date_format:Y-m-d',
+                'entries.*.start_time' => 'nullable|date_format:H:i:s',
+                'entries.*.end_date' => 'nullable|date_format:Y-m-d',
+                'entries.*.end_time' => 'nullable|date_format:H:i:s',
             ];
 
         return Validator::make($requestData, $rules)->setAttributeNames(
@@ -175,6 +175,11 @@ class ItineraryController extends BaseController
      */
     public function store(Request $request)
     {
+        if (is_string($request->input('entries'))) {
+            $request->merge([
+                'entries' => json_decode($request->input('entries'), true)
+            ]);
+        }
         DB::beginTransaction();
         try {
             $this->requestValidator($request->all())->validate();
@@ -255,6 +260,9 @@ class ItineraryController extends BaseController
         $savedItems = [];
 
         foreach ($entriesData as $key => $entry) {
+            $entry['end_date'] = !empty($entry['end_date']) ? $entry['end_date'] : ($entry['start_date'] ?? null);
+            $entry['end_time'] = !empty($entry['end_time']) ? $entry['end_time'] : ($entry['start_time'] ?? null);
+
             $entryData = [];
 
             $entryData['date'] = $entry['date'];
@@ -322,30 +330,36 @@ class ItineraryController extends BaseController
                 }
             } elseif ($entry['entry_type'] == 'TRANSFER') {
 
-                $entryData['transfer_type'] = $entry['transfer_type'];
+                $entryData['transfer_type'] = $entry['transfer_type'] ?? null;
                 $entryData['adult_count'] = $entry['adult_count'] ?? $requestData['adult_count'];
                 $entryData['child_count'] = $entry['child_count'] ?? $requestData['child_count'];
                 $entryData['no_of_person'] = $entryData['adult_count'] + $entryData['child_count'];
                 $entryData['vehicle_count'] = $entry['vehicle_count'] ?? 1;
                 $entryData['vehicle_type'] = $entry['vehicle_type'] ?? null;
 
-                if ($entry['transfer_type'] == 'PRIVATE') {
-                    $entryData['cost'] = $entry['cost'];
-                    $entryData['amount'] = $entry['cost'];
-                } elseif ($entry['transfer_type'] == 'SIC') {
-                    $entryData['adult_cost'] = $entry['adult_cost'];
-                    $entryData['child_cost'] = $entry['child_cost'];
+                $transferType = $entry['transfer_type'] ?? null;
+                if ($transferType == 'PRIVATE') {
+                    $entryData['cost'] = $entry['cost'] ?? 0;
+                    $entryData['amount'] = $entry['cost'] ?? 0;
+                } elseif ($transferType == 'SIC') {
+                    $entryData['adult_cost'] = $entry['adult_cost'] ?? 0;
+                    $entryData['child_cost'] = $entry['child_cost'] ?? 0;
 
-                    $entryData['amount'] = $entry['adult_cost'] + $entry['child_cost'];
+                    $entryData['amount'] = ($entry['adult_cost'] ?? 0) + ($entry['child_cost'] ?? 0);
+                } else {
+                    $entryData['cost'] = $entry['cost'] ?? 0;
+                    $entryData['adult_cost'] = $entry['adult_cost'] ?? 0;
+                    $entryData['child_cost'] = $entry['child_cost'] ?? 0;
+                    $entryData['amount'] = 0;
                 }
             }
 
-            $entryData['no_of_person'] = $entryData['no_of_person'] ?? $entry['no_of_person'];
+            $entryData['no_of_person'] = $entryData['no_of_person'] ?? ($entry['no_of_person'] ?? 0);
 
-            $entryData['start_date'] = $entry['start_date'];
-            $entryData['start_time'] = $entry['start_time'];
-            $entryData['end_date'] = $entry['end_date'];
-            $entryData['end_time'] = $entry['end_time'];
+            $entryData['start_date'] = !empty($entry['start_date']) ? $entry['start_date'] : ($entry['date'] ?? null);
+            $entryData['start_time'] = !empty($entry['start_time']) ? $entry['start_time'] : '00:00:00';
+            $entryData['end_date'] = !empty($entry['end_date']) ? $entry['end_date'] : $entryData['start_date'];
+            $entryData['end_time'] = !empty($entry['end_time']) ? $entry['end_time'] : $entryData['start_time'];
 
             $entryData['subject_id'] = $entry['subject_id'];
             $entryData['sub_destination_id'] = $entry['sub_destination_id'];
@@ -405,6 +419,11 @@ class ItineraryController extends BaseController
      */
     public function update(Request $request, $id)
     {
+        if (is_string($request->input('entries'))) {
+            $request->merge([
+                'entries' => json_decode($request->input('entries'), true)
+            ]);
+        }
         DB::beginTransaction();
         try {
             $this->requestValidator($request->all())->validate();
@@ -557,6 +576,11 @@ class ItineraryController extends BaseController
      */
     public function setPricing(Request $request, $id)
     {
+        if (is_string($request->input('entries'))) {
+            $request->merge([
+                'entries' => json_decode($request->input('entries'), true)
+            ]);
+        }
         DB::beginTransaction();
         try {
 
