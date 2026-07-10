@@ -190,7 +190,16 @@ class ItineraryController extends BaseController
 
             DB::commit();
 
-            return $this->sendResponse(ItineraryResource::make($itinerary), 'Itinerary created Successfully', 201);
+            $updatedEnquiry = null;
+            if ($itinerary->enquiry_id) {
+                $updatedEnquiry = Enquiry::with(['agent', 'destination', 'sub_destinations', 'sub_destination', 'customer', 'assigned_to_user', 'lead_source', 'requirements', 'priority'])->find($itinerary->enquiry_id);
+            }
+
+            $responseResource = ItineraryResource::make($itinerary)->additional([
+                'updated_enquiry' => $updatedEnquiry ? \Modules\Settings\Transformers\EnquiryResource::make($updatedEnquiry)->resolve() : null
+            ]);
+
+            return $this->sendResponse($responseResource, 'Itinerary created Successfully', 201);
         } catch (Exception $exception) {
             DB::rollBack();
 
@@ -219,8 +228,9 @@ class ItineraryController extends BaseController
 
         $itinerary = Itinerary::updateOrCreate(['id' => $id], $requestData);
 
+        $isCurrent = $itinerary->is_current || !$id;
         // Sync main details back to Enquiry
-        if ($itinerary->enquiry_id) {
+        if ($itinerary->enquiry_id && $isCurrent) {
             $enquiry = Enquiry::find($itinerary->enquiry_id);
             if ($enquiry) {
                 if (isset($requestData['start_date'])) {
@@ -406,7 +416,16 @@ class ItineraryController extends BaseController
             $itinerary = $this->process($request->all(), $id);
             DB::commit();
 
-            return $this->sendResponse(ItineraryResource::make($itinerary), 'Itinerary updated Successfully', 200);
+            $updatedEnquiry = null;
+            if ($itinerary->enquiry_id && $itinerary->is_current) {
+                $updatedEnquiry = Enquiry::with(['agent', 'destination', 'sub_destinations', 'sub_destination', 'customer', 'assigned_to_user', 'lead_source', 'requirements', 'priority'])->find($itinerary->enquiry_id);
+            }
+
+            $responseResource = ItineraryResource::make($itinerary)->additional([
+                'updated_enquiry' => $updatedEnquiry ? \Modules\Settings\Transformers\EnquiryResource::make($updatedEnquiry)->resolve() : null
+            ]);
+
+            return $this->sendResponse($responseResource, 'Itinerary updated Successfully', 200);
         } catch (Exception $exception) {
             DB::rollBack();
 

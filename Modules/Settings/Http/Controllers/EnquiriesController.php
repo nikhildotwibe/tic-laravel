@@ -13,6 +13,8 @@ use Modules\Settings\Entities\EnquiryRequirement;
 use Modules\Settings\Entities\EnquirySubDestination;
 use Modules\Settings\Transformers\EnquiryResource;
 
+use Illuminate\Support\Facades\DB;
+
 class EnquiriesController extends BaseController
 {
 
@@ -179,6 +181,7 @@ class EnquiriesController extends BaseController
 
     public function update(Request $request, $id)
     {
+        DB::beginTransaction();
         try {
             $rules = [
                 'type' => 'required|in:B2B,B2C',
@@ -251,10 +254,30 @@ class EnquiriesController extends BaseController
                 $enquiryRequirement->save();
             }
 
-            $enquiry = Enquiry::findOrFail($id);
+            $enquiry = Enquiry::with(['agent', 'destination', 'sub_destinations', 'sub_destination', 'customer', 'assigned_to_user', 'lead_source', 'requirements', 'priority'])->findOrFail($id);
 
-            return $this->sendResponse(EnquiryResource::make($enquiry), 'Enquiry updated Successfully', 200);
+            // Trigger 1 Cascade: Update the current itinerary
+            $currentItinerary = \Modules\Quotations\Entities\Itinerary::where('enquiry_id', $enquiry->id)
+                ->where('is_current', true)
+                ->first();
+            
+            if ($currentItinerary) {
+                $currentItinerary->start_date = $enquiry->start_date;
+                $currentItinerary->end_date = $enquiry->end_date;
+                // Save quietly if we don't want itinerary observers to re-trigger loops, 
+                // but save() is usually fine if no such observers exist.
+                $currentItinerary->save();
+            }
+
+            DB::commit();
+
+            $responseResource = EnquiryResource::make($enquiry)->additional([
+                'updated_itinerary' => $currentItinerary ? $currentItinerary->toArray() : null
+            ]);
+
+            return $this->sendResponse($responseResource, 'Enquiry updated Successfully', 200);
         } catch (Exception $exception) {
+            DB::rollBack();
             return $this->HandleException($exception);
         }
     }
