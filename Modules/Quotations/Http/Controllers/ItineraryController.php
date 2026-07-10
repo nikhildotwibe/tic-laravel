@@ -346,10 +346,10 @@ class ItineraryController extends BaseController
 
             $entryData['no_of_person'] = $entryData['no_of_person'] ?? ($entry['no_of_person'] ?? 0);
 
-            $entryData['start_date'] = $entry['start_date'] ?? null;
-            $entryData['start_time'] = $entry['start_time'] ?? null;
-            $entryData['end_date'] = $entry['end_date'] ?? null;
-            $entryData['end_time'] = $entry['end_time'] ?? null;
+            $entryData['start_date'] = !empty($entry['start_date']) ? $entry['start_date'] : ($entry['date'] ?? null);
+            $entryData['start_time'] = !empty($entry['start_time']) ? $entry['start_time'] : '00:00:00';
+            $entryData['end_date'] = !empty($entry['end_date']) ? $entry['end_date'] : $entryData['start_date'];
+            $entryData['end_time'] = !empty($entry['end_time']) ? $entry['end_time'] : $entryData['start_time'];
 
             $entryData['subject_id'] = $entry['subject_id'];
             $entryData['sub_destination_id'] = $entry['sub_destination_id'];
