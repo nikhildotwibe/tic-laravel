@@ -126,8 +126,8 @@ class ItineraryController extends BaseController
 
                 'entries.*.start_date' => 'required|date_format:Y-m-d',
                 'entries.*.start_time' => 'required|date_format:H:i:s',
-                'entries.*.end_date' => 'required|date_format:Y-m-d',
-                'entries.*.end_time' => 'required|date_format:H:i:s',
+                'entries.*.end_date' => 'nullable|date_format:Y-m-d',
+                'entries.*.end_time' => 'nullable|date_format:H:i:s',
             ];
 
         return Validator::make($requestData, $rules)->setAttributeNames(
@@ -245,6 +245,9 @@ class ItineraryController extends BaseController
         $savedItems = [];
 
         foreach ($entriesData as $key => $entry) {
+            $entry['end_date'] = !empty($entry['end_date']) ? $entry['end_date'] : ($entry['start_date'] ?? null);
+            $entry['end_time'] = !empty($entry['end_time']) ? $entry['end_time'] : ($entry['start_time'] ?? null);
+
             $entryData = [];
 
             $entryData['date'] = $entry['date'];
