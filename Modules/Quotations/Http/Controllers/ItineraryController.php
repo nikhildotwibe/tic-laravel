@@ -118,9 +118,9 @@ class ItineraryController extends BaseController
 
                 // TRANSFER specific
                 'entries.*.transfer_type' => 'required_if:entries.*.entry_type,TRANSFER|in:PRIVATE,SIC',
-                'entries.*.cost' => 'required_if:entries.*.entry_type,TRANSFER|required_if:entries.*.transfer_type,PRIVATE|gte:0',
-                'entries.*.adult_cost' => 'required_if:entries.*.entry_type,TRANSFER|required_if:entries.*.transfer_type,SIC|gte:0',
-                'entries.*.child_cost' => 'required_if:entries.*.entry_type,TRANSFER|required_if:entries.*.transfer_type,SIC|gte:0',
+                'entries.*.cost' => 'required_if:entries.*.transfer_type,PRIVATE|gte:0',
+                'entries.*.adult_cost' => 'required_if:entries.*.transfer_type,SIC|gte:0',
+                'entries.*.child_cost' => 'required_if:entries.*.transfer_type,SIC|gte:0',
                 'entries.*.vehicle_count' => 'nullable|integer',
                 'entries.*.vehicle_type' => 'nullable|string',
 
@@ -175,6 +175,11 @@ class ItineraryController extends BaseController
      */
     public function store(Request $request)
     {
+        if (is_string($request->input('entries'))) {
+            $request->merge([
+                'entries' => json_decode($request->input('entries'), true)
+            ]);
+        }
         DB::beginTransaction();
         try {
             $this->requestValidator($request->all())->validate();
@@ -398,6 +403,11 @@ class ItineraryController extends BaseController
      */
     public function update(Request $request, $id)
     {
+        if (is_string($request->input('entries'))) {
+            $request->merge([
+                'entries' => json_decode($request->input('entries'), true)
+            ]);
+        }
         DB::beginTransaction();
         try {
             $this->requestValidator($request->all())->validate();
@@ -541,6 +551,11 @@ class ItineraryController extends BaseController
      */
     public function setPricing(Request $request, $id)
     {
+        if (is_string($request->input('entries'))) {
+            $request->merge([
+                'entries' => json_decode($request->input('entries'), true)
+            ]);
+        }
         DB::beginTransaction();
         try {
 
