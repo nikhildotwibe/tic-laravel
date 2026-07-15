@@ -226,6 +226,14 @@ class HotelsController extends BaseController
             
             $hasExceptionsKey = array_key_exists('has_exceptions', $room);
             $exceptionsData = $room['exceptions'] ?? [];
+            file_put_contents(storage_path('logs/exceptions_debug.txt'),
+                json_encode([
+                    'room_key'          => $key,
+                    'has_exceptions_key'=> $hasExceptionsKey,
+                    'has_exceptions_val'=> $room['has_exceptions'] ?? 'NOT_SET',
+                    'exceptions_count'  => count($exceptionsData),
+                    'exceptions_data'   => $exceptionsData,
+                ]) . PHP_EOL, FILE_APPEND);
             
             unset($room['meal_plans'], $room['amenities'], $room['images'], $room['exceptions'], $room['has_exceptions']);
 
