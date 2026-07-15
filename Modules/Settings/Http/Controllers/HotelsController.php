@@ -14,6 +14,7 @@ use Modules\Settings\Entities\Draft;
 use Modules\Settings\Entities\Hotel;
 use Modules\Settings\Entities\Room;
 use Modules\Settings\Entities\RoomMealPlanEntry;
+use Modules\Settings\Entities\RoomRateException;
 use Modules\Settings\Transformers\HotelResource;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
@@ -77,6 +78,22 @@ class HotelsController extends BaseController
                 'rooms.*.occupancy' => 'required|integer|min:0',
                 'rooms.*.is_allotted' => 'required|boolean',
                 'rooms.*.allotted_cut_off_days' => 'required_if:rooms.*.is_allotted,1|gte:0',
+
+                // Exception date pricing
+                'rooms.*.exceptions' => 'nullable|array',
+                'rooms.*.exceptions.*.label' => 'nullable|string|max:100',
+                'rooms.*.exceptions.*.dates' => 'required_with:rooms.*.exceptions.*|array',
+                'rooms.*.exceptions.*.dates.*' => 'nullable|date_format:Y-m-d',
+                'rooms.*.exceptions.*.single_bed_amount' => 'nullable|numeric|gte:0',
+                'rooms.*.exceptions.*.double_bed_amount' => 'nullable|numeric|gte:0',
+                'rooms.*.exceptions.*.triple_bed_amount' => 'nullable|numeric|gte:0',
+                'rooms.*.exceptions.*.extra_bed_amount' => 'nullable|numeric|gte:0',
+                'rooms.*.exceptions.*.child_w_bed_amount' => 'nullable|numeric|gte:0',
+                'rooms.*.exceptions.*.child_n_bed_amount' => 'nullable|numeric|gte:0',
+                'rooms.*.exceptions.*.quad_bed_amount' => 'nullable|numeric|gte:0',
+                'rooms.*.exceptions.*.two_bedroom_amount' => 'nullable|numeric|gte:0',
+                'rooms.*.exceptions.*.three_bedroom_amount' => 'nullable|numeric|gte:0',
+                'rooms.*.exceptions.*.four_bedroom_amount' => 'nullable|numeric|gte:0',
 
                 // 'rooms.*.images' => 'required|array|min:1',
                 // 'rooms.*.images.*' => 'required|image|mimes:jpeg,jpg,png|max:2000',
@@ -212,7 +229,11 @@ class HotelsController extends BaseController
             $mealPlansData = isset($room['meal_plans']) ? $room['meal_plans'] : [];
             $amenitiesData = isset($room['amenities']) ? $room['amenities'] : [];
             $imagesData = $room['images'] ?? null;
-            unset($room['meal_plans'], $room['amenities'], $room['images']);
+            
+            $hasExceptionsKey = array_key_exists('has_exceptions', $room);
+            $exceptionsData = $room['exceptions'] ?? [];
+            
+            unset($room['meal_plans'], $room['amenities'], $room['images'], $room['exceptions'], $room['has_exceptions']);
 
             // These flags don't have DB columns — unset them to prevent SQL errors
             unset($room['is_two_bedroom_available'], $room['is_three_bedroom_available'], $room['is_four_bedroom_available']);
@@ -265,6 +286,33 @@ class HotelsController extends BaseController
                 ];
             }
             $room->amenities()->sync($amenities);
+
+            // sync rate exceptions
+            if ($hasExceptionsKey) {
+                $room->rate_exceptions()->delete();
+                foreach ($exceptionsData as $exc) {
+                    $dates = $exc['dates'] ?? [];
+                    $label = $exc['label'] ?? null;
+                    foreach ($dates as $date) {
+                        if (empty($date)) continue;
+                        RoomRateException::create([
+                            'room_id'             => $room->id,
+                            'exception_date'      => $date,
+                            'label'               => $label,
+                            'single_bed_amount'   => isset($exc['single_bed_amount'])    && $exc['single_bed_amount']    !== '' ? $exc['single_bed_amount']    : null,
+                            'double_bed_amount'   => isset($exc['double_bed_amount'])    && $exc['double_bed_amount']    !== '' ? $exc['double_bed_amount']    : null,
+                            'triple_bed_amount'   => isset($exc['triple_bed_amount'])    && $exc['triple_bed_amount']    !== '' ? $exc['triple_bed_amount']    : null,
+                            'extra_bed_amount'    => isset($exc['extra_bed_amount'])     && $exc['extra_bed_amount']     !== '' ? $exc['extra_bed_amount']     : null,
+                            'child_w_bed_amount'  => isset($exc['child_w_bed_amount'])   && $exc['child_w_bed_amount']   !== '' ? $exc['child_w_bed_amount']   : null,
+                            'child_n_bed_amount'  => isset($exc['child_n_bed_amount'])   && $exc['child_n_bed_amount']   !== '' ? $exc['child_n_bed_amount']   : null,
+                            'quad_bed_amount'     => isset($exc['quad_bed_amount'])      && $exc['quad_bed_amount']      !== '' ? $exc['quad_bed_amount']      : null,
+                            'two_bedroom_amount'  => isset($exc['two_bedroom_amount'])   && $exc['two_bedroom_amount']   !== '' ? $exc['two_bedroom_amount']   : null,
+                            'three_bedroom_amount'=> isset($exc['three_bedroom_amount']) && $exc['three_bedroom_amount'] !== '' ? $exc['three_bedroom_amount'] : null,
+                            'four_bedroom_amount' => isset($exc['four_bedroom_amount'])  && $exc['four_bedroom_amount']  !== '' ? $exc['four_bedroom_amount']  : null,
+                        ]);
+                    }
+                }
+            }
         }
 
         Room::where('hotel_id', $id)->whereNotIn('id', collect($savedObjects)->pluck('id'))->delete();
@@ -277,7 +325,7 @@ class HotelsController extends BaseController
 
         DB::commit();
 
-        $hotel = Hotel::with('rooms.media')->find($hotel->id);
+            $hotel = Hotel::with('rooms.media', 'rooms.meal_plans', 'rooms.amenities', 'rooms.rate_exceptions')->find($hotel->id);
 
         return $hotel;
     }
@@ -306,7 +354,7 @@ class HotelsController extends BaseController
     public function show($id)
     {
         try {
-            $hotel = Hotel::with('rooms.media')->findOrFail($id);
+            $hotel = Hotel::with('rooms.media', 'rooms.meal_plans', 'rooms.amenities', 'rooms.rate_exceptions')->findOrFail($id);
 
             return $this->sendResponse(HotelResource::make($hotel), 'Hotel Fetched', 200);
         } catch (Exception $exception) {

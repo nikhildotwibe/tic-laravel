@@ -45,6 +45,26 @@ class RoomResource extends JsonResource
             'meal_plans' => MealPlanEntryResource::collection($this->resource->meal_plans),
             'amenities' => AmenityResource::collection($this->resource->amenities),
             'media' => MediaResource::collection($this->resource->media),
+            'rate_exceptions' => $this->resource->rate_exceptions
+                ->groupBy('label')
+                ->map(function ($group) {
+                    $first = $group->first();
+                    return [
+                        'label'               => $first->label,
+                        'dates'               => $group->pluck('exception_date')->toArray(),
+                        'single_bed_amount'   => $first->single_bed_amount,
+                        'double_bed_amount'   => $first->double_bed_amount,
+                        'triple_bed_amount'   => $first->triple_bed_amount,
+                        'extra_bed_amount'    => $first->extra_bed_amount,
+                        'child_w_bed_amount'  => $first->child_w_bed_amount,
+                        'child_n_bed_amount'  => $first->child_n_bed_amount,
+                        'quad_bed_amount'     => $first->quad_bed_amount,
+                        'two_bedroom_amount'  => $first->two_bedroom_amount,
+                        'three_bedroom_amount'=> $first->three_bedroom_amount,
+                        'four_bedroom_amount' => $first->four_bedroom_amount,
+                    ];
+                })
+                ->values(),
         ];
     }
 }

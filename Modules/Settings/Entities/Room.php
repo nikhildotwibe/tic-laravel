@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 
@@ -46,5 +47,10 @@ class Room extends BaseModel
     public function room_type(): BelongsTo
     {
         return $this->belongsTo(RoomType::class, 'room_type_id', 'id');
+    }
+
+    public function rate_exceptions(): HasMany
+    {
+        return $this->hasMany(RoomRateException::class, 'room_id', 'id');
     }
 }
