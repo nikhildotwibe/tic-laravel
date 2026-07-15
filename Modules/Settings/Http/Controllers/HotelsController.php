@@ -26,7 +26,7 @@ class HotelsController extends BaseController
             $query = Hotel::query();
 
             if ($request->sub_destination_id) {
-                $query = $query->where('sub_destination_id', $sub_destination_id);
+                $query = $query->where('sub_destination_id', $request->sub_destination_id);
             }
 
             $hotels = $query->latest()->get();
@@ -168,12 +168,6 @@ class HotelsController extends BaseController
         $document2 = $requestData['document_2'] ?? [];
         $document3 = $requestData['document_3'] ?? [];
         $document4 = $requestData['document_4'] ?? [];
-        try {
-            $this->requestValidator($requestData, $id)->validate();
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            file_put_contents(storage_path('logs/validation_errors.txt'), json_encode($e->errors()).PHP_EOL, FILE_APPEND);
-            throw $e;
-        }
 
         unset(
             $requestData['rooms'],
@@ -364,12 +358,15 @@ class HotelsController extends BaseController
 
     public function update(Request $request, $id)
     {
+        DB::beginTransaction();
         try {
             $this->requestValidator($request->all(), $id)->validate();
             $hotel = $this->process($request->all(), $id);
 
             return $this->sendResponse(HotelResource::make($hotel), 'Hotel Updated', 200);
         } catch (Exception $exception) {
+            DB::rollBack();
+
             return $this->HandleException($exception);
         }
     }

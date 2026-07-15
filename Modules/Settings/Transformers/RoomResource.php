@@ -46,7 +46,23 @@ class RoomResource extends JsonResource
             'amenities' => AmenityResource::collection($this->resource->amenities),
             'media' => MediaResource::collection($this->resource->media),
             'rate_exceptions' => $this->resource->rate_exceptions
-                ->groupBy('label')
+                ->groupBy(function ($exc) {
+                    // Group by a fingerprint of (label + all rate amounts)
+                    // so two periods with the same label but different rates are kept separate
+                    return implode('|', [
+                        $exc->label,
+                        $exc->single_bed_amount,
+                        $exc->double_bed_amount,
+                        $exc->triple_bed_amount,
+                        $exc->extra_bed_amount,
+                        $exc->child_w_bed_amount,
+                        $exc->child_n_bed_amount,
+                        $exc->quad_bed_amount,
+                        $exc->two_bedroom_amount,
+                        $exc->three_bedroom_amount,
+                        $exc->four_bedroom_amount,
+                    ]);
+                })
                 ->map(function ($group) {
                     $first = $group->first();
                     return [
