@@ -85,7 +85,9 @@ class Room extends BaseModel
             $currentDate = $start->copy()->addDays($i)->toDateString();
             
             // Find if there's an exception for this date
-            $exception = $exceptions->firstWhere('exception_date', $currentDate);
+            $exception = $exceptions->first(function($item) use ($currentDate) {
+                return \Carbon\Carbon::parse($item->exception_date)->toDateString() === $currentDate;
+            });
 
             // Determine rates for this night
             $singleRate = $exception ? ($exception->single_bed_amount ?? 0) : $this->single_bed_amount;
