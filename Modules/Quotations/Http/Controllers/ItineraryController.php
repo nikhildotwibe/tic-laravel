@@ -65,6 +65,7 @@ class ItineraryController extends BaseController
                 'updater',
                 'currency_obj',
                 'entries.room',
+                'entries.room.rate_exceptions',
                 'entries.sub_destination',
                 'entries.hotel',
                 'entries.activity.estimations',
@@ -289,19 +290,12 @@ class ItineraryController extends BaseController
                 $entryData['description'] = $entry['description'] ?? null;
 
                 // set pricing
-                $room = Room::findOrFail($entry['room_id']);
-                $singlePrice = $entry['single_count'] * $room->single_bed_amount;
-                $doublePrice = $entry['double_count'] * $room->double_bed_amount;
-                $triplePrice = $entry['triple_count'] * $room->triple_bed_amount;
-                $quadPrice = $entry['quad_count'] * $room->quad_bed_amount;
-                $twoBedroomPrice = ($entry['two_bedroom_count'] ?? 0) * ($room->two_bedroom_amount ?? 0);
-                $threeBedroomPrice = ($entry['three_bedroom_count'] ?? 0) * ($room->three_bedroom_amount ?? 0);
-                $fourBedroomPrice = ($entry['four_bedroom_count'] ?? 0) * ($room->four_bedroom_amount ?? 0);
-                $extraPrice = $entry['extra_count'] * $room->extra_bed_amount;
-                $childWPrice = $entry['child_w_count'] * $room->child_w_bed_amount;
-                $childNPrice = $entry['child_n_count'] * $room->child_n_bed_amount;
+                $room = Room::with('rate_exceptions')->findOrFail($entry['room_id']);
+                
+                $pricing = $room->calculateStayPricing($entryData['start_date'], $entryData['end_date'], $entryData);
 
-                $entryData['amount'] = $singlePrice + $doublePrice + $triplePrice + $quadPrice + $twoBedroomPrice + $threeBedroomPrice + $fourBedroomPrice + $extraPrice + $childWPrice + $childNPrice;
+                $entryData['amount'] = $pricing['total_amount'];
+
             } elseif ($entry['entry_type'] == 'ACTIVITY') {
 
                 $entryData['description'] = $entry['description'];
@@ -399,6 +393,7 @@ class ItineraryController extends BaseController
                 'updater',
                 'currency_obj',
                 'entries.room',
+                'entries.room.rate_exceptions',
                 'entries.sub_destination',
                 'entries.hotel',
                 'entries.activity.estimations',
