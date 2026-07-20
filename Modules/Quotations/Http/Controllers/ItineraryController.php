@@ -261,12 +261,18 @@ class ItineraryController extends BaseController
         $savedItems = [];
 
         foreach ($entriesData as $key => $entry) {
-            $entry['end_date'] = !empty($entry['end_date']) ? $entry['end_date'] : ($entry['start_date'] ?? null);
-            $entry['end_time'] = !empty($entry['end_time']) ? $entry['end_time'] : ($entry['start_time'] ?? null);
+            $startDate = !empty($entry['start_date']) ? $entry['start_date'] : ($entry['date'] ?? null);
+            $startTime = !empty($entry['start_time']) ? $entry['start_time'] : '00:00:00';
+            $endDate = !empty($entry['end_date']) ? $entry['end_date'] : $startDate;
+            $endTime = !empty($entry['end_time']) ? $entry['end_time'] : $startTime;
 
             $entryData = [];
 
-            $entryData['date'] = $entry['date'];
+            $entryData['date'] = $entry['date'] ?? $startDate;
+            $entryData['start_date'] = $startDate;
+            $entryData['start_time'] = $startTime;
+            $entryData['end_date'] = $endDate;
+            $entryData['end_time'] = $endTime;
             $entryData['itinerary_id'] = $itinerary->id;
             $entryData['entry_type'] = $entry['entry_type'];
 
@@ -350,10 +356,7 @@ class ItineraryController extends BaseController
 
             $entryData['no_of_person'] = $entryData['no_of_person'] ?? ($entry['no_of_person'] ?? 0);
 
-            $entryData['start_date'] = !empty($entry['start_date']) ? $entry['start_date'] : ($entry['date'] ?? null);
-            $entryData['start_time'] = !empty($entry['start_time']) ? $entry['start_time'] : '00:00:00';
-            $entryData['end_date'] = !empty($entry['end_date']) ? $entry['end_date'] : $entryData['start_date'];
-            $entryData['end_time'] = !empty($entry['end_time']) ? $entry['end_time'] : $entryData['start_time'];
+
 
             $entryData['subject_id'] = $entry['subject_id'];
             $entryData['sub_destination_id'] = $entry['sub_destination_id'];
