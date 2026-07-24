@@ -891,11 +891,22 @@ class ItineraryController extends BaseController
             }
 
             $itinerary = Itinerary::findOrFail($id);
+
+            // Check if column exists in table before saving to prevent SQL error 500
+            if (!\Illuminate\Support\Facades\Schema::hasColumn('itineraries', 'booking_status')) {
+                return $this->sendError('Database column booking_status does not exist. Please run php artisan migrate.', [], 400);
+            }
+
             $itinerary->booking_status = $request->booking_status;
-            $itinerary->booking_status_updated_at = now();
-            if (auth()->check()) {
+
+            if (\Illuminate\Support\Facades\Schema::hasColumn('itineraries', 'booking_status_updated_at')) {
+                $itinerary->booking_status_updated_at = now();
+            }
+
+            if (\Illuminate\Support\Facades\Schema::hasColumn('itineraries', 'booking_status_updated_by') && auth()->check()) {
                 $itinerary->booking_status_updated_by = auth()->id();
             }
+
             $itinerary->save();
 
             return $this->sendResponse(
