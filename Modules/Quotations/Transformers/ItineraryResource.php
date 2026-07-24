@@ -192,6 +192,8 @@ class ItineraryResource extends JsonResource
             'is_current' => (bool) ($this->resource->is_current ?? true),
             'parent_itinerary_id' => $this->resource->parent_itinerary_id,
             'edited_at' => $this->resource->updated_at ? $this->resource->updated_at->toIso8601String() : null,
+            'booking_status' => $this->resource->booking_status ?? 'pending',
+            'booking_status_updated_at' => optional($this->resource->booking_status_updated_at)->toIso8601String(),
         ];
     }
 }

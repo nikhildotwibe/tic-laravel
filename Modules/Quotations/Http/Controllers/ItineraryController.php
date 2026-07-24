@@ -876,6 +876,38 @@ class ItineraryController extends BaseController
         }
     }
 
+    /**
+     * Update the booking status of an itinerary (confirmed / cancelled / pending).
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'booking_status' => 'required|in:pending,confirmed,cancelled',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->sendError('Validation Error.', $validator->errors(), 422);
+            }
+
+            $itinerary = Itinerary::findOrFail($id);
+            $itinerary->booking_status = $request->booking_status;
+            $itinerary->booking_status_updated_at = now();
+            if (auth()->check()) {
+                $itinerary->booking_status_updated_by = auth()->id();
+            }
+            $itinerary->save();
+
+            return $this->sendResponse(
+                ItineraryResource::make($itinerary->fresh()),
+                'Booking status updated successfully',
+                200
+            );
+        } catch (Exception $exception) {
+            return $this->HandleException($exception);
+        }
+    }
+
     public function print(string $id)
     {
         $itinerary = Itinerary::findOrFail($id);

@@ -20,6 +20,7 @@ class Itinerary extends BaseModel
 
     protected $casts = [
         'is_current' => 'boolean',
+        'booking_status_updated_at' => 'datetime',
     ];
 
     public function destination(): BelongsTo
