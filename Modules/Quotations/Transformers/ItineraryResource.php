@@ -194,7 +194,7 @@ class ItineraryResource extends JsonResource
             'edited_at' => $this->resource->updated_at ? $this->resource->updated_at->toIso8601String() : null,
             'booking_status' => $this->resource->booking_status ?? 'pending',
             'booking_status_updated_at' => optional($this->resource->booking_status_updated_at)->toIso8601String(),
-            'tour_acknowledgement_data' => $this->resource->tour_acknowledgement_data ? json_decode($this->resource->tour_acknowledgement_data, true) : null,
+            'tour_acknowledgement_data' => is_string($this->resource->tour_acknowledgement_data) ? json_decode($this->resource->tour_acknowledgement_data, true) : $this->resource->tour_acknowledgement_data,
         ];
     }
 }

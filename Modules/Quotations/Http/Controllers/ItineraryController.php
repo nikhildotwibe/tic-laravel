@@ -923,12 +923,9 @@ class ItineraryController extends BaseController
     {
         try {
             $itinerary = Itinerary::findOrFail($id);
-
-            if (\Illuminate\Support\Facades\Schema::hasColumn('itineraries', 'tour_acknowledgement_data')) {
-                $ackData = $request->input('tour_acknowledgement_data');
-                $itinerary->tour_acknowledgement_data = is_array($ackData) ? json_encode($ackData) : $ackData;
-                $itinerary->save();
-            }
+            $ackData = $request->input('tour_acknowledgement_data');
+            $itinerary->tour_acknowledgement_data = is_array($ackData) ? json_encode($ackData) : $ackData;
+            $itinerary->save();
 
             return $this->sendResponse(
                 ItineraryResource::make($itinerary->fresh()),

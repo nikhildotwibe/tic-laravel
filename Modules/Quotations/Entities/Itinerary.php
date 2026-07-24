@@ -21,6 +21,7 @@ class Itinerary extends BaseModel
     protected $casts = [
         'is_current' => 'boolean',
         'booking_status_updated_at' => 'datetime',
+        'tour_acknowledgement_data' => 'array',
     ];
 
     public function destination(): BelongsTo
