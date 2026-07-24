@@ -10,13 +10,20 @@ return new class extends Migration
      * Run the migrations.
      * Adds booking_status to itineraries table.
      * Values: 'pending' | 'confirmed' | 'cancelled'
+     * Safe to run even if columns already exist.
      */
     public function up(): void
     {
         Schema::table('itineraries', function (Blueprint $table) {
-            $table->string('booking_status', 20)->default('pending')->after('is_current');
-            $table->timestamp('booking_status_updated_at')->nullable()->after('booking_status');
-            $table->foreignId('booking_status_updated_by')->nullable()->constrained('users')->nullOnDelete()->after('booking_status_updated_at');
+            if (!Schema::hasColumn('itineraries', 'booking_status')) {
+                $table->string('booking_status', 20)->default('pending')->after('is_current');
+            }
+            if (!Schema::hasColumn('itineraries', 'booking_status_updated_at')) {
+                $table->timestamp('booking_status_updated_at')->nullable()->after('booking_status');
+            }
+            if (!Schema::hasColumn('itineraries', 'booking_status_updated_by')) {
+                $table->foreignId('booking_status_updated_by')->nullable()->constrained('users')->nullOnDelete()->after('booking_status_updated_at');
+            }
         });
     }
 
@@ -26,7 +33,14 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('itineraries', function (Blueprint $table) {
-            $table->dropColumn(['booking_status', 'booking_status_updated_at', 'booking_status_updated_by']);
+            $cols = array_filter([
+                Schema::hasColumn('itineraries', 'booking_status_updated_by') ? 'booking_status_updated_by' : null,
+                Schema::hasColumn('itineraries', 'booking_status_updated_at') ? 'booking_status_updated_at' : null,
+                Schema::hasColumn('itineraries', 'booking_status') ? 'booking_status' : null,
+            ]);
+            if ($cols) {
+                $table->dropColumn(array_values($cols));
+            }
         });
     }
 };
