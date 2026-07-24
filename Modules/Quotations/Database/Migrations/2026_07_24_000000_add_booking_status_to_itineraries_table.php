@@ -22,7 +22,7 @@ return new class extends Migration
                 $table->timestamp('booking_status_updated_at')->nullable()->after('booking_status');
             }
             if (!Schema::hasColumn('itineraries', 'booking_status_updated_by')) {
-                $table->foreignId('booking_status_updated_by')->nullable()->constrained('users')->nullOnDelete()->after('booking_status_updated_at');
+                $table->uuid('booking_status_updated_by')->nullable()->after('booking_status_updated_at');
             }
         });
     }

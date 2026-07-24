@@ -91,6 +91,7 @@ class ItineraryController extends BaseController
                 'destination_id' => 'required|exists:destinations,id,deleted_at,NULL',
                 'valid_until' => 'required|date_format:Y-m-d',
                 'price_mode' => 'required',
+                'booking_status' => 'nullable|in:pending,confirmed,cancelled',
 
                 'entries' => 'required|array',
                 'entries.*.entry_type' => 'required|in:HOTEL,ACTIVITY,TRANSFER',
@@ -901,10 +902,6 @@ class ItineraryController extends BaseController
 
             if (\Illuminate\Support\Facades\Schema::hasColumn('itineraries', 'booking_status_updated_at')) {
                 $itinerary->booking_status_updated_at = now();
-            }
-
-            if (\Illuminate\Support\Facades\Schema::hasColumn('itineraries', 'booking_status_updated_by') && auth()->check()) {
-                $itinerary->booking_status_updated_by = auth()->id();
             }
 
             $itinerary->save();
