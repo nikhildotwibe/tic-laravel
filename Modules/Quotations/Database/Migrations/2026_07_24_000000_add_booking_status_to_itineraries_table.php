@@ -24,6 +24,9 @@ return new class extends Migration
             if (!Schema::hasColumn('itineraries', 'booking_status_updated_by')) {
                 $table->uuid('booking_status_updated_by')->nullable()->after('booking_status_updated_at');
             }
+            if (!Schema::hasColumn('itineraries', 'tour_acknowledgement_data')) {
+                $table->json('tour_acknowledgement_data')->nullable()->after('booking_status_updated_by');
+            }
         });
     }
 

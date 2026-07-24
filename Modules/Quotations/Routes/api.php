@@ -33,4 +33,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('itineraries/{id}/share-email', [ItineraryController::class, 'shareEmail']);
     Route::put('itineraries/{id}/set-current', [ItineraryController::class, 'setCurrent']);
     Route::patch('itineraries/{id}/status', [ItineraryController::class, 'updateStatus']);
+    Route::post('itineraries/{id}/tour-acknowledgement', [ItineraryController::class, 'updateTourAcknowledgement']);
 });
