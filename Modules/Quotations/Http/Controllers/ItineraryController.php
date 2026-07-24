@@ -50,6 +50,10 @@ class ItineraryController extends BaseController
                 $itinerary = $itinerary->where('package_name', 'LIKE', '%'.$request->package_name.'%');
             }
 
+            if (request()->has('booking_status')) {
+                $itinerary = $itinerary->where('booking_status', $request->booking_status);
+            }
+
             $itinerary = $itinerary->with([
                 'enquiry.agent',
                 'enquiry.customer',
