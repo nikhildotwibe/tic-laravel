@@ -41,7 +41,7 @@ class ItineraryController extends BaseController
                 'enquiry_id' => 'nullable|exists:enquiries,id,deleted_at,NULL',
             ]);
 
-            $itinerary = Itinerary::query();
+            $itinerary = Itinerary::query()->has('enquiry');
             if (request()->has('enquiry_id')) {
                 $itinerary = $itinerary->where('enquiry_id', $request->enquiry_id);
             }
