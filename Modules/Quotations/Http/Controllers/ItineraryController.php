@@ -82,6 +82,31 @@ class ItineraryController extends BaseController
         }
     }
 
+    /**
+     * Return distinct enquiry IDs that have at least one confirmed itinerary.
+     * Lightweight — no entry/room/activity eager loading.
+     *
+     * GET /api/itineraries/confirmed-enquiry-ids
+     *
+     * @return JsonResponse
+     */
+    public function confirmedEnquiryIds()
+    {
+        try {
+            $ids = Itinerary::query()
+                ->has('enquiry')
+                ->where('booking_status', 'confirmed')
+                ->distinct()
+                ->pluck('enquiry_id')
+                ->filter()
+                ->values();
+
+            return $this->sendResponse($ids, 'Confirmed Enquiry IDs Fetched', 200);
+        } catch (Exception $exception) {
+            return $this->HandleException($exception);
+        }
+    }
+
     public function requestValidator($requestData, string $id = null): ValidationValidator
     {
         $rules =

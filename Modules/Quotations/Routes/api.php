@@ -21,6 +21,7 @@ Route::middleware('auth:api')->get('/quotations', function (Request $request) {
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('itineraries/bulk-delete', [ItineraryController::class, 'bulkDestroy']);
+    Route::get('itineraries/confirmed-enquiry-ids', [ItineraryController::class, 'confirmedEnquiryIds']);
     Route::apiResource('itineraries', ItineraryController::class)->except('update');
     Route::post('itinerary-update/{id}', [ItineraryController::class, 'update']);
     // Route::get('itineraries/{id}/pricing', [ItineraryController::class, 'pricing']);
