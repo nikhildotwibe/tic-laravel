@@ -148,7 +148,7 @@ class ItineraryController extends BaseController
                 // 'entries.*.description' => 'required_if:entries.*.entry_type,ACTIVITY',
 
                 // TRANSFER specific
-                'entries.*.transfer_type' => 'nullable|in:PRIVATE,SIC',
+                'entries.*.transfer_type' => 'nullable|string',
                 'entries.*.cost' => 'nullable|gte:0',
                 'entries.*.adult_cost' => 'nullable|gte:0',
                 'entries.*.child_cost' => 'nullable|gte:0',
@@ -367,11 +367,11 @@ class ItineraryController extends BaseController
                 $entryData['vehicle_count'] = $entry['vehicle_count'] ?? 1;
                 $entryData['vehicle_type'] = $entry['vehicle_type'] ?? null;
 
-                $transferType = $entry['transfer_type'] ?? null;
-                if ($transferType == 'PRIVATE') {
+                $transferType = strtoupper($entry['transfer_type'] ?? '');
+                if (str_contains($transferType, 'PRIVATE') || str_contains($transferType, 'PVT')) {
                     $entryData['cost'] = $entry['cost'] ?? 0;
                     $entryData['amount'] = $entry['cost'] ?? 0;
-                } elseif ($transferType == 'SIC') {
+                } elseif (str_contains($transferType, 'SIC')) {
                     $entryData['adult_cost'] = $entry['adult_cost'] ?? 0;
                     $entryData['child_cost'] = $entry['child_cost'] ?? 0;
 
