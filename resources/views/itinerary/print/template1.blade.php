@@ -286,7 +286,11 @@
             $childCount = $itinerary->child_count ?? 0;
             
             // Handle currency lookup (ID, 'base' string, or fallback)
-            if ($itinerary->currency === 'base' || empty($itinerary->currency)) {
+            // If the frontend passes a currency_code override (e.g. MYR selected on Pricing page),
+            // use it directly — this fixes the email showing the stale DB currency (e.g. THB).
+            if (!empty($currencyOverride ?? null)) {
+                $currency = $currencyOverride;
+            } elseif ($itinerary->currency === 'base' || empty($itinerary->currency)) {
                 // Fetch from enquiry base currency if available, otherwise default to 'THB'
                 $currency = optional($itinerary->enquiry)->currency_code ?? 'THB';
             } else {

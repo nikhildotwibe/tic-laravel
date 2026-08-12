@@ -1017,11 +1017,19 @@ class ItineraryController extends BaseController
                 'terms' => $request->query('terms', 'false') === 'true',
             ];
 
+            // Accept currency override from frontend (e.g. when user selects MYR on the Pricing page).
+            // The frontend ShareModal sends ?currency_code=MYR&exchange_rate=... so the blade
+            // renders the correct display currency instead of reading the stale DB value.
+            $currencyOverride = $request->query('currency_code');       // e.g. "MYR"
+            $exchangeRateOverride = $request->query('exchange_rate');    // e.g. "0.106"
+
             $html = View::make(
                 'itinerary.print.template1',
                 [
-                    'itinerary' => $itinerary,
-                    'options'   => $options,
+                    'itinerary'        => $itinerary,
+                    'options'          => $options,
+                    'currencyOverride' => $currencyOverride ?: null,
+                    'exchangeRateOverride' => $exchangeRateOverride ? (float) $exchangeRateOverride : null,
                 ]
             )->render();
 
