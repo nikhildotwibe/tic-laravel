@@ -14,9 +14,8 @@ class NotificationSettingController extends Controller
     public function index(Request $request)
     {
         $eventKey = $request->query('event_key', 'enquiry_confirmed');
-        $setting = NotificationSetting::where('event_key', $eventKey)->first();
 
-        if (!$setting) {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('notification_settings')) {
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -28,10 +27,36 @@ class NotificationSettingController extends Controller
             ]);
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => $setting
-        ]);
+        try {
+            $setting = NotificationSetting::where('event_key', $eventKey)->first();
+
+            if (!$setting) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'event_key' => $eventKey,
+                        'roles' => [],
+                        'user_ids' => [],
+                        'is_active' => true,
+                    ]
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $setting
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'event_key' => $eventKey,
+                    'roles' => [],
+                    'user_ids' => [],
+                    'is_active' => true,
+                ]
+            ]);
+        }
     }
 
     /**

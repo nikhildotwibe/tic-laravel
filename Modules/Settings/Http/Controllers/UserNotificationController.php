@@ -16,7 +16,7 @@ class UserNotificationController extends Controller
     {
         $userId = $request->user()?->id;
 
-        if (!$userId) {
+        if (!$userId || !\Illuminate\Support\Facades\Schema::hasTable('user_notifications')) {
             return response()->json([
                 'success' => true,
                 'data' => [],
@@ -24,22 +24,30 @@ class UserNotificationController extends Controller
             ]);
         }
 
-        $query = UserNotification::where('user_id', $userId)
-            ->orderBy('created_at', 'desc');
+        try {
+            $query = UserNotification::where('user_id', $userId)
+                ->orderBy('created_at', 'desc');
 
-        $unreadCount = UserNotification::where('user_id', $userId)
-            ->where(function($q) {
-                $q->where('is_read', false)->orWhereNull('is_read');
-            })
-            ->count();
+            $unreadCount = UserNotification::where('user_id', $userId)
+                ->where(function($q) {
+                    $q->where('is_read', false)->orWhereNull('is_read');
+                })
+                ->count();
 
-        $notifications = $query->limit(30)->get();
+            $notifications = $query->limit(30)->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $notifications,
-            'unread_count' => $unreadCount,
-        ]);
+            return response()->json([
+                'success' => true,
+                'data' => $notifications,
+                'unread_count' => $unreadCount,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => true,
+                'data' => [],
+                'unread_count' => 0,
+            ]);
+        }
     }
 
     /**
