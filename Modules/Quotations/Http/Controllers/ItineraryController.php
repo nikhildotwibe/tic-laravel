@@ -935,6 +935,52 @@ class ItineraryController extends BaseController
 
             $itinerary->save();
 
+            // Trigger automated notifications on confirmation if status is 'confirmed'
+            if ($request->booking_status === 'confirmed') {
+                try {
+                    $setting = \Modules\Settings\Entities\NotificationSetting::where('event_key', 'enquiry_confirmed')
+                        ->where('is_active', true)
+                        ->first();
+
+                    if ($setting && (!empty($setting->roles) || !empty($setting->user_ids))) {
+                        $configuredRoles = (array)($setting->roles ?? []);
+                        $configuredUserIds = (array)($setting->user_ids ?? []);
+
+                        // Find target users matching configured roles or user IDs
+                        $targetUserIds = \App\Models\User::where(function($q) use ($configuredRoles, $configuredUserIds) {
+                            if (!empty($configuredRoles)) {
+                                $q->whereHas('roles', function($roleQuery) use ($configuredRoles) {
+                                    $roleQuery->whereIn('name', $configuredRoles);
+                                });
+                            }
+                            if (!empty($configuredUserIds)) {
+                                $q->orWhereIn('id', $configuredUserIds);
+                            }
+                        })->pluck('id')->toArray();
+
+                        $enqRef = $itinerary->enquiry_ref_no ?? $itinerary->enquiry?->ref_no ?? $itinerary->enquiry_id;
+                        $actorName = auth()->user()?->first_name ?? auth()->user()?->name ?? 'Sales Staff';
+                        $title = "Enquiry Confirmed ({$enqRef})";
+                        $message = "Enquiry {$enqRef} has been confirmed by {$actorName}. Click to view details.";
+
+                        foreach (array_unique($targetUserIds) as $targetUserId) {
+                            \Modules\Settings\Entities\UserNotification::create([
+                                'user_id' => $targetUserId,
+                                'type' => 'enquiry_confirmed',
+                                'title' => $title,
+                                'message' => $message,
+                                'enquiry_id' => $itinerary->enquiry_id,
+                                'itinerary_id' => $itinerary->id,
+                                'is_read' => false,
+                            ]);
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    // Safe non-blocking: never interrupt itinerary confirmation response
+                    \Illuminate\Support\Facades\Log::warning('[Notification] Failed to create notification: ' . $e->getMessage());
+                }
+            }
+
             return $this->sendResponse(
                 ItineraryResource::make($itinerary->fresh()),
                 'Booking status updated successfully',

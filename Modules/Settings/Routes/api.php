@@ -94,4 +94,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // Package Terms (Invoice Terms, Package Terms, Bank Info)
     Route::get('package-terms', [PackageTermsController::class, 'index']);
     Route::put('package-terms', [PackageTermsController::class, 'update']);
+
+    // Notification Controller Settings & User Notifications
+    Route::get('notification-settings', [\Modules\Settings\Http\Controllers\NotificationSettingController::class, 'index']);
+    Route::post('notification-settings', [\Modules\Settings\Http\Controllers\NotificationSettingController::class, 'store']);
+    Route::get('user-notifications', [\Modules\Settings\Http\Controllers\UserNotificationController::class, 'index']);
+    Route::post('user-notifications/{id}/read', [\Modules\Settings\Http\Controllers\UserNotificationController::class, 'markAsRead']);
+    Route::post('user-notifications/read-all', [\Modules\Settings\Http\Controllers\UserNotificationController::class, 'markAllAsRead']);
 });
