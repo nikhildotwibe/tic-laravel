@@ -29,6 +29,7 @@ use Modules\Settings\Http\Controllers\SystemSettingsController;
 use Modules\Settings\Http\Controllers\PackageTermsController;
 use Modules\Settings\Http\Controllers\TaxController;
 use Modules\Settings\Http\Controllers\TransfersController;
+use Modules\Settings\Http\Controllers\CompanySettingsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -94,6 +95,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Package Terms (Invoice Terms, Package Terms, Bank Info)
     Route::get('package-terms', [PackageTermsController::class, 'index']);
     Route::put('package-terms', [PackageTermsController::class, 'update']);
+
+    // Company Settings
+    Route::apiResource('company-settings', CompanySettingsController::class);
+    Route::patch('company-settings/{id}/set-default', [CompanySettingsController::class, 'setDefault']);
 
     // Notification Controller Settings & User Notifications
     Route::get('notification-settings', [\Modules\Settings\Http\Controllers\NotificationSettingController::class, 'index']);
