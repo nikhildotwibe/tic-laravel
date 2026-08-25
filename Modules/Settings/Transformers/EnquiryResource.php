@@ -44,7 +44,34 @@ class EnquiryResource extends JsonResource
             'package_name' => $this->resource->relationLoaded('latestItinerary')
                 ? optional($this->resource->latestItinerary)->package_name
                 : null,
+            'status' => $this->getStatus(),
             'created_at' => $this->resource->created_at,
         ];
+    }
+
+    protected function getStatus()
+    {
+        if ($this->resource->relationLoaded('itineraries')) {
+            $hasConfirmed = $this->resource->itineraries->contains('booking_status', 'confirmed');
+            if ($hasConfirmed) {
+                return 'Confirmed';
+            }
+            $allCancelled = $this->resource->itineraries->count() > 0 && $this->resource->itineraries->every(function ($it) {
+                return $it->booking_status === 'cancelled';
+            });
+            if ($allCancelled) {
+                return 'Cancelled';
+            }
+        } else {
+            $hasConfirmed = $this->resource->itineraries()->where('booking_status', 'confirmed')->exists();
+            if ($hasConfirmed) {
+                return 'Confirmed';
+            }
+            $count = $this->resource->itineraries()->count();
+            if ($count > 0 && $this->resource->itineraries()->where('booking_status', '!=', 'cancelled')->count() === 0) {
+                return 'Cancelled';
+            }
+        }
+        return 'Pending';
     }
 }

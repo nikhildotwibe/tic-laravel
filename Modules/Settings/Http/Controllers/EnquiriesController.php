@@ -26,7 +26,7 @@ class EnquiriesController extends BaseController
             // Super-admin or users with no role → return all
             $role = $user->roles()->first();
             if (!$role) {
-                $enquiry = Enquiry::with(['agent', 'destination', 'sub_destinations', 'sub_destination', 'customer', 'assigned_to_user', 'lead_source', 'requirements', 'priority'])->latest()->get();
+                $enquiry = Enquiry::with(['agent', 'destination', 'sub_destinations', 'sub_destination', 'customer', 'assigned_to_user', 'lead_source', 'requirements', 'priority', 'itineraries'])->latest()->get();
                 return $this->sendResponse(EnquiryResource::collection($enquiry), 'All Enquiries Fetched', 200);
             }
 
@@ -52,7 +52,7 @@ class EnquiriesController extends BaseController
                 $query->where('created_by', $user->id);
             }
 
-            $enquiry = $query->with(['agent', 'destination', 'sub_destinations', 'sub_destination', 'customer', 'assigned_to_user', 'lead_source', 'requirements', 'priority'])->latest()->get();
+            $enquiry = $query->with(['agent', 'destination', 'sub_destinations', 'sub_destination', 'customer', 'assigned_to_user', 'lead_source', 'requirements', 'priority', 'itineraries'])->latest()->get();
             return $this->sendResponse(EnquiryResource::collection($enquiry), 'All Enquiries Fetched', 200);
         } catch (Exception $exception) {
             return $this->HandleException($exception);
@@ -171,7 +171,7 @@ class EnquiriesController extends BaseController
     public function show($id)
     {
         try {
-            $enquiry = Enquiry::with(['agent', 'destination', 'sub_destinations', 'sub_destination', 'customer', 'assigned_to_user', 'lead_source', 'requirements', 'priority'])->findOrFail($id);
+            $enquiry = Enquiry::with(['agent', 'destination', 'sub_destinations', 'sub_destination', 'customer', 'assigned_to_user', 'lead_source', 'requirements', 'priority', 'itineraries'])->findOrFail($id);
             return $this->sendResponse(EnquiryResource::make($enquiry), 'Enquiry Fetched', 200);
         } catch (Exception $exception) {
             return $this->HandleException($exception);
