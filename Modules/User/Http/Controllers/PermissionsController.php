@@ -23,9 +23,45 @@ class PermissionsController extends BaseController
     {
 
         try {
+            // Ensure Reports and Settings modules exist with their 16 permissions
+            $modulesToEnsure = ['Reports', 'Settings'];
+            $permissionKeys = [
+                ['name' => 'All',                  'slug' => '-read-all'],
+                ['name' => 'Added',                'slug' => '-read-added'],
+                ['name' => 'Assigned',             'slug' => '-read-assigned'],
+                ['name' => 'Added and Assigned',   'slug' => '-read-added-and-assigned'],
+                ['name' => 'All',                  'slug' => '-write-all'],
+                ['name' => 'Added',                'slug' => '-write-added'],
+                ['name' => 'Assigned',             'slug' => '-write-assigned'],
+                ['name' => 'Added and Assigned',   'slug' => '-write-added-and-assigned'],
+                ['name' => 'All',                  'slug' => '-update-all'],
+                ['name' => 'Added',                'slug' => '-update-added'],
+                ['name' => 'Assigned',             'slug' => '-update-assigned'],
+                ['name' => 'Added and Assigned',   'slug' => '-update-added-and-assigned'],
+                ['name' => 'All',                  'slug' => '-delete-all'],
+                ['name' => 'Added',                'slug' => '-delete-added'],
+                ['name' => 'Assigned',             'slug' => '-delete-assigned'],
+                ['name' => 'Added and Assigned',   'slug' => '-delete-added-and-assigned'],
+            ];
+
+            foreach ($modulesToEnsure as $moduleName) {
+                $module = Module::firstOrCreate(['name' => $moduleName]);
+                foreach ($permissionKeys as $pKey) {
+                    $slug = Str::lower($moduleName) . $pKey['slug'];
+                    Permission::firstOrCreate(
+                        ['slug' => $slug],
+                        [
+                            'id' => Str::uuid()->toString(),
+                            'name' => $pKey['name'],
+                            'module_id' => $module->id
+                        ]
+                    );
+                }
+            }
+
+            // Return ALL modules in database so existing settings & data remain untouched
             $query = Module::query()->latest();
             $data = $query->get();
-
 
             return $this->sendResponse(
                 ModuleShowResource::collection($data),
