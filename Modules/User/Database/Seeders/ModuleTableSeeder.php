@@ -29,19 +29,10 @@ class ModuleTableSeeder extends Seeder
                 'name' => 'Enquiry',
             ],
             [
-                'name' => 'Follow ups',
+                'name' => 'Reports',
             ],
             [
-                'name' => 'Tickets',
-            ],
-            [
-                'name' => 'Works',
-            ],
-            [
-                'name' => 'Finance',
-            ],
-            [
-                'name' => 'Mails',
+                'name' => 'Settings',
             ],
         ];
 
