@@ -322,6 +322,7 @@ class ItineraryController extends BaseController
                 $entryData['child_w_count'] = $entry['child_w_count'];
                 $entryData['child_n_count'] = $entry['child_n_count'];
                 $entryData['room_rows'] = $entry['room_rows'] ?? null;
+                $entryData['meal_plan_ids'] = $entry['meal_plan_ids'] ?? null;
                 $entryData['no_of_person'] = $entry['no_of_person'];
                 $entryData['description'] = $entry['description'] ?? null;
 
