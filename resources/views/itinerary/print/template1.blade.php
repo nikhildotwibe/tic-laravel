@@ -532,11 +532,13 @@
 
                         $mealPlanText = '';
                         if ($room && $room->meal_plans && $room->meal_plans->count() > 0) {
-                            $mealPlanNames = $room->meal_plans->map(function ($mp) {
-                                $plan = Modules\Settings\Entities\MealPlan::find($mp->meal_plan_id);
-                                return $plan ? $plan->name : '';
-                            })->filter()->unique()->toArray();
-                            $mealPlanText = ' with ' . implode(', ', $mealPlanNames);
+                            // Use only the primary (first) meal plan to avoid listing all plans
+                            // linked to the room (e.g. would otherwise show "Half Board, Full Board").
+                            $firstMp = $room->meal_plans->first();
+                            $plan = $firstMp ? Modules\Settings\Entities\MealPlan::find($firstMp->meal_plan_id) : null;
+                            if ($plan && $plan->name) {
+                                $mealPlanText = ' with ' . $plan->name;
+                            }
                         }
 
                         $roomTypeName = optional($room?->room_type)->name ?? 'mentioned';
