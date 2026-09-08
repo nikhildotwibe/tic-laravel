@@ -531,9 +531,23 @@
                         $hotelEnd = Carbon\Carbon::parse($hotelEntry->end_date);
 
                         $mealPlanText = '';
-                        if ($room && $room->meal_plans && $room->meal_plans->count() > 0) {
-                            // Use only the primary (first) meal plan to avoid listing all plans
-                            // linked to the room (e.g. would otherwise show "Half Board, Full Board").
+                        // Prefer saved meal_plan_ids on the entry (stored when user selects specific plans).
+                        // Fall back to the room's primary meal plan for old entries with no saved selection.
+                        $savedMealPlanIds = $hotelEntry->meal_plan_ids
+                            ? (is_string($hotelEntry->meal_plan_ids) ? json_decode($hotelEntry->meal_plan_ids, true) : $hotelEntry->meal_plan_ids)
+                            : null;
+
+                        if ($savedMealPlanIds && count($savedMealPlanIds) > 0) {
+                            // Use only the selected meal plan IDs
+                            $mealPlanNames = collect($savedMealPlanIds)->map(function ($mpId) {
+                                $plan = Modules\Settings\Entities\MealPlan::find($mpId);
+                                return $plan ? $plan->name : null;
+                            })->filter()->unique()->values()->toArray();
+                            if (count($mealPlanNames) > 0) {
+                                $mealPlanText = ' with ' . implode(', ', $mealPlanNames);
+                            }
+                        } elseif ($room && $room->meal_plans && $room->meal_plans->count() > 0) {
+                            // Old entry (no saved selection): show primary meal plan only
                             $firstMp = $room->meal_plans->first();
                             $plan = $firstMp ? Modules\Settings\Entities\MealPlan::find($firstMp->meal_plan_id) : null;
                             if ($plan && $plan->name) {
