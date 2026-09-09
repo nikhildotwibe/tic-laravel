@@ -24,7 +24,7 @@ class CleanupOldVersions extends Command
      *
      * @var string
      */
-    protected $description = 'Soft-delete old non-confirmed itinerary versions for confirmed enquiries whose end date has passed';
+    protected $description = 'Soft-delete old itinerary versions for enquiries whose end date has passed';
 
     /**
      * Execute the console command.
@@ -40,13 +40,13 @@ class CleanupOldVersions extends Command
 
         $this->info("Running cleanup for enquiries with end_date < {$today}...");
 
-        // Step 1: Find enquiry IDs that have at least one confirmed itinerary
-        //         whose end_date is in the past.
+        // Step 1: Find all enquiry IDs that have itineraries whose end_date is in the past
+        // and have more than 1 version (no point cleaning up single-version enquiries)
         $enquiryIds = Itinerary::query()
             ->whereNull('deleted_at')
-            ->where('booking_status', 'confirmed')
             ->where('end_date', '<', $today)
-            ->distinct()
+            ->groupBy('enquiry_id')
+            ->havingRaw('COUNT(*) > 1')
             ->pluck('enquiry_id')
             ->filter()
             ->values();
@@ -56,7 +56,7 @@ class CleanupOldVersions extends Command
             return self::SUCCESS;
         }
 
-        $this->info("Found {$enquiryIds->count()} enquiry(ies) with past confirmed itineraries.");
+        $this->info("Found {$enquiryIds->count()} enquiry(ies) with past end dates and multiple versions.");
 
         $totalDeleted = 0;
         $totalEntriesDeleted = 0;
@@ -100,7 +100,7 @@ class CleanupOldVersions extends Command
         $deletedVersions = 0;
         $deletedEntries = 0;
 
-        // Load all non-soft-deleted itineraries for this enquiry, grouped by parent.
+        // Load all non-soft-deleted itineraries for this enquiry
         $allItineraries = Itinerary::query()
             ->where('enquiry_id', $enquiryId)
             ->whereNull('deleted_at')
@@ -111,20 +111,15 @@ class CleanupOldVersions extends Command
         $groups = $allItineraries->groupBy('parent_itinerary_id');
 
         foreach ($groups as $parentId => $versions) {
-            // Check if this group has any confirmed version
-            $hasConfirmed = $versions->contains(function ($v) {
-                return $v->booking_status === 'confirmed';
-            });
-
-            if (!$hasConfirmed) {
-                // No confirmed version in this group — skip entirely
+            // Skip groups with 2 or fewer versions — nothing worth cleaning
+            if ($versions->count() <= 2) {
                 continue;
             }
 
             // Determine which IDs to KEEP:
             $keepIds = collect();
 
-            // 1. Keep ALL confirmed versions
+            // 1. Keep ALL confirmed versions (booking_status = 'confirmed')
             $confirmedIds = $versions->where('booking_status', 'confirmed')->pluck('id');
             $keepIds = $keepIds->merge($confirmedIds);
 
@@ -132,7 +127,8 @@ class CleanupOldVersions extends Command
             $currentIds = $versions->where('is_current', true)->pluck('id');
             $keepIds = $keepIds->merge($currentIds);
 
-            // 3. Keep 1 latest non-confirmed version (highest version number among non-confirmed, non-current)
+            // 3. Keep 1 latest non-confirmed, non-current version
+            //    (the most recent by version number)
             $nonConfirmedNonCurrent = $versions->filter(function ($v) {
                 return $v->booking_status !== 'confirmed' && !$v->is_current;
             })->sortByDesc('version');
