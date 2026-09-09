@@ -113,3 +113,29 @@ Route::get('/clear-cache', function () {
         ]);
     }
 });
+
+// Cleanup old itinerary versions (dry-run preview)
+// Usage: /cleanup-old-versions?dry-run
+Route::get('/cleanup-old-versions', function () {
+    try {
+        $isDryRun = request()->has('dry-run');
+        $params = $isDryRun ? ['--dry-run' => true] : [];
+
+        \Illuminate\Support\Facades\Artisan::call('quotations:cleanup-old-versions', $params);
+
+        return response()->json([
+            'status' => 'success',
+            'mode' => $isDryRun ? 'dry-run (no changes made)' : 'executed',
+            'message' => $isDryRun
+                ? 'Dry run completed — preview of what would be deleted'
+                : 'Old versions cleanup completed successfully',
+            'output' => \Illuminate\Support\Facades\Artisan::output()
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Cleanup failed',
+            'error' => $e->getMessage()
+        ]);
+    }
+});
