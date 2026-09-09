@@ -4,6 +4,8 @@ namespace Modules\Quotations\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Database\Eloquent\Factory;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class QuotationsServiceProvider extends ServiceProvider
 {
@@ -29,6 +31,43 @@ class QuotationsServiceProvider extends ServiceProvider
         $this->registerViews();
         $this->registerCommands();
         $this->loadMigrationsFrom(module_path($this->moduleName, 'Database/Migrations'));
+
+        // Auto-run version cleanup once per day (no cron needed)
+        $this->autoCleanupOldVersions();
+    }
+
+    /**
+     * Automatically run the old-version cleanup once per day.
+     * Uses cache to ensure it only runs once every 24 hours,
+     * triggered on the first API request of the day.
+     */
+    protected function autoCleanupOldVersions()
+    {
+        // Only run during HTTP requests (not during artisan commands, queue workers, etc.)
+        if ($this->app->runningInConsole()) {
+            return;
+        }
+
+        // Use cache lock: if the key exists, cleanup already ran today — skip
+        $cacheKey = 'quotations:cleanup-old-versions:last-run';
+
+        if (Cache::has($cacheKey)) {
+            return;
+        }
+
+        // Set the cache key immediately so concurrent requests don't trigger multiple cleanups
+        // Expires in 23 hours (slightly less than 24h to avoid edge cases)
+        Cache::put($cacheKey, now()->toDateTimeString(), now()->addHours(23));
+
+        // Run cleanup after the response is sent to the user (non-blocking)
+        $this->app->terminating(function () {
+            try {
+                \Illuminate\Support\Facades\Artisan::call('quotations:cleanup-old-versions');
+                Log::info('Auto-cleanup old versions completed: ' . \Illuminate\Support\Facades\Artisan::output());
+            } catch (\Exception $e) {
+                Log::error('Auto-cleanup old versions failed: ' . $e->getMessage());
+            }
+        });
     }
 
     /**
