@@ -15,7 +15,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        // Auto-cleanup old itinerary versions for confirmed enquiries whose end date has passed
+        $schedule->command('quotations:cleanup-old-versions')->dailyAt('02:00');
     }
 
     /**

@@ -27,7 +27,18 @@ class QuotationsServiceProvider extends ServiceProvider
         $this->registerTranslations();
         $this->registerConfig();
         $this->registerViews();
+        $this->registerCommands();
         $this->loadMigrationsFrom(module_path($this->moduleName, 'Database/Migrations'));
+    }
+
+    /**
+     * Register console commands for the module.
+     */
+    protected function registerCommands()
+    {
+        $this->commands([
+            \Modules\Quotations\Console\CleanupOldVersions::class,
+        ]);
     }
 
     /**
