@@ -64,6 +64,29 @@ class EnquiriesController extends BaseController
             if ($request->filled('assigned_to') && $request->assigned_to !== 'all') {
                 $query->where('assigned_to', $request->assigned_to);
             }
+            if ($request->filled('status') && $request->status !== 'all') {
+                $statusVal = strtolower($request->status);
+                if ($statusVal === 'confirmed') {
+                    $query->where(function ($q) {
+                        $q->whereHas('itineraries', function ($itQ) {
+                            $itQ->where('booking_status', 'confirmed');
+                        })->orWhere('status', 'LIKE', '%confirm%');
+                    });
+                } elseif ($statusVal === 'cancelled') {
+                    $query->where(function ($q) {
+                        $q->whereHas('itineraries', function ($itQ) {
+                            $itQ->where('booking_status', 'cancelled');
+                        })->orWhere('status', 'LIKE', '%cancel%');
+                    });
+                } elseif ($statusVal === 'pending') {
+                    $query->whereDoesntHave('itineraries', function ($itQ) {
+                        $itQ->whereIn('booking_status', ['confirmed', 'cancelled']);
+                    })->where(function ($q) {
+                        $q->whereNull('status')
+                          ->orWhereNotIn('status', ['confirmed', 'cancelled']);
+                    });
+                }
+            }
 
             // Server-side sorting
             $sortBy = $request->get('sort_by', 'created_at');
