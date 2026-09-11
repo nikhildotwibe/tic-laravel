@@ -79,8 +79,6 @@ class EnquiriesController extends BaseController
                 $query->orderBy('start_date', $sortOrder);
             } elseif ($sortBy === 'ref_no' || $sortBy === 'bookingId') {
                 $query->orderBy('ref_no', $sortOrder);
-            } elseif ($sortBy === 'status') {
-                $query->orderBy('status', $sortOrder);
             } else {
                 $query->orderBy('created_at', $sortOrder);
             }
