@@ -48,11 +48,42 @@ class EnquiriesController extends BaseController
                 }
             }
 
+            // Server-side filtering parameters
+            if ($request->filled('from_date')) {
+                $query->whereDate('start_date', '>=', $request->from_date);
+            }
+            if ($request->filled('to_date')) {
+                $query->whereDate('start_date', '<=', $request->to_date);
+            }
+            if ($request->filled('destination_id') && $request->destination_id !== 'all') {
+                $query->where('destination_id', $request->destination_id);
+            }
+            if ($request->filled('agent_id') && $request->agent_id !== 'all') {
+                $query->where('agent_id', $request->agent_id);
+            }
+            if ($request->filled('assigned_to') && $request->assigned_to !== 'all') {
+                $query->where('assigned_to', $request->assigned_to);
+            }
+
+            // Server-side sorting
+            $sortBy = $request->get('sort_by', 'created_at');
+            $sortOrder = strtolower($request->get('sort_order', 'desc')) === 'asc' ? 'asc' : 'desc';
+
             $query->with([
                 'agent', 'destination', 'sub_destinations', 'sub_destination',
                 'customer', 'assigned_to_user', 'lead_source', 'requirements',
                 'priority', 'itineraries'
-            ])->latest();
+            ]);
+
+            if ($sortBy === 'date' || $sortBy === 'start_date') {
+                $query->orderBy('start_date', $sortOrder);
+            } elseif ($sortBy === 'ref_no' || $sortBy === 'bookingId') {
+                $query->orderBy('ref_no', $sortOrder);
+            } elseif ($sortBy === 'status') {
+                $query->orderBy('status', $sortOrder);
+            } else {
+                $query->orderBy('created_at', $sortOrder);
+            }
 
             // If per_page or page parameter is supplied, return paginated data structure
             if ($request->has('per_page') || $request->has('page')) {
