@@ -67,27 +67,22 @@ class EnquiriesController extends BaseController
             if ($request->filled('status') && $request->status !== 'all') {
                 $statusVal = strtolower($request->status);
                 if ($statusVal === 'confirmed') {
-                    $query->where(function ($q) {
-                        $q->whereHas('itineraries', function ($itQ) {
-                            $itQ->whereIn('booking_status', ['confirmed', 'Confirmed']);
-                        })
-                        ->orWhereRaw('LOWER(status) LIKE ?', ['%confirm%'])
-                        ->orWhereRaw('LOWER(booking_status) LIKE ?', ['%confirm%']);
+                    $query->whereHas('itineraries', function ($itQ) {
+                        $itQ->where('booking_status', 'confirmed');
                     });
                 } elseif ($statusVal === 'cancelled') {
-                    $query->where(function ($q) {
-                        $q->whereHas('itineraries', function ($itQ) {
-                            $itQ->whereIn('booking_status', ['cancelled', 'Cancelled']);
-                        })
-                        ->orWhereRaw('LOWER(status) LIKE ?', ['%cancel%'])
-                        ->orWhereRaw('LOWER(booking_status) LIKE ?', ['%cancel%']);
-                    });
+                    $query->whereHas('itineraries')
+                          ->whereDoesntHave('itineraries', function ($itQ) {
+                              $itQ->where('booking_status', '!=', 'cancelled');
+                          });
                 } elseif ($statusVal === 'pending') {
                     $query->whereDoesntHave('itineraries', function ($itQ) {
-                        $itQ->whereIn('booking_status', ['confirmed', 'Confirmed', 'cancelled', 'Cancelled']);
+                        $itQ->where('booking_status', 'confirmed');
                     })->where(function ($q) {
-                        $q->whereNull('status')
-                          ->orWhereRaw('LOWER(status) NOT IN (?, ?)', ['confirmed', 'cancelled']);
+                        $q->whereDoesntHave('itineraries')
+                          ->orWhereHas('itineraries', function ($itQ) {
+                              $itQ->where('booking_status', '!=', 'cancelled');
+                          });
                     });
                 }
             }
