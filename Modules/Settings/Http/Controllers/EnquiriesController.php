@@ -18,41 +18,62 @@ use Illuminate\Support\Facades\DB;
 class EnquiriesController extends BaseController
 {
 
-    public function index()
+    public function index(Request $request)
     {
         try {
             $user = auth()->user();
 
-            // Super-admin or users with no role → return all
-            $role = $user->roles()->first();
-            if (!$role) {
-                $enquiry = Enquiry::with(['agent', 'destination', 'sub_destinations', 'sub_destination', 'customer', 'assigned_to_user', 'lead_source', 'requirements', 'priority', 'itineraries'])->latest()->get();
-                return $this->sendResponse(EnquiryResource::collection($enquiry), 'All Enquiries Fetched', 200);
-            }
-
-            // Find the enquiry-read permission assigned to this role
-            $readPermission = $role->permissions()
-                ->where('slug', 'LIKE', 'enquiry-read-%')
-                ->first();
-
-            $slug = $readPermission ? $readPermission->slug : null;
-
             $query = Enquiry::query();
 
-            if (!$slug || str_ends_with($slug, '-read-all')) {
-                // No filter — return everything
-            } elseif (str_ends_with($slug, '-read-added-and-assigned')) {
-                $query->where(function ($q) use ($user) {
-                    $q->where('created_by', $user->id)
-                        ->orWhere('assigned_to', $user->id);
-                });
-            } elseif (str_ends_with($slug, '-read-assigned')) {
-                $query->where('assigned_to', $user->id);
-            } elseif (str_ends_with($slug, '-read-added')) {
-                $query->where('created_by', $user->id);
+            // Permission filtering
+            $role = $user ? $user->roles()->first() : null;
+            if ($role) {
+                $readPermission = $role->permissions()
+                    ->where('slug', 'LIKE', 'enquiry-read-%')
+                    ->first();
+
+                $slug = $readPermission ? $readPermission->slug : null;
+
+                if ($slug && !str_ends_with($slug, '-read-all')) {
+                    if (str_ends_with($slug, '-read-added-and-assigned')) {
+                        $query->where(function ($q) use ($user) {
+                            $q->where('created_by', $user->id)
+                                ->orWhere('assigned_to', $user->id);
+                        });
+                    } elseif (str_ends_with($slug, '-read-assigned')) {
+                        $query->where('assigned_to', $user->id);
+                    } elseif (str_ends_with($slug, '-read-added')) {
+                        $query->where('created_by', $user->id);
+                    }
+                }
             }
 
-            $enquiry = $query->with(['agent', 'destination', 'sub_destinations', 'sub_destination', 'customer', 'assigned_to_user', 'lead_source', 'requirements', 'priority', 'itineraries'])->latest()->get();
+            $query->with([
+                'agent', 'destination', 'sub_destinations', 'sub_destination',
+                'customer', 'assigned_to_user', 'lead_source', 'requirements',
+                'priority', 'itineraries'
+            ])->latest();
+
+            // If per_page or page parameter is supplied, return paginated data structure
+            if ($request->has('per_page') || $request->has('page')) {
+                $perPage = (int) $request->get('per_page', 10);
+                $paginated = $query->paginate($perPage);
+
+                return response()->json([
+                    'success' => true,
+                    'data' => EnquiryResource::collection($paginated->items()),
+                    'meta' => [
+                        'current_page' => $paginated->currentPage(),
+                        'last_page' => $paginated->lastPage(),
+                        'per_page' => $paginated->perPage(),
+                        'total' => $paginated->total(),
+                    ],
+                    'message' => 'Enquiries Fetched Successfully'
+                ], 200);
+            }
+
+            // Default fallback for legacy endpoints without pagination parameters
+            $enquiry = $query->get();
             return $this->sendResponse(EnquiryResource::collection($enquiry), 'All Enquiries Fetched', 200);
         } catch (Exception $exception) {
             return $this->HandleException($exception);
