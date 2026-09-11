@@ -69,21 +69,25 @@ class EnquiriesController extends BaseController
                 if ($statusVal === 'confirmed') {
                     $query->where(function ($q) {
                         $q->whereHas('itineraries', function ($itQ) {
-                            $itQ->where('booking_status', 'confirmed');
-                        })->orWhere('status', 'LIKE', '%confirm%');
+                            $itQ->whereIn('booking_status', ['confirmed', 'Confirmed']);
+                        })
+                        ->orWhereRaw('LOWER(status) LIKE ?', ['%confirm%'])
+                        ->orWhereRaw('LOWER(booking_status) LIKE ?', ['%confirm%']);
                     });
                 } elseif ($statusVal === 'cancelled') {
                     $query->where(function ($q) {
                         $q->whereHas('itineraries', function ($itQ) {
-                            $itQ->where('booking_status', 'cancelled');
-                        })->orWhere('status', 'LIKE', '%cancel%');
+                            $itQ->whereIn('booking_status', ['cancelled', 'Cancelled']);
+                        })
+                        ->orWhereRaw('LOWER(status) LIKE ?', ['%cancel%'])
+                        ->orWhereRaw('LOWER(booking_status) LIKE ?', ['%cancel%']);
                     });
                 } elseif ($statusVal === 'pending') {
                     $query->whereDoesntHave('itineraries', function ($itQ) {
-                        $itQ->whereIn('booking_status', ['confirmed', 'cancelled']);
+                        $itQ->whereIn('booking_status', ['confirmed', 'Confirmed', 'cancelled', 'Cancelled']);
                     })->where(function ($q) {
                         $q->whereNull('status')
-                          ->orWhereNotIn('status', ['confirmed', 'cancelled']);
+                          ->orWhereRaw('LOWER(status) NOT IN (?, ?)', ['confirmed', 'cancelled']);
                     });
                 }
             }
