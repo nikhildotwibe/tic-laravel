@@ -132,25 +132,6 @@ class EnquiriesController extends BaseController
     }
 
 
-    public function debugCnf()
-    {
-        $enquiry = Enquiry::with('itineraries')->whereHas('itineraries', function($q) {
-            $q->whereNotNull('tour_acknowledgement_data');
-        })->first();
-        
-        return response()->json([
-            'itineraries' => $enquiry ? $enquiry->itineraries->map(function ($it) {
-                $data = $it->tour_acknowledgement_data;
-                if (is_string($data)) { $data = json_decode($data, true); }
-                return [
-                    'type' => gettype($it->tour_acknowledgement_data),
-                    'cnf' => $data['headerState']['cnfNo'] ?? null,
-                ];
-            }) : [],
-            'resource_cnf' => $enquiry ? (new EnquiryResource($enquiry))->toArray(request())['cnf_no'] ?? null : null
-        ]);
-    }
-
     public function store(Request $request)
     {
         try {

@@ -45,7 +45,6 @@ class EnquiryResource extends JsonResource
                 ? optional($this->resource->latestItinerary)->package_name
                 : null,
             'status' => $this->getStatus(),
-            'cnf_no' => $this->getCnfNo(),
             'created_at' => $this->resource->created_at,
         ];
     }
@@ -74,27 +73,5 @@ class EnquiryResource extends JsonResource
             }
         }
         return 'Pending';
-    }
-
-    protected function getCnfNo()
-    {
-        if ($this->resource->relationLoaded('itineraries')) {
-            $itinerary = $this->resource->itineraries->first(function ($it) {
-                $data = $it->tour_acknowledgement_data;
-                while (is_string($data)) {
-                    $data = json_decode($data, true);
-                }
-                return is_array($data) && isset($data['headerState']['cnfNo']) && !empty($data['headerState']['cnfNo']);
-            });
-            
-            if ($itinerary) {
-                $data = $itinerary->tour_acknowledgement_data;
-                while (is_string($data)) {
-                    $data = json_decode($data, true);
-                }
-                return is_array($data) ? ($data['headerState']['cnfNo'] ?? null) : null;
-            }
-        }
-        return null;
     }
 }
