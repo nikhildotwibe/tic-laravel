@@ -53,17 +53,18 @@ class EnquiryResource extends JsonResource
     protected function getCnfNo()
     {
         if ($this->resource->relationLoaded('itineraries')) {
-            $confirmedItinerary = $this->resource->itineraries->where('booking_status', 'confirmed')->first();
-            if ($confirmedItinerary && !empty($confirmedItinerary->tour_acknowledgement_data)) {
-                $data = $confirmedItinerary->tour_acknowledgement_data;
-                if (is_string($data)) {
-                    $data = json_decode($data, true);
-                }
-                if (is_string($data)) {
-                    $data = json_decode($data, true);
-                }
-                if (is_array($data)) {
-                    return $data['headerState']['cnfNo'] ?? null;
+            foreach ($this->resource->itineraries as $itinerary) {
+                if (!empty($itinerary->tour_acknowledgement_data)) {
+                    $data = $itinerary->tour_acknowledgement_data;
+                    if (is_string($data)) {
+                        $data = json_decode($data, true);
+                    }
+                    if (is_string($data)) {
+                        $data = json_decode($data, true);
+                    }
+                    if (is_array($data) && !empty($data['headerState']['cnfNo'])) {
+                        return $data['headerState']['cnfNo'];
+                    }
                 }
             }
         }
