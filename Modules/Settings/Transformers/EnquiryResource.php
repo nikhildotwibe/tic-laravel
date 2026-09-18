@@ -54,11 +54,17 @@ class EnquiryResource extends JsonResource
     {
         if ($this->resource->relationLoaded('itineraries')) {
             $confirmedItinerary = $this->resource->itineraries->where('booking_status', 'confirmed')->first();
-            if ($confirmedItinerary && $confirmedItinerary->tour_acknowledgement_data) {
-                $data = is_string($confirmedItinerary->tour_acknowledgement_data) 
-                    ? json_decode($confirmedItinerary->tour_acknowledgement_data, true) 
-                    : $confirmedItinerary->tour_acknowledgement_data;
-                return $data['headerState']['cnfNo'] ?? null;
+            if ($confirmedItinerary && !empty($confirmedItinerary->tour_acknowledgement_data)) {
+                $data = $confirmedItinerary->tour_acknowledgement_data;
+                if (is_string($data)) {
+                    $data = json_decode($data, true);
+                }
+                if (is_string($data)) {
+                    $data = json_decode($data, true);
+                }
+                if (is_array($data)) {
+                    return $data['headerState']['cnfNo'] ?? null;
+                }
             }
         }
         return null;
