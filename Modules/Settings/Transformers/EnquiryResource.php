@@ -80,9 +80,20 @@ class EnquiryResource extends JsonResource
     {
         if ($this->resource->relationLoaded('itineraries')) {
             $itinerary = $this->resource->itineraries->first(function ($it) {
-                return isset($it->tour_acknowledgement_data['headerState']['cnfNo']) && !empty($it->tour_acknowledgement_data['headerState']['cnfNo']);
+                $data = $it->tour_acknowledgement_data;
+                if (is_string($data)) {
+                    $data = json_decode($data, true);
+                }
+                return isset($data['headerState']['cnfNo']) && !empty($data['headerState']['cnfNo']);
             });
-            return $itinerary ? $itinerary->tour_acknowledgement_data['headerState']['cnfNo'] : null;
+            
+            if ($itinerary) {
+                $data = $itinerary->tour_acknowledgement_data;
+                if (is_string($data)) {
+                    $data = json_decode($data, true);
+                }
+                return $data['headerState']['cnfNo'] ?? null;
+            }
         }
         return null;
     }
