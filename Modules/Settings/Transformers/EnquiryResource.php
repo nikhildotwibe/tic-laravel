@@ -53,19 +53,52 @@ class EnquiryResource extends JsonResource
     protected function getCnfNo()
     {
         if ($this->resource->relationLoaded('itineraries')) {
+            $cnfNos = [];
             foreach ($this->resource->itineraries as $itinerary) {
                 if (!empty($itinerary->tour_acknowledgement_data)) {
                     $data = $itinerary->tour_acknowledgement_data;
-                    if (is_string($data)) {
-                        $data = json_decode($data, true);
+                    
+                    // Safely decode potentially nested JSON strings
+                    while (is_string($data)) {
+                        $decoded = json_decode($data, true);
+                        if (json_last_error() === JSON_ERROR_NONE && !is_null($decoded)) {
+                            $data = $decoded;
+                        } else {
+                            break;
+                        }
                     }
-                    if (is_string($data)) {
-                        $data = json_decode($data, true);
-                    }
-                    if (is_array($data) && !empty($data['headerState']['cnfNo'])) {
-                        return $data['headerState']['cnfNo'];
+                    
+                    if (is_array($data)) {
+                        // 1. Root headerState cnfNo
+                        if (!empty($data['headerState']['cnfNo'])) {
+                            $cnfNos[] = trim($data['headerState']['cnfNo']);
+                        }
+                        
+                        // 2. Hotel bookings ticConfirmationNo and hotelConfirmationNo
+                        if (!empty($data['hotelBookings']) && is_array($data['hotelBookings'])) {
+                            foreach ($data['hotelBookings'] as $booking) {
+                                if (!empty($booking['ticConfirmationNo'])) {
+                                    $cnfNos[] = trim($booking['ticConfirmationNo']);
+                                }
+                                if (!empty($booking['hotelConfirmationNo'])) {
+                                    $cnfNos[] = trim($booking['hotelConfirmationNo']);
+                                }
+                            }
+                        }
+                        
+                        // 3. Fallback voucherData or invoiceData cnfNo
+                        if (!empty($data['voucherData']['headerState']['cnfNo'])) {
+                            $cnfNos[] = trim($data['voucherData']['headerState']['cnfNo']);
+                        }
+                        if (!empty($data['invoiceData']['headerState']['cnfNo'])) {
+                            $cnfNos[] = trim($data['invoiceData']['headerState']['cnfNo']);
+                        }
                     }
                 }
+            }
+            
+            if (!empty($cnfNos)) {
+                return implode(', ', array_unique($cnfNos));
             }
         }
         return null;
