@@ -44,9 +44,24 @@ class EnquiryResource extends JsonResource
             'package_name' => $this->resource->relationLoaded('latestItinerary')
                 ? optional($this->resource->latestItinerary)->package_name
                 : null,
+            'cnf_no' => $this->getCnfNo(),
             'status' => $this->getStatus(),
             'created_at' => $this->resource->created_at,
         ];
+    }
+
+    protected function getCnfNo()
+    {
+        if ($this->resource->relationLoaded('itineraries')) {
+            $confirmedItinerary = $this->resource->itineraries->where('booking_status', 'confirmed')->first();
+            if ($confirmedItinerary && $confirmedItinerary->tour_acknowledgement_data) {
+                $data = is_string($confirmedItinerary->tour_acknowledgement_data) 
+                    ? json_decode($confirmedItinerary->tour_acknowledgement_data, true) 
+                    : $confirmedItinerary->tour_acknowledgement_data;
+                return $data['headerState']['cnfNo'] ?? null;
+            }
+        }
+        return null;
     }
 
     protected function getStatus()
