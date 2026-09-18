@@ -44,6 +44,7 @@ class EnquiryResource extends JsonResource
             'package_name' => $this->resource->relationLoaded('latestItinerary')
                 ? optional($this->resource->latestItinerary)->package_name
                 : null,
+            'cnf_no' => $this->getCnfNo(),
             'status' => $this->getStatus(),
             'created_at' => $this->resource->created_at,
         ];
