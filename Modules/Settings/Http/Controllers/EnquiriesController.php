@@ -137,6 +137,7 @@ class EnquiriesController extends BaseController
         try {
 
             $rules = [
+                'ref_no' => 'required|unique:enquiries,ref_no,NULL,id,deleted_at,NULL',
                 'type' => 'required|in:B2B,B2C',
                 'agent_id' => 'required_if:type,B2B|exists:agents,id,deleted_at,NULL',
                 'destination_id' => 'required|exists:destinations,id,deleted_at,NULL',
@@ -256,6 +257,7 @@ class EnquiriesController extends BaseController
         DB::beginTransaction();
         try {
             $rules = [
+                'ref_no' => 'required|unique:enquiries,ref_no,' . $id . ',id,deleted_at,NULL',
                 'type' => 'required|in:B2B,B2C',
                 'agent_id' => 'required_if:type,B2B|exists:agents,id,deleted_at,NULL',
                 'destination_id' => 'required|exists:destinations,id,deleted_at,NULL',
