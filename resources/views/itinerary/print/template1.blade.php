@@ -309,6 +309,13 @@
             $quotedOptionsStr = $itinerary->quoted_options;
             $quotedOptions = is_string($quotedOptionsStr) ? json_decode($quotedOptionsStr, true) : ($quotedOptionsStr ?: []);
 
+            // Override currency from quoted_options if available — this is the most reliable source
+            // because it's saved at pricing time and matches what the app/WhatsApp display.
+            // This fixes the email showing THB when the user actually priced in USD.
+            if (is_array($quotedOptions) && !empty($quotedOptions[0]['currencyCode'])) {
+                $currency = $quotedOptions[0]['currencyCode'];
+            }
+
             $optionLabels = $options->keys()->toArray();
             $optCount = max(count($optionLabels), count($quotedOptions));
             if ($optCount == 0) {
