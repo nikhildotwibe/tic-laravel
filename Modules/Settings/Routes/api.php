@@ -74,7 +74,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('activity-status-update/{id}', [ActivitiesController::class, 'updateStatus']);
     Route::apiResource('lead-sources', LeadSourceController::class);
     Route::apiResource('priorities', PriorityController::class);
-    Route::apiResource('currencies', CurrencyController::class);
+    // Route::apiResource('currencies', CurrencyController::class);
     Route::apiResource('requirements', RequirementsController::class);
     Route::apiResource('enquiries', EnquiriesController::class);
     Route::apiResource('activity-types', ActivityTypeController::class);
