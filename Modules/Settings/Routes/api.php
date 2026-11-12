@@ -67,19 +67,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     Route::match(['POST', 'PUT', 'PATCH'], 'hotel-update/{id}', [HotelsController::class, 'update']);
-
-    // DEBUG: catch GET on hotel-update to log it
-    Route::get('hotel-update/{id}', function ($id) {
-        \Illuminate\Support\Facades\Log::warning('[HotelUpdate] GET request received — should be POST!', [
-            'hotel_id'   => $id,
-            'url'        => request()->fullUrl(),
-            'referer'    => request()->header('Referer'),
-            'user_agent' => request()->header('User-Agent'),
-        ]);
-        return response()->json([
-            'message' => 'GET is not allowed on hotel-update. This was logged.',
-        ], 405);
-    });
     Route::apiResource('transfers', TransfersController::class)->except('update');
     Route::post('transfer-update/{id}', [TransfersController::class, 'update']);
     Route::patch('transfer-status-update/{id}', [TransfersController::class, 'updateStatus']);

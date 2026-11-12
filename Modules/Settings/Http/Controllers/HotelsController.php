@@ -366,15 +366,6 @@ class HotelsController extends BaseController
 
     public function update(Request $request, $id)
     {
-        \Illuminate\Support\Facades\Log::info('[HotelUpdate] HIT', [
-            'method'       => $request->method(),
-            'url'          => $request->fullUrl(),
-            'hotel_id'     => $id,
-            'content_type' => $request->header('Content-Type'),
-            'has_files'    => $request->hasFile('document_2'),
-            'input_keys'   => array_keys($request->all()),
-        ]);
-
         DB::beginTransaction();
         try {
             $this->requestValidator($request->all(), $id)->validate();
