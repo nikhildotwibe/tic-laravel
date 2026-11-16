@@ -65,7 +65,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::delete('hotel-image/{id}', [HotelsController::class, 'deleteImage']);
 
-    Route::post('hotel-update/{id}', [HotelsController::class, 'update']);
+    Route::match(['GET', 'POST'], 'hotel-update/{id}', [HotelsController::class, 'update']);
  
     Route::apiResource('transfers', TransfersController::class)->except('update');
     Route::post('transfer-update/{id}', [TransfersController::class, 'update']);
