@@ -332,12 +332,128 @@ class HotelsController extends BaseController
         return $hotel;
     }
 
+    /**
+     * Turns the compact request sent by the frontend back into the shape that
+     * requestValidator() and process() expect.
+     *
+     * - `rooms_json`: all room data in ONE json field (the frontend used to send ~40
+     *   multipart fields per room, which exceeded the host's 128 KB ModSecurity limit and
+     *   made Apache replay the request as a GET -> 405). Uploaded room images still arrive
+     *   as rooms[i][images][...] files and are merged back into the matching room.
+     * - `exceptions.*.date_ranges` ("2026-12-24/2026-12-31" or a single "2026-12-24") are
+     *   expanded into the `dates` array.
+     * Requests in the old format (rooms[i][...] fields, `dates` array or comma string)
+     * are still accepted unchanged.
+     */
+    private function normalizeRequestData(Request $request): array
+    {
+        $data = $request->all();
+
+        if (array_key_exists('rooms_json', $data)) {
+            $decoded = is_string($data['rooms_json']) ? json_decode($data['rooms_json'], true) : null;
+            unset($data['rooms_json']);
+
+            if (is_array($decoded)) {
+                // json bypasses Laravel's TrimStrings / ConvertEmptyStringsToNull middleware, so redo that here
+                $decoded = $this->emptyStringsToNull($decoded);
+                $uploads = (isset($data['rooms']) && is_array($data['rooms'])) ? $data['rooms'] : [];
+
+                foreach ($decoded as $i => $room) {
+                    if (is_array($room) && isset($uploads[$i]) && is_array($uploads[$i])) {
+                        $decoded[$i] = array_merge($room, $uploads[$i]);
+                    }
+                }
+
+                $data['rooms'] = $decoded;
+            }
+        }
+
+        if (isset($data['rooms']) && is_array($data['rooms'])) {
+            foreach ($data['rooms'] as $i => $room) {
+                if (! is_array($room) || ! isset($room['exceptions']) || ! is_array($room['exceptions'])) {
+                    continue;
+                }
+                foreach ($room['exceptions'] as $j => $exc) {
+                    if (! is_array($exc)) {
+                        continue;
+                    }
+                    if (isset($exc['date_ranges']) && is_array($exc['date_ranges'])) {
+                        $data['rooms'][$i]['exceptions'][$j]['dates'] = $this->expandDateRanges($exc['date_ranges']);
+                        unset($data['rooms'][$i]['exceptions'][$j]['date_ranges']);
+                    } elseif (isset($exc['dates']) && is_string($exc['dates'])) {
+                        $data['rooms'][$i]['exceptions'][$j]['dates'] = array_values(
+                            array_filter(array_map('trim', explode(',', $exc['dates'])), 'strlen')
+                        );
+                    }
+                }
+            }
+        }
+
+        return $data;
+    }
+
+    private function emptyStringsToNull(array $items): array
+    {
+        foreach ($items as $key => $value) {
+            if (is_array($value)) {
+                $items[$key] = $this->emptyStringsToNull($value);
+            } elseif (is_string($value)) {
+                $value = trim($value);
+                $items[$key] = $value === '' ? null : $value;
+            }
+        }
+
+        return $items;
+    }
+
+    /**
+     * ["2026-12-24/2026-12-26", "2027-01-02"] => ["2026-12-24", "2026-12-25", "2026-12-26", "2027-01-02"]
+     * Anything invalid is passed through as-is so the `date_format:Y-m-d` rule rejects it.
+     */
+    private function expandDateRanges(array $ranges): array
+    {
+        $dates = [];
+
+        foreach ($ranges as $range) {
+            if (! is_string($range) || trim($range) === '') {
+                continue;
+            }
+            $range = trim($range);
+            [$from, $to] = array_pad(explode('/', $range, 2), 2, null);
+            $to = $to ?: $from;
+
+            $start = \DateTimeImmutable::createFromFormat('!Y-m-d', (string) $from);
+            $end = \DateTimeImmutable::createFromFormat('!Y-m-d', (string) $to);
+
+            if (! $start || ! $end || $start->format('Y-m-d') !== $from || $end->format('Y-m-d') !== $to) {
+                $dates[] = $range;
+
+                continue;
+            }
+            if ($end < $start) {
+                [$start, $end] = [$end, $start];
+            }
+            $span = (int) $start->diff($end)->days;
+            if ($span > 3660) { // safety cap: 10 years in one range
+                $dates[] = $range;
+
+                continue;
+            }
+            for ($n = 0; $n <= $span; $n++) {
+                $dates[] = $start->modify("+{$n} days")->format('Y-m-d');
+            }
+        }
+
+        return array_values(array_unique($dates));
+    }
+
     public function store(Request $request)
     {
         DB::beginTransaction();
         try {
-            $this->requestValidator($request->all())->validate();
-            $hotel = $this->process($request->all());
+            $data = $this->normalizeRequestData($request);
+            $this->requestValidator($data)->validate();
+            $hotel = $this->process($data);
 
             return $this->sendResponse(HotelResource::make($hotel), 'Hotel created Successfully', 201);
         } catch (Exception $exception) {
@@ -368,8 +484,9 @@ class HotelsController extends BaseController
     {
         DB::beginTransaction();
         try {
-            $this->requestValidator($request->all(), $id)->validate();
-            $hotel = $this->process($request->all(), $id);
+            $data = $this->normalizeRequestData($request);
+            $this->requestValidator($data, $id)->validate();
+            $hotel = $this->process($data, $id);
 
             return $this->sendResponse(HotelResource::make($hotel), 'Hotel Updated', 200);
         } catch (Exception $exception) {
