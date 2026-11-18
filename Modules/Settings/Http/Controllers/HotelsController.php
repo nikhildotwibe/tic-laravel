@@ -482,38 +482,15 @@ class HotelsController extends BaseController
 
     public function update(Request $request, $id)
     {
-        \Illuminate\Support\Facades\Log::info('[HotelUpdate DEBUG] Received request in HotelsController@update', [
-            'id' => $id,
-            'method' => $request->method(),
-            'actual_method' => $request->getMethod(),
-            'is_method_post' => $request->isMethod('post'),
-            'content_type' => $request->header('Content-Type'),
-            'input_keys' => array_keys($request->all()),
-            'has_rooms_json' => $request->has('rooms_json'),
-        ]);
-
         DB::beginTransaction();
         try {
             $data = $this->normalizeRequestData($request);
-            $validator = $this->requestValidator($data, $id);
-            if ($validator->fails()) {
-                \Illuminate\Support\Facades\Log::warning('[HotelUpdate DEBUG] Validation failed', [
-                    'id' => $id,
-                    'errors' => $validator->errors()->toArray(),
-                    'normalized_data_keys' => array_keys($data),
-                ]);
-            }
-            $validator->validate();
+            $this->requestValidator($data, $id)->validate();
             $hotel = $this->process($data, $id);
 
             return $this->sendResponse(HotelResource::make($hotel), 'Hotel Updated', 200);
         } catch (Exception $exception) {
             DB::rollBack();
-            \Illuminate\Support\Facades\Log::error('[HotelUpdate DEBUG] Exception caught in update', [
-                'id' => $id,
-                'message' => $exception->getMessage(),
-                'trace' => substr($exception->getTraceAsString(), 0, 500),
-            ]);
 
             return $this->HandleException($exception);
         }
