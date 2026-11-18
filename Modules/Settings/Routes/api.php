@@ -66,6 +66,28 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('hotel-image/{id}', [HotelsController::class, 'deleteImage']);
 
     Route::match(['POST', 'PUT', 'PATCH'], 'hotel-update/{id}', [HotelsController::class, 'update']);
+    Route::get('hotel-update/{id}', function ($id) {
+        \Illuminate\Support\Facades\Log::warning('[HotelUpdate DEBUG] Unexpected GET request hit hotel-update!', [
+            'id' => $id,
+            'url' => request()->fullUrl(),
+            'headers' => request()->headers->all(),
+            'server_vars' => [
+                'REQUEST_METHOD' => $_SERVER['REQUEST_METHOD'] ?? null,
+                'REDIRECT_STATUS' => $_SERVER['REDIRECT_STATUS'] ?? null,
+                'REQUEST_URI' => $_SERVER['REQUEST_URI'] ?? null,
+            ],
+        ]);
+        return response()->json([
+            'success' => false,
+            'message' => 'DEBUG: A GET request reached hotel-update/' . $id . '. Your web server (Apache/cPanel) or ModSecurity converted the client POST into a GET before handing it to PHP!',
+            'debug' => [
+                'method' => request()->method(),
+                'server_request_method' => $_SERVER['REQUEST_METHOD'] ?? null,
+                'redirect_status' => $_SERVER['REDIRECT_STATUS'] ?? null,
+                'content_type' => request()->header('Content-Type'),
+            ]
+        ], 405);
+    });
  
     Route::apiResource('transfers', TransfersController::class)->except('update');
     Route::post('transfer-update/{id}', [TransfersController::class, 'update']);
